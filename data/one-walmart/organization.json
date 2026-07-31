@@ -1,0 +1,1643 @@
+{
+  "source": "User-provided Regional Manager / Area Manager performance hierarchy",
+  "regionalManagers": [
+    {
+      "name": "Anders, Roy",
+      "normalizedName": "anders roy",
+      "metrics": {
+        "name": "Anders, Roy",
+        "level": "Regional Manager",
+        "regionalManager": "Anders, Roy",
+        "soExecuted": 87.84,
+        "compliance": 52.29,
+        "actionHoursUtilized": 71.75,
+        "efficiencyGained": 25.82
+      },
+      "areaManagers": [
+        {
+          "name": "Bailey, Steven",
+          "normalizedName": "bailey steven",
+          "metrics": {
+            "name": "Bailey, Steven",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 94.64,
+            "compliance": 52.1,
+            "actionHoursUtilized": 75.06,
+            "efficiencyGained": 23.9
+          }
+        },
+        {
+          "name": "Davis, Chad",
+          "normalizedName": "davis chad",
+          "metrics": {
+            "name": "Davis, Chad",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 94.69,
+            "compliance": 49.93,
+            "actionHoursUtilized": 72.46,
+            "efficiencyGained": 27.5
+          }
+        },
+        {
+          "name": "Hogshire, Brenda",
+          "normalizedName": "hogshire brenda",
+          "metrics": {
+            "name": "Hogshire, Brenda",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 83.93,
+            "compliance": 55.92,
+            "actionHoursUtilized": 64.45,
+            "efficiencyGained": 33.4
+          }
+        },
+        {
+          "name": "Mitchell, Ashley",
+          "normalizedName": "mitchell ashley",
+          "metrics": {
+            "name": "Mitchell, Ashley",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 87.23,
+            "compliance": 53.86,
+            "actionHoursUtilized": 82.05,
+            "efficiencyGained": 15.93
+          }
+        },
+        {
+          "name": "NICODEMUS, ROXANNE",
+          "normalizedName": "nicodemus roxanne",
+          "metrics": {
+            "name": "NICODEMUS, ROXANNE",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 96.02,
+            "compliance": 53.22,
+            "actionHoursUtilized": 74.04,
+            "efficiencyGained": 23.09
+          }
+        },
+        {
+          "name": "RUPP, DAMITA",
+          "normalizedName": "rupp damita",
+          "metrics": {
+            "name": "RUPP, DAMITA",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 78.1,
+            "compliance": 49.67,
+            "actionHoursUtilized": 61.6,
+            "efficiencyGained": 34.29
+          }
+        },
+        {
+          "name": "Strauss, Ronald",
+          "normalizedName": "strauss ronald",
+          "metrics": {
+            "name": "Strauss, Ronald",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 96.02,
+            "compliance": 50.89,
+            "actionHoursUtilized": 72.65,
+            "efficiencyGained": 26.0
+          }
+        },
+        {
+          "name": "Tyler, Kimberly",
+          "normalizedName": "tyler kimberly",
+          "metrics": {
+            "name": "Tyler, Kimberly",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 75.83,
+            "compliance": 50.85,
+            "actionHoursUtilized": 67.61,
+            "efficiencyGained": 23.28
+          }
+        },
+        {
+          "name": "Warnecke, Daffney",
+          "normalizedName": "warnecke daffney",
+          "metrics": {
+            "name": "Warnecke, Daffney",
+            "level": "Area Manager",
+            "regionalManager": "Anders, Roy",
+            "soExecuted": 83.6,
+            "compliance": 57.19,
+            "actionHoursUtilized": 72.22,
+            "efficiencyGained": 26.56
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blankenhorn, Sherry",
+      "normalizedName": "blankenhorn sherry",
+      "metrics": {
+        "name": "Blankenhorn, Sherry",
+        "level": "Regional Manager",
+        "regionalManager": "Blankenhorn, Sherry",
+        "soExecuted": 94.49,
+        "compliance": 51.06,
+        "actionHoursUtilized": 72.2,
+        "efficiencyGained": 26.07
+      },
+      "areaManagers": [
+        {
+          "name": "GIESKE, DAWN",
+          "normalizedName": "gieske dawn",
+          "metrics": {
+            "name": "GIESKE, DAWN",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 91.97,
+            "compliance": 49.37,
+            "actionHoursUtilized": 70.91,
+            "efficiencyGained": 25.85
+          }
+        },
+        {
+          "name": "JOCHIMSEN, DEBORAH",
+          "normalizedName": "jochimsen deborah",
+          "metrics": {
+            "name": "JOCHIMSEN, DEBORAH",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 98.2,
+            "compliance": 49.88,
+            "actionHoursUtilized": 76.46,
+            "efficiencyGained": 22.67
+          }
+        },
+        {
+          "name": "McAllister, Michael",
+          "normalizedName": "mcallister michael",
+          "metrics": {
+            "name": "McAllister, Michael",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 86.55,
+            "compliance": 46.87,
+            "actionHoursUtilized": 65.66,
+            "efficiencyGained": 31.2
+          }
+        },
+        {
+          "name": "Orr, Janeice",
+          "normalizedName": "orr janeice",
+          "metrics": {
+            "name": "Orr, Janeice",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 91.91,
+            "compliance": 58.45,
+            "actionHoursUtilized": 75.28,
+            "efficiencyGained": 24.33
+          }
+        },
+        {
+          "name": "Ramirez, Sandra",
+          "normalizedName": "ramirez sandra",
+          "metrics": {
+            "name": "Ramirez, Sandra",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 92.85,
+            "compliance": 50.21,
+            "actionHoursUtilized": 65.96,
+            "efficiencyGained": 32.21
+          }
+        },
+        {
+          "name": "Salvage, Sonya",
+          "normalizedName": "salvage sonya",
+          "metrics": {
+            "name": "Salvage, Sonya",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 97.21,
+            "compliance": 51.53,
+            "actionHoursUtilized": 71.15,
+            "efficiencyGained": 27.2
+          }
+        },
+        {
+          "name": "Skelton, Tammy",
+          "normalizedName": "skelton tammy",
+          "metrics": {
+            "name": "Skelton, Tammy",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 99.71,
+            "compliance": 52.64,
+            "actionHoursUtilized": 73.97,
+            "efficiencyGained": 25.89
+          }
+        },
+        {
+          "name": "Stevens, Elizabeth",
+          "normalizedName": "stevens elizabeth",
+          "metrics": {
+            "name": "Stevens, Elizabeth",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 93.88,
+            "compliance": 45.66,
+            "actionHoursUtilized": 69.76,
+            "efficiencyGained": 26.87
+          }
+        },
+        {
+          "name": "WOOD, JONATHAN",
+          "normalizedName": "wood jonathan",
+          "metrics": {
+            "name": "WOOD, JONATHAN",
+            "level": "Area Manager",
+            "regionalManager": "Blankenhorn, Sherry",
+            "soExecuted": 98.48,
+            "compliance": 55.9,
+            "actionHoursUtilized": 81.07,
+            "efficiencyGained": 17.97
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bruce, Angel",
+      "normalizedName": "bruce angel",
+      "metrics": {
+        "name": "Bruce, Angel",
+        "level": "Regional Manager",
+        "regionalManager": "Bruce, Angel",
+        "soExecuted": 81.32,
+        "compliance": 43.2,
+        "actionHoursUtilized": 66.81,
+        "efficiencyGained": 30.16
+      },
+      "areaManagers": [
+        {
+          "name": "Ahrens, Lorena",
+          "normalizedName": "ahrens lorena",
+          "metrics": {
+            "name": "Ahrens, Lorena",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 81.97,
+            "compliance": 40.12,
+            "actionHoursUtilized": 69.48,
+            "efficiencyGained": 26.12
+          }
+        },
+        {
+          "name": "Behrens, Karin",
+          "normalizedName": "behrens karin",
+          "metrics": {
+            "name": "Behrens, Karin",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 75.38,
+            "compliance": 41.68,
+            "actionHoursUtilized": 68.03,
+            "efficiencyGained": 28.22
+          }
+        },
+        {
+          "name": "Bruce OWM RMM, Angel",
+          "normalizedName": "bruce owm rmm angel",
+          "metrics": {
+            "name": "Bruce OWM RMM, Angel",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 86.13,
+            "compliance": 42.26,
+            "actionHoursUtilized": 63.62,
+            "efficiencyGained": 34.45
+          }
+        },
+        {
+          "name": "Heidebrink, Michelle",
+          "normalizedName": "heidebrink michelle",
+          "metrics": {
+            "name": "Heidebrink, Michelle",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 81.04,
+            "compliance": 38.49,
+            "actionHoursUtilized": 62.73,
+            "efficiencyGained": 36.65
+          }
+        },
+        {
+          "name": "Maphis, Julie",
+          "normalizedName": "maphis julie",
+          "metrics": {
+            "name": "Maphis, Julie",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 86.48,
+            "compliance": 45.43,
+            "actionHoursUtilized": 73.6,
+            "efficiencyGained": 26.07
+          }
+        },
+        {
+          "name": "OLSON, LINDSEY",
+          "normalizedName": "olson lindsey",
+          "metrics": {
+            "name": "OLSON, LINDSEY",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 85.62,
+            "compliance": 48.79,
+            "actionHoursUtilized": 63.08,
+            "efficiencyGained": 31.01
+          }
+        },
+        {
+          "name": "Padalecki, Marianne",
+          "normalizedName": "padalecki marianne",
+          "metrics": {
+            "name": "Padalecki, Marianne",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 70.55,
+            "compliance": 41.38,
+            "actionHoursUtilized": 69.1,
+            "efficiencyGained": 25.62
+          }
+        },
+        {
+          "name": "POLAK, STEVEN",
+          "normalizedName": "polak steven",
+          "metrics": {
+            "name": "POLAK, STEVEN",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 92.2,
+            "compliance": 45.63,
+            "actionHoursUtilized": 67.94,
+            "efficiencyGained": 29.14
+          }
+        },
+        {
+          "name": "Reimer, Donna",
+          "normalizedName": "reimer donna",
+          "metrics": {
+            "name": "Reimer, Donna",
+            "level": "Area Manager",
+            "regionalManager": "Bruce, Angel",
+            "soExecuted": 72.6,
+            "compliance": 43.59,
+            "actionHoursUtilized": 64.14,
+            "efficiencyGained": 33.88
+          }
+        }
+      ]
+    },
+    {
+      "name": "Falcon, Shannon",
+      "normalizedName": "falcon shannon",
+      "metrics": {
+        "name": "Falcon, Shannon",
+        "level": "Regional Manager",
+        "regionalManager": "Falcon, Shannon",
+        "soExecuted": 87.52,
+        "compliance": 48.23,
+        "actionHoursUtilized": 67.93,
+        "efficiencyGained": 29.48
+      },
+      "areaManagers": [
+        {
+          "name": "ALCALA, ALEJANDRO",
+          "normalizedName": "alcala alejandro",
+          "metrics": {
+            "name": "ALCALA, ALEJANDRO",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 93.9,
+            "compliance": 54.2,
+            "actionHoursUtilized": 75.67,
+            "efficiencyGained": 21.65
+          }
+        },
+        {
+          "name": "Brandon, Kolby",
+          "normalizedName": "brandon kolby",
+          "metrics": {
+            "name": "Brandon, Kolby",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 78.72,
+            "compliance": 48.62,
+            "actionHoursUtilized": 74.2,
+            "efficiencyGained": 24.98
+          }
+        },
+        {
+          "name": "Cline, Jennifer",
+          "normalizedName": "cline jennifer",
+          "metrics": {
+            "name": "Cline, Jennifer",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 90.96,
+            "compliance": 47.02,
+            "actionHoursUtilized": 60.89,
+            "efficiencyGained": 36.22
+          }
+        },
+        {
+          "name": "Cross, Shawn",
+          "normalizedName": "cross shawn",
+          "metrics": {
+            "name": "Cross, Shawn",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 87.92,
+            "compliance": 45.98,
+            "actionHoursUtilized": 70.98,
+            "efficiencyGained": 22.78
+          }
+        },
+        {
+          "name": "DELEHANT, MARLENE",
+          "normalizedName": "delehant marlene",
+          "metrics": {
+            "name": "DELEHANT, MARLENE",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 87.98,
+            "compliance": 46.57,
+            "actionHoursUtilized": 63.76,
+            "efficiencyGained": 32.87
+          }
+        },
+        {
+          "name": "Hulbert, Lynne",
+          "normalizedName": "hulbert lynne",
+          "metrics": {
+            "name": "Hulbert, Lynne",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 89.99,
+            "compliance": 48.72,
+            "actionHoursUtilized": 60.81,
+            "efficiencyGained": 38.33
+          }
+        },
+        {
+          "name": "Jensen, Kimberly",
+          "normalizedName": "jensen kimberly",
+          "metrics": {
+            "name": "Jensen, Kimberly",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 82.79,
+            "compliance": 46.11,
+            "actionHoursUtilized": 69.45,
+            "efficiencyGained": 28.78
+          }
+        },
+        {
+          "name": "Kristek, Dustin",
+          "normalizedName": "kristek dustin",
+          "metrics": {
+            "name": "Kristek, Dustin",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 87.1,
+            "compliance": 53.8,
+            "actionHoursUtilized": 70.71,
+            "efficiencyGained": 26.6
+          }
+        },
+        {
+          "name": "Simpson, Gena",
+          "normalizedName": "simpson gena",
+          "metrics": {
+            "name": "Simpson, Gena",
+            "level": "Area Manager",
+            "regionalManager": "Falcon, Shannon",
+            "soExecuted": 90.65,
+            "compliance": 51.95,
+            "actionHoursUtilized": 72.6,
+            "efficiencyGained": 26.45
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fiechter, Alicia",
+      "normalizedName": "fiechter alicia",
+      "metrics": {
+        "name": "Fiechter, Alicia",
+        "level": "Regional Manager",
+        "regionalManager": "Fiechter, Alicia",
+        "soExecuted": 88.24,
+        "compliance": 51.46,
+        "actionHoursUtilized": 64.52,
+        "efficiencyGained": 32.86
+      },
+      "areaManagers": [
+        {
+          "name": "AROCHO, JENIFER",
+          "normalizedName": "arocho jenifer",
+          "metrics": {
+            "name": "AROCHO, JENIFER",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 96.9,
+            "compliance": 47.99,
+            "actionHoursUtilized": 58.81,
+            "efficiencyGained": 39.66
+          }
+        },
+        {
+          "name": "Desantis, Monica",
+          "normalizedName": "desantis monica",
+          "metrics": {
+            "name": "Desantis, Monica",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 95.17,
+            "compliance": 51.4,
+            "actionHoursUtilized": 68.9,
+            "efficiencyGained": 30.25
+          }
+        },
+        {
+          "name": "Dinkins, Daniel",
+          "normalizedName": "dinkins daniel",
+          "metrics": {
+            "name": "Dinkins, Daniel",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 87.42,
+            "compliance": 49.93,
+            "actionHoursUtilized": 65.68,
+            "efficiencyGained": 33.67
+          }
+        },
+        {
+          "name": "Earhart, Amber",
+          "normalizedName": "earhart amber",
+          "metrics": {
+            "name": "Earhart, Amber",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 88.74,
+            "compliance": 57.32,
+            "actionHoursUtilized": 64.54,
+            "efficiencyGained": 30.25
+          }
+        },
+        {
+          "name": "Kaman, Sarah",
+          "normalizedName": "kaman sarah",
+          "metrics": {
+            "name": "Kaman, Sarah",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 79.16,
+            "compliance": 49.03,
+            "actionHoursUtilized": 65.03,
+            "efficiencyGained": 33.06
+          }
+        },
+        {
+          "name": "Lorenzano, Luis",
+          "normalizedName": "lorenzano luis",
+          "metrics": {
+            "name": "Lorenzano, Luis",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 86.37,
+            "compliance": 47.89,
+            "actionHoursUtilized": 60.92,
+            "efficiencyGained": 31.95
+          }
+        },
+        {
+          "name": "QUEEN, JOHN",
+          "normalizedName": "queen john",
+          "metrics": {
+            "name": "QUEEN, JOHN",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 85.77,
+            "compliance": 56.24,
+            "actionHoursUtilized": 62.11,
+            "efficiencyGained": 35.35
+          }
+        },
+        {
+          "name": "Wolsefer, Donna",
+          "normalizedName": "wolsefer donna",
+          "metrics": {
+            "name": "Wolsefer, Donna",
+            "level": "Area Manager",
+            "regionalManager": "Fiechter, Alicia",
+            "soExecuted": 87.76,
+            "compliance": 53.44,
+            "actionHoursUtilized": 70.37,
+            "efficiencyGained": 28.14
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hernandez, Veronica",
+      "normalizedName": "hernandez veronica",
+      "metrics": {
+        "name": "Hernandez, Veronica",
+        "level": "Regional Manager",
+        "regionalManager": "Hernandez, Veronica",
+        "soExecuted": 91.89,
+        "compliance": 53.34,
+        "actionHoursUtilized": 70.98,
+        "efficiencyGained": 27.64
+      },
+      "areaManagers": [
+        {
+          "name": "Allen, Keith",
+          "normalizedName": "allen keith",
+          "metrics": {
+            "name": "Allen, Keith",
+            "level": "Area Manager",
+            "regionalManager": "Hernandez, Veronica",
+            "soExecuted": 74.15,
+            "compliance": 44.22,
+            "actionHoursUtilized": 68.61,
+            "efficiencyGained": 29.98
+          }
+        },
+        {
+          "name": "CHEATOM, REGINA",
+          "normalizedName": "cheatom regina",
+          "metrics": {
+            "name": "CHEATOM, REGINA",
+            "level": "Area Manager",
+            "regionalManager": "Hernandez, Veronica",
+            "soExecuted": 91.35,
+            "compliance": 51.89,
+            "actionHoursUtilized": 65.53,
+            "efficiencyGained": 32.6
+          }
+        },
+        {
+          "name": "Clark, Debbie",
+          "normalizedName": "clark debbie",
+          "metrics": {
+            "name": "Clark, Debbie",
+            "level": "Area Manager",
+            "regionalManager": "Hernandez, Veronica",
+            "soExecuted": 94.1,
+            "compliance": 57.86,
+            "actionHoursUtilized": 73.3,
+            "efficiencyGained": 26.27
+          }
+        },
+        {
+          "name": "Lagos, Lisa",
+          "normalizedName": "lagos lisa",
+          "metrics": {
+            "name": "Lagos, Lisa",
+            "level": "Area Manager",
+            "regionalManager": "Hernandez, Veronica",
+            "soExecuted": 89.75,
+            "compliance": 50.95,
+            "actionHoursUtilized": 68.67,
+            "efficiencyGained": 30.04
+          }
+        },
+        {
+          "name": "Monkiewicz, Phyllis",
+          "normalizedName": "monkiewicz phyllis",
+          "metrics": {
+            "name": "Monkiewicz, Phyllis",
+            "level": "Area Manager",
+            "regionalManager": "Hernandez, Veronica",
+            "soExecuted": 97.51,
+            "compliance": 57.82,
+            "actionHoursUtilized": 74.87,
+            "efficiencyGained": 24.84
+          }
+        },
+        {
+          "name": "Nelson, Kellie",
+          "normalizedName": "nelson kellie",
+          "metrics": {
+            "name": "Nelson, Kellie",
+            "level": "Area Manager",
+            "regionalManager": "Hernandez, Veronica",
+            "soExecuted": 94.05,
+            "compliance": 55.73,
+            "actionHoursUtilized": 72.82,
+            "efficiencyGained": 24.56
+          }
+        },
+        {
+          "name": "Toriumi, Lisa",
+          "normalizedName": "toriumi lisa",
+          "metrics": {
+            "name": "Toriumi, Lisa",
+            "level": "Area Manager",
+            "regionalManager": "Hernandez, Veronica",
+            "soExecuted": 97.64,
+            "compliance": 54.83,
+            "actionHoursUtilized": 72.39,
+            "efficiencyGained": 26.47
+          }
+        }
+      ]
+    },
+    {
+      "name": "Massey, Shawn",
+      "normalizedName": "massey shawn",
+      "metrics": {
+        "name": "Massey, Shawn",
+        "level": "Regional Manager",
+        "regionalManager": "Massey, Shawn",
+        "soExecuted": 93.11,
+        "compliance": 53.45,
+        "actionHoursUtilized": 73.88,
+        "efficiencyGained": 23.45
+      },
+      "areaManagers": [
+        {
+          "name": "Bourque, Elizabeth",
+          "normalizedName": "bourque elizabeth",
+          "metrics": {
+            "name": "Bourque, Elizabeth",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 97.45,
+            "compliance": 55.99,
+            "actionHoursUtilized": 77.82,
+            "efficiencyGained": 20.4
+          }
+        },
+        {
+          "name": "CREGER, SHARON",
+          "normalizedName": "creger sharon",
+          "metrics": {
+            "name": "CREGER, SHARON",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 96.14,
+            "compliance": 51.35,
+            "actionHoursUtilized": 74.37,
+            "efficiencyGained": 24.09
+          }
+        },
+        {
+          "name": "DART, TREVOR",
+          "normalizedName": "dart trevor",
+          "metrics": {
+            "name": "DART, TREVOR",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 95.41,
+            "compliance": 59.4,
+            "actionHoursUtilized": 79.87,
+            "efficiencyGained": 17.02
+          }
+        },
+        {
+          "name": "Gautney, Jemma",
+          "normalizedName": "gautney jemma",
+          "metrics": {
+            "name": "Gautney, Jemma",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 98.89,
+            "compliance": 64.05,
+            "actionHoursUtilized": 73.55,
+            "efficiencyGained": 25.49
+          }
+        },
+        {
+          "name": "Gillett, Christina",
+          "normalizedName": "gillett christina",
+          "metrics": {
+            "name": "Gillett, Christina",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 94.82,
+            "compliance": 56.07,
+            "actionHoursUtilized": 76.19,
+            "efficiencyGained": 23.81
+          }
+        },
+        {
+          "name": "Henrichsen, Kelly",
+          "normalizedName": "henrichsen kelly",
+          "metrics": {
+            "name": "Henrichsen, Kelly",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 88.75,
+            "compliance": 47.93,
+            "actionHoursUtilized": 70.45,
+            "efficiencyGained": 27.27
+          }
+        },
+        {
+          "name": "ROWTON, JESSICA",
+          "normalizedName": "rowton jessica",
+          "metrics": {
+            "name": "ROWTON, JESSICA",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 92.5,
+            "compliance": 48.4,
+            "actionHoursUtilized": 71.39,
+            "efficiencyGained": 24.53
+          }
+        },
+        {
+          "name": "Whaley, Laura",
+          "normalizedName": "whaley laura",
+          "metrics": {
+            "name": "Whaley, Laura",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 93.09,
+            "compliance": 57.58,
+            "actionHoursUtilized": 75.26,
+            "efficiencyGained": 22.86
+          }
+        },
+        {
+          "name": "Woodward, Shelley",
+          "normalizedName": "woodward shelley",
+          "metrics": {
+            "name": "Woodward, Shelley",
+            "level": "Area Manager",
+            "regionalManager": "Massey, Shawn",
+            "soExecuted": 81.76,
+            "compliance": 46.98,
+            "actionHoursUtilized": 64.9,
+            "efficiencyGained": 27.78
+          }
+        }
+      ]
+    },
+    {
+      "name": "Preslicka, Dani",
+      "normalizedName": "preslicka dani",
+      "metrics": {
+        "name": "Preslicka, Dani",
+        "level": "Regional Manager",
+        "regionalManager": "Preslicka, Dani",
+        "soExecuted": 94.27,
+        "compliance": 47.03,
+        "actionHoursUtilized": 70.9,
+        "efficiencyGained": 28.32
+      },
+      "areaManagers": [
+        {
+          "name": "BUNKLEY, YOLONDA",
+          "normalizedName": "bunkley yolonda",
+          "metrics": {
+            "name": "BUNKLEY, YOLONDA",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 97.59,
+            "compliance": 50.63,
+            "actionHoursUtilized": 73.86,
+            "efficiencyGained": 25.34
+          }
+        },
+        {
+          "name": "Garza, Melissa",
+          "normalizedName": "garza melissa",
+          "metrics": {
+            "name": "Garza, Melissa",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 99.91,
+            "compliance": 57.69,
+            "actionHoursUtilized": 79.41,
+            "efficiencyGained": 20.59
+          }
+        },
+        {
+          "name": "Gordon Elliott, Cindy",
+          "normalizedName": "gordon elliott cindy",
+          "metrics": {
+            "name": "Gordon Elliott, Cindy",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 74.56,
+            "compliance": 47.73,
+            "actionHoursUtilized": 70.13,
+            "efficiencyGained": 27.49
+          }
+        },
+        {
+          "name": "HICKEY, GLENNA",
+          "normalizedName": "hickey glenna",
+          "metrics": {
+            "name": "HICKEY, GLENNA",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 94.55,
+            "compliance": 46.25,
+            "actionHoursUtilized": 68.51,
+            "efficiencyGained": 29.67
+          }
+        },
+        {
+          "name": "Martinez, Roberta",
+          "normalizedName": "martinez roberta",
+          "metrics": {
+            "name": "Martinez, Roberta",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 100.0,
+            "compliance": 44.26,
+            "actionHoursUtilized": 67.05,
+            "efficiencyGained": 32.95
+          }
+        },
+        {
+          "name": "Razon, Suzanne",
+          "normalizedName": "razon suzanne",
+          "metrics": {
+            "name": "Razon, Suzanne",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 99.92,
+            "compliance": 43.57,
+            "actionHoursUtilized": 68.5,
+            "efficiencyGained": 31.5
+          }
+        },
+        {
+          "name": "Russell, Rebecca",
+          "normalizedName": "russell rebecca",
+          "metrics": {
+            "name": "Russell, Rebecca",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 98.94,
+            "compliance": 44.0,
+            "actionHoursUtilized": 65.28,
+            "efficiencyGained": 33.9
+          }
+        },
+        {
+          "name": "Southerland, Kimberly",
+          "normalizedName": "southerland kimberly",
+          "metrics": {
+            "name": "Southerland, Kimberly",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 88.37,
+            "compliance": 48.45,
+            "actionHoursUtilized": 73.1,
+            "efficiencyGained": 26.42
+          }
+        },
+        {
+          "name": "WILSON, DAVID",
+          "normalizedName": "wilson david",
+          "metrics": {
+            "name": "WILSON, DAVID",
+            "level": "Area Manager",
+            "regionalManager": "Preslicka, Dani",
+            "soExecuted": 98.07,
+            "compliance": null,
+            "actionHoursUtilized": null,
+            "efficiencyGained": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rogge, Raina",
+      "normalizedName": "rogge raina",
+      "metrics": {
+        "name": "Rogge, Raina",
+        "level": "Regional Manager",
+        "regionalManager": "Rogge, Raina",
+        "soExecuted": 99.03,
+        "compliance": 58.46,
+        "actionHoursUtilized": 74.58,
+        "efficiencyGained": 24.97
+      },
+      "areaManagers": [
+        {
+          "name": "ALLENDEZ, SHUNKO",
+          "normalizedName": "allendez shunko",
+          "metrics": {
+            "name": "ALLENDEZ, SHUNKO",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 96.96,
+            "compliance": 55.53,
+            "actionHoursUtilized": 77.45,
+            "efficiencyGained": 20.39
+          }
+        },
+        {
+          "name": "Collins, La-Shunda",
+          "normalizedName": "collins la shunda",
+          "metrics": {
+            "name": "Collins, La-Shunda",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 98.81,
+            "compliance": 54.4,
+            "actionHoursUtilized": 71.25,
+            "efficiencyGained": 27.84
+          }
+        },
+        {
+          "name": "Cortes, Michael",
+          "normalizedName": "cortes michael",
+          "metrics": {
+            "name": "Cortes, Michael",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 99.31,
+            "compliance": 58.7,
+            "actionHoursUtilized": 74.24,
+            "efficiencyGained": 25.62
+          }
+        },
+        {
+          "name": "ERVIN, KIMBERLY",
+          "normalizedName": "ervin kimberly",
+          "metrics": {
+            "name": "ERVIN, KIMBERLY",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 99.32,
+            "compliance": 62.76,
+            "actionHoursUtilized": 74.87,
+            "efficiencyGained": 24.74
+          }
+        },
+        {
+          "name": "Etingoff, Beth",
+          "normalizedName": "etingoff beth",
+          "metrics": {
+            "name": "Etingoff, Beth",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 98.1,
+            "compliance": 60.36,
+            "actionHoursUtilized": 78.08,
+            "efficiencyGained": 21.23
+          }
+        },
+        {
+          "name": "Marcum, Joel",
+          "normalizedName": "marcum joel",
+          "metrics": {
+            "name": "Marcum, Joel",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 99.42,
+            "compliance": 58.73,
+            "actionHoursUtilized": 75.76,
+            "efficiencyGained": 23.94
+          }
+        },
+        {
+          "name": "Restivo, James",
+          "normalizedName": "restivo james",
+          "metrics": {
+            "name": "Restivo, James",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 100.0,
+            "compliance": 56.15,
+            "actionHoursUtilized": 77.78,
+            "efficiencyGained": 22.22
+          }
+        },
+        {
+          "name": "Specht, Wolf",
+          "normalizedName": "specht wolf",
+          "metrics": {
+            "name": "Specht, Wolf",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 99.38,
+            "compliance": 61.88,
+            "actionHoursUtilized": 60.3,
+            "efficiencyGained": 39.7
+          }
+        },
+        {
+          "name": "Tripoli, Michael",
+          "normalizedName": "tripoli michael",
+          "metrics": {
+            "name": "Tripoli, Michael",
+            "level": "Area Manager",
+            "regionalManager": "Rogge, Raina",
+            "soExecuted": 99.47,
+            "compliance": 56.85,
+            "actionHoursUtilized": 77.27,
+            "efficiencyGained": 22.56
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schubert, Brian",
+      "normalizedName": "schubert brian",
+      "metrics": {
+        "name": "Schubert, Brian",
+        "level": "Regional Manager",
+        "regionalManager": "Schubert, Brian",
+        "soExecuted": 95.94,
+        "compliance": 53.09,
+        "actionHoursUtilized": 67.81,
+        "efficiencyGained": 31.19
+      },
+      "areaManagers": [
+        {
+          "name": "Bentley, Leslie",
+          "normalizedName": "bentley leslie",
+          "metrics": {
+            "name": "Bentley, Leslie",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 90.84,
+            "compliance": 51.46,
+            "actionHoursUtilized": 65.49,
+            "efficiencyGained": 32.81
+          }
+        },
+        {
+          "name": "Couillard, Cherry",
+          "normalizedName": "couillard cherry",
+          "metrics": {
+            "name": "Couillard, Cherry",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 98.62,
+            "compliance": 53.79,
+            "actionHoursUtilized": 64.54,
+            "efficiencyGained": 34.75
+          }
+        },
+        {
+          "name": "Graves, David",
+          "normalizedName": "graves david",
+          "metrics": {
+            "name": "Graves, David",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 99.1,
+            "compliance": 51.77,
+            "actionHoursUtilized": 68.55,
+            "efficiencyGained": 31.16
+          }
+        },
+        {
+          "name": "Malone, Bret",
+          "normalizedName": "malone bret",
+          "metrics": {
+            "name": "Malone, Bret",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 95.89,
+            "compliance": 56.31,
+            "actionHoursUtilized": 78.22,
+            "efficiencyGained": 20.02
+          }
+        },
+        {
+          "name": "Preston, Ken",
+          "normalizedName": "preston ken",
+          "metrics": {
+            "name": "Preston, Ken",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 99.21,
+            "compliance": 54.37,
+            "actionHoursUtilized": 64.7,
+            "efficiencyGained": 35.3
+          }
+        },
+        {
+          "name": "VADALA, JENNY",
+          "normalizedName": "vadala jenny",
+          "metrics": {
+            "name": "VADALA, JENNY",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 91.66,
+            "compliance": 53.8,
+            "actionHoursUtilized": 69.65,
+            "efficiencyGained": 28.99
+          }
+        },
+        {
+          "name": "Walton, Dayvon",
+          "normalizedName": "walton dayvon",
+          "metrics": {
+            "name": "Walton, Dayvon",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 99.83,
+            "compliance": 52.28,
+            "actionHoursUtilized": 67.1,
+            "efficiencyGained": 32.77
+          }
+        },
+        {
+          "name": "WESTMORELAND, CHRISTOPHER",
+          "normalizedName": "westmoreland christopher",
+          "metrics": {
+            "name": "WESTMORELAND, CHRISTOPHER",
+            "level": "Area Manager",
+            "regionalManager": "Schubert, Brian",
+            "soExecuted": 96.49,
+            "compliance": 51.38,
+            "actionHoursUtilized": 63.71,
+            "efficiencyGained": 34.18
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shockey, Jonathan",
+      "normalizedName": "shockey jonathan",
+      "metrics": {
+        "name": "Shockey, Jonathan",
+        "level": "Regional Manager",
+        "regionalManager": "Shockey, Jonathan",
+        "soExecuted": 92.66,
+        "compliance": 46.63,
+        "actionHoursUtilized": 65.31,
+        "efficiencyGained": 32.35
+      },
+      "areaManagers": [
+        {
+          "name": "Burns, Linn",
+          "normalizedName": "burns linn",
+          "metrics": {
+            "name": "Burns, Linn",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 94.92,
+            "compliance": 49.31,
+            "actionHoursUtilized": 69.72,
+            "efficiencyGained": 26.89
+          }
+        },
+        {
+          "name": "Currington, Angela",
+          "normalizedName": "currington angela",
+          "metrics": {
+            "name": "Currington, Angela",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 94.63,
+            "compliance": 47.79,
+            "actionHoursUtilized": 65.46,
+            "efficiencyGained": 34.08
+          }
+        },
+        {
+          "name": "Fullerton, Dulcie",
+          "normalizedName": "fullerton dulcie",
+          "metrics": {
+            "name": "Fullerton, Dulcie",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 82.06,
+            "compliance": 44.34,
+            "actionHoursUtilized": 56.96,
+            "efficiencyGained": 38.62
+          }
+        },
+        {
+          "name": "Nix, Linda",
+          "normalizedName": "nix linda",
+          "metrics": {
+            "name": "Nix, Linda",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 97.58,
+            "compliance": 43.11,
+            "actionHoursUtilized": 56.19,
+            "efficiencyGained": 42.82
+          }
+        },
+        {
+          "name": "Pfluger, Felicia",
+          "normalizedName": "pfluger felicia",
+          "metrics": {
+            "name": "Pfluger, Felicia",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 100.0,
+            "compliance": 41.47,
+            "actionHoursUtilized": 60.61,
+            "efficiencyGained": 39.39
+          }
+        },
+        {
+          "name": "Schaaf, Dyanna",
+          "normalizedName": "schaaf dyanna",
+          "metrics": {
+            "name": "Schaaf, Dyanna",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 92.61,
+            "compliance": 50.58,
+            "actionHoursUtilized": 74.93,
+            "efficiencyGained": 24.44
+          }
+        },
+        {
+          "name": "SETTLE, MELINDA",
+          "normalizedName": "settle melinda",
+          "metrics": {
+            "name": "SETTLE, MELINDA",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 83.4,
+            "compliance": 59.64,
+            "actionHoursUtilized": 65.31,
+            "efficiencyGained": 25.85
+          }
+        },
+        {
+          "name": "STOUT, CHRISTINE",
+          "normalizedName": "stout christine",
+          "metrics": {
+            "name": "STOUT, CHRISTINE",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 95.64,
+            "compliance": 45.41,
+            "actionHoursUtilized": 66.34,
+            "efficiencyGained": 31.39
+          }
+        },
+        {
+          "name": "Stull, Monica",
+          "normalizedName": "stull monica",
+          "metrics": {
+            "name": "Stull, Monica",
+            "level": "Area Manager",
+            "regionalManager": "Shockey, Jonathan",
+            "soExecuted": 94.92,
+            "compliance": 40.14,
+            "actionHoursUtilized": 71.56,
+            "efficiencyGained": 27.19
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sinclair, Eliazbeth",
+      "normalizedName": "sinclair eliazbeth",
+      "metrics": {
+        "name": "Sinclair, Eliazbeth",
+        "level": "Regional Manager",
+        "regionalManager": "Sinclair, Eliazbeth",
+        "soExecuted": 85.65,
+        "compliance": 52.04,
+        "actionHoursUtilized": 64.6,
+        "efficiencyGained": 32.57
+      },
+      "areaManagers": [
+        {
+          "name": "ABEDRABBO, IMAD",
+          "normalizedName": "abedrabbo imad",
+          "metrics": {
+            "name": "ABEDRABBO, IMAD",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 93.56,
+            "compliance": 50.77,
+            "actionHoursUtilized": 72.42,
+            "efficiencyGained": 26.91
+          }
+        },
+        {
+          "name": "BURBANK, KORI",
+          "normalizedName": "burbank kori",
+          "metrics": {
+            "name": "BURBANK, KORI",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 86.13,
+            "compliance": 52.39,
+            "actionHoursUtilized": 60.57,
+            "efficiencyGained": 31.98
+          }
+        },
+        {
+          "name": "Febo, Melissa",
+          "normalizedName": "febo melissa",
+          "metrics": {
+            "name": "Febo, Melissa",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 77.59,
+            "compliance": 55.45,
+            "actionHoursUtilized": 68.29,
+            "efficiencyGained": 30.18
+          }
+        },
+        {
+          "name": "Gibbes, Malin",
+          "normalizedName": "gibbes malin",
+          "metrics": {
+            "name": "Gibbes, Malin",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 87.09,
+            "compliance": 54.98,
+            "actionHoursUtilized": 71.66,
+            "efficiencyGained": 24.69
+          }
+        },
+        {
+          "name": "Henry, Linda",
+          "normalizedName": "henry linda",
+          "metrics": {
+            "name": "Henry, Linda",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 96.91,
+            "compliance": 56.23,
+            "actionHoursUtilized": 65.86,
+            "efficiencyGained": 33.29
+          }
+        },
+        {
+          "name": "Judd, Jaqueline",
+          "normalizedName": "judd jaqueline",
+          "metrics": {
+            "name": "Judd, Jaqueline",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 71.02,
+            "compliance": 52.48,
+            "actionHoursUtilized": 58.88,
+            "efficiencyGained": 36.26
+          }
+        },
+        {
+          "name": "Santiago, Sylvia",
+          "normalizedName": "santiago sylvia",
+          "metrics": {
+            "name": "Santiago, Sylvia",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 76.74,
+            "compliance": 49.52,
+            "actionHoursUtilized": 63.23,
+            "efficiencyGained": 33.73
+          }
+        },
+        {
+          "name": "Simko, Linda",
+          "normalizedName": "simko linda",
+          "metrics": {
+            "name": "Simko, Linda",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 94.71,
+            "compliance": 48.46,
+            "actionHoursUtilized": 54.78,
+            "efficiencyGained": 44.35
+          }
+        },
+        {
+          "name": "Vadala, Laura",
+          "normalizedName": "vadala laura",
+          "metrics": {
+            "name": "Vadala, Laura",
+            "level": "Area Manager",
+            "regionalManager": "Sinclair, Eliazbeth",
+            "soExecuted": 84.95,
+            "compliance": 49.85,
+            "actionHoursUtilized": 64.59,
+            "efficiencyGained": 33.18
+          }
+        }
+      ]
+    }
+  ],
+  "rdmToRegionalManager": {
+    "bailey steven": "Anders, Roy",
+    "davis chad": "Anders, Roy",
+    "hogshire brenda": "Anders, Roy",
+    "mitchell ashley": "Anders, Roy",
+    "nicodemus roxanne": "Anders, Roy",
+    "rupp damita": "Anders, Roy",
+    "strauss ronald": "Anders, Roy",
+    "tyler kimberly": "Anders, Roy",
+    "warnecke daffney": "Anders, Roy",
+    "gieske dawn": "Blankenhorn, Sherry",
+    "jochimsen deborah": "Blankenhorn, Sherry",
+    "mcallister michael": "Blankenhorn, Sherry",
+    "orr janeice": "Blankenhorn, Sherry",
+    "ramirez sandra": "Blankenhorn, Sherry",
+    "salvage sonya": "Blankenhorn, Sherry",
+    "skelton tammy": "Blankenhorn, Sherry",
+    "stevens elizabeth": "Blankenhorn, Sherry",
+    "wood jonathan": "Blankenhorn, Sherry",
+    "ahrens lorena": "Bruce, Angel",
+    "behrens karin": "Bruce, Angel",
+    "bruce owm rmm angel": "Bruce, Angel",
+    "heidebrink michelle": "Bruce, Angel",
+    "maphis julie": "Bruce, Angel",
+    "olson lindsey": "Bruce, Angel",
+    "padalecki marianne": "Bruce, Angel",
+    "polak steven": "Bruce, Angel",
+    "reimer donna": "Bruce, Angel",
+    "alcala alejandro": "Falcon, Shannon",
+    "brandon kolby": "Falcon, Shannon",
+    "cline jennifer": "Falcon, Shannon",
+    "cross shawn": "Falcon, Shannon",
+    "delehant marlene": "Falcon, Shannon",
+    "hulbert lynne": "Falcon, Shannon",
+    "jensen kimberly": "Falcon, Shannon",
+    "kristek dustin": "Falcon, Shannon",
+    "simpson gena": "Falcon, Shannon",
+    "arocho jenifer": "Fiechter, Alicia",
+    "desantis monica": "Fiechter, Alicia",
+    "dinkins daniel": "Fiechter, Alicia",
+    "earhart amber": "Fiechter, Alicia",
+    "kaman sarah": "Fiechter, Alicia",
+    "lorenzano luis": "Fiechter, Alicia",
+    "queen john": "Fiechter, Alicia",
+    "wolsefer donna": "Fiechter, Alicia",
+    "allen keith": "Hernandez, Veronica",
+    "cheatom regina": "Hernandez, Veronica",
+    "clark debbie": "Hernandez, Veronica",
+    "lagos lisa": "Hernandez, Veronica",
+    "monkiewicz phyllis": "Hernandez, Veronica",
+    "nelson kellie": "Hernandez, Veronica",
+    "toriumi lisa": "Hernandez, Veronica",
+    "bourque elizabeth": "Massey, Shawn",
+    "creger sharon": "Massey, Shawn",
+    "dart trevor": "Massey, Shawn",
+    "gautney jemma": "Massey, Shawn",
+    "gillett christina": "Massey, Shawn",
+    "henrichsen kelly": "Massey, Shawn",
+    "rowton jessica": "Massey, Shawn",
+    "whaley laura": "Massey, Shawn",
+    "woodward shelley": "Massey, Shawn",
+    "bunkley yolonda": "Preslicka, Dani",
+    "garza melissa": "Preslicka, Dani",
+    "gordon elliott cindy": "Preslicka, Dani",
+    "hickey glenna": "Preslicka, Dani",
+    "martinez roberta": "Preslicka, Dani",
+    "razon suzanne": "Preslicka, Dani",
+    "russell rebecca": "Preslicka, Dani",
+    "southerland kimberly": "Preslicka, Dani",
+    "wilson david": "Preslicka, Dani",
+    "allendez shunko": "Rogge, Raina",
+    "collins la shunda": "Rogge, Raina",
+    "cortes michael": "Rogge, Raina",
+    "ervin kimberly": "Rogge, Raina",
+    "etingoff beth": "Rogge, Raina",
+    "marcum joel": "Rogge, Raina",
+    "restivo james": "Rogge, Raina",
+    "specht wolf": "Rogge, Raina",
+    "tripoli michael": "Rogge, Raina",
+    "bentley leslie": "Schubert, Brian",
+    "couillard cherry": "Schubert, Brian",
+    "graves david": "Schubert, Brian",
+    "malone bret": "Schubert, Brian",
+    "preston ken": "Schubert, Brian",
+    "vadala jenny": "Schubert, Brian",
+    "walton dayvon": "Schubert, Brian",
+    "westmoreland christopher": "Schubert, Brian",
+    "burns linn": "Shockey, Jonathan",
+    "currington angela": "Shockey, Jonathan",
+    "fullerton dulcie": "Shockey, Jonathan",
+    "nix linda": "Shockey, Jonathan",
+    "pfluger felicia": "Shockey, Jonathan",
+    "schaaf dyanna": "Shockey, Jonathan",
+    "settle melinda": "Shockey, Jonathan",
+    "stout christine": "Shockey, Jonathan",
+    "stull monica": "Shockey, Jonathan",
+    "abedrabbo imad": "Sinclair, Eliazbeth",
+    "burbank kori": "Sinclair, Eliazbeth",
+    "febo melissa": "Sinclair, Eliazbeth",
+    "gibbes malin": "Sinclair, Eliazbeth",
+    "henry linda": "Sinclair, Eliazbeth",
+    "judd jaqueline": "Sinclair, Eliazbeth",
+    "santiago sylvia": "Sinclair, Eliazbeth",
+    "simko linda": "Sinclair, Eliazbeth",
+    "vadala laura": "Sinclair, Eliazbeth"
+  }
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PSP Coverage Intelligence Platform</title>
-<link rel="stylesheet" href="./css/app.css?v=platform-v6">
+<link rel="stylesheet" href="./css/app.css?v=platform-v7">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -36,80 +36,96 @@
   <label class="toggle"><input id="v4DedicatedToggle" type="checkbox" checked> Dedicated Teams</label>
 </div><div class="body"><label class="toggle"><input id="cluster" type="checkbox" checked>Cluster stores</label><label class="toggle"><input id="heat" type="checkbox">Store density heatmap</label><label class="toggle"><input id="territories" type="checkbox">Nearest-RTS territory boundaries</label><label class="toggle"><input id="territoryLabels" type="checkbox">Territory labels</label><label class="toggle"><input id="overlap" type="checkbox">Highlight 2+ RTS overlap</label><label class="toggle"><input id="within" type="checkbox">Stores inside visible radius</label></div></section>
 
-<section class="section v41-quick-section">
-  <h3>Quick Actions</h3>
-  <div class="body v41-quick-grid">
-    <button id="v41ShowGapsBtn" class="btn primary">Show Uncovered</button>
-    <button id="v41ShowCoveredBtn" class="btn">Show Covered</button>
-    <button id="v41DedicatedGapsBtn" class="btn">Dedicated Gaps</button>
-    <button id="v41OperationalFocusBtn" class="btn">Operational Focus</button>
-    <button id="v41CopyViewBtn" class="btn">Copy View Link</button>
-    <button id="v41SavedViewsBtn" class="btn">Saved Views</button>
+
+<section class="section v62-command-center">
+  <h3>Coverage Command Center</h3>
+  <div class="body">
+    <div class="v62-start-note">
+      <b>Recommended workflow:</b> review the network → drill into gaps or managers →
+      validate RTS coverage → model placement → export the decision.
+    </div>
+
+    <details class="v62-tool-group" open>
+      <summary>Start Here</summary>
+      <div class="v62-tool-grid">
+        <button id="v62ExecutiveBtn" class="btn primary">Executive Overview</button>
+        <button id="v62ShowGapsBtn" class="btn">Show Uncovered</button>
+        <button id="v62OperationalBtn" class="btn">Operational Focus</button>
+        <button id="v62GapSummaryBtn" class="btn">Gap Summary</button>
+      </div>
+    </details>
+
+    <details class="v62-tool-group" open>
+      <summary>Coverage & Ownership</summary>
+      <div class="v62-tool-grid">
+        <button id="v62StateBtn" class="btn">State / Territory</button>
+        <button id="v62ManagerBtn" class="btn">Manager Intelligence</button>
+        <button id="v7OrganizationBtn" class="btn primary">Organization Navigator</button>
+        <button id="v62RtsBtn" class="btn">RTS Profiles</button>
+        <button id="v62StoreBtn" class="btn">Store Intelligence</button>
+        <button id="v62DedicatedBtn" class="btn">Dedicated Teams</button>
+        <button id="v62ResiliencyBtn" class="btn">Resiliency</button>
+      </div>
+    </details>
+
+    <details class="v62-tool-group" open>
+      <summary>Planning</summary>
+      <div class="v62-tool-grid">
+        <button id="v62SimulateBtn" class="btn primary">Simulate New RTS</button>
+        <button id="v62OptimizerBtn" class="btn">Optimize Network</button>
+        <button id="v62MultiHireBtn" class="btn">Multi-Hire Plan</button>
+        <button id="v62CompareBtn" class="btn">Compare RTS</button>
+        <button id="v62TimelineBtn" class="btn">Coverage Timeline</button>
+        <button id="v62SavedPlansBtn" class="btn">Saved Scenarios</button>
+      </div>
+    </details>
+
+    <details class="v62-tool-group">
+      <summary>Reports & Advanced</summary>
+      <div class="v62-tool-grid">
+        <button id="v62BriefBtn" class="btn">Executive Brief</button>
+        <button id="v62LeadershipBtn" class="btn">Leadership Report</button>
+        <button id="v62TerritoryReportBtn" class="btn">Territory Report</button>
+        <button id="v62HealthBtn" class="btn">Coverage Health</button>
+        <button id="v62BalancerBtn" class="btn">Territory Balancer</button>
+        <button id="v62RetailerBtn" class="btn">Retailer Rollups</button>
+        <button id="v62SavedViewsBtn" class="btn">Saved Views</button>
+        <button id="v62HelpBtn" class="btn">Help / Guide</button>
+      </div>
+    </details>
   </div>
 </section>
 
-<section class="section v41-onewalmart-section">
-  <h3>One Walmart Operations</h3>
-  <div class="body">
-    <div class="v41-note">
-      These tools preserve the One Walmart workflow built in the prior map:
-      core coverage, dedicated-team exposure, manager review, gap concentration,
-      RTS placement planning, and leadership reporting.
-    </div>
-    <div class="v41-tool-grid">
-      <button id="v41DedicatedExposureBtn" class="btn">Dedicated Team Exposure</button>
-      <button id="v41ManagerRollupBtn" class="btn">Manager Rollups</button>
-      <button id="v41GapFinderBtn" class="btn">Current Gap Finder</button>
-      <button id="v41PlacementBtn" class="btn">Model New RTS Placement</button>
-      <button id="v41ResiliencyBtn" class="btn">RTS Resiliency</button>
-      <button id="v41HelpBtn" class="btn">Help / Workflow Guide</button>
-    </div>
-  </div>
-</section>
-<section class="section"><h3>Coverage Model</h3><div class="body"><div class="filter-scope-note"><b>Model v2:</b> RTS workload is every store within the selected radius. Stores may be unique, shared, or uncovered. Uncovered stores are network gaps and are never assigned to the nearest RTS.</div></div></section>
+<section class="section"><h3>Coverage Model</h3><div class="body"><div class="filter-scope-note"><b>Coverage truth:</b> every RTS on the applicable roster counts; store-specific program eligibility and the selected radius determine Gap, Unique, or Shared coverage.</div></div></section>
 
-<section class="section v6-nav-section">
-  <h3>Version 6 Intelligence</h3>
-  <div class="body v6-nav-grid">
-    <button id="v6ExecutiveIntelligenceBtn" class="btn primary">Executive Intelligence</button>
-    <button id="v6StateIntelligenceBtn" class="btn">State / Territory Intelligence</button>
-    <button id="v6ManagerIntelligenceBtn" class="btn">Manager Intelligence</button>
-    <button id="v6StoreFinderBtn" class="btn">Store Intelligence</button>
-    <button id="v6HistoricalBtn" class="btn">Historical Trends</button>
-  </div>
-</section>
-<section class="section v4-nav-section">
-  <h3>Platform Workspaces</h3>
-  <div class="body">
-    <div class="v4-workspace-group">
-      <div class="v4-workspace-label">Executive</div>
-      <button id="v4ExecutiveBtn" class="btn primary">Executive Dashboard</button>
-      <button id="v4BriefBtn" class="btn">Executive Brief</button>
-      <button id="v4LeadershipBtn" class="btn">Leadership Report</button>
-      <button id="v4RtmBtn" class="btn">RTM Dashboard</button>
-    </div>
-    <div class="v4-workspace-group">
-      <div class="v4-workspace-label">Coverage</div>
-      <button id="v4GapHeatBtn" class="btn">Gap Heatmap</button>
-      <button id="v4ProfilesBtn" class="btn">RTS Profiles</button>
-      <button id="v4HealthBtn" class="btn">Coverage Health</button>
-      <button id="v4CompareBtn" class="btn">Compare RTS</button>
-    </div>
-    <div class="v4-workspace-group">
-      <div class="v4-workspace-label">Planning</div>
-      <button id="v4HiringBtn" class="btn">Hiring Simulator</button>
-      <button id="v4TimelineBtn" class="btn">Coverage Timeline</button>
-      <button id="v4OptimizerBtn" class="btn">Optimize Network</button>
-      <button id="v4BalancerBtn" class="btn">Territory Balancer</button>
-    </div>
-    <div class="v4-workspace-group">
-      <div class="v4-workspace-label">Reports</div>
-      <button id="v4TerritoryReportBtn" class="btn">Territory Report</button>
-      <button id="v4ExportSummaryBtn" class="btn">Export Summary</button>
-    </div>
-  </div>
-</section>
-<section class="section"><h3>Planning & Analysis</h3><div class="body"><button id="executiveModeBtn" class="btn primary">Executive Mode</button><button id="networkOptimizerBtn" class="btn">Optimize Network</button><button id="multiHireBtn" class="btn">Multi-Hire Planner</button><button id="healthBtn" class="btn">Territory Health Scores</button><button id="rtmDashboardBtn" class="btn">RTM Dashboard</button><button id="executiveBtn" class="btn primary">Executive Coverage Dashboard</button><button id="leadershipReportBtn" class="btn">Printable Leadership Report</button><button id="balanceBtn" class="btn">Territory Balancer</button><button id="hiringPlanBtn" class="btn">Hiring Recommendation Plan</button><button id="simulateBtn" class="btn">Simulate New RTS</button><button id="modelBtn" class="btn">Model New RTS Placement</button><button id="gapFinderBtn" class="btn">Current Gap Finder</button><button id="territoryBtn" class="btn">RTS Territory Profiles</button><button id="compareBtn" class="btn">Compare RTS Territories</button><button id="resiliencyBtn" class="btn">RTS Resiliency Simulator</button><button id="managerBtn" class="btn">Manager Rollups</button><button id="retailerBtn" class="btn">Retailer Rollups</button></div></section>
+<!-- Compatibility hooks retained but hidden so older bindings and saved links remain safe. -->
+<div class="v62-legacy-hooks" aria-hidden="true">
+  <button id="v41ShowGapsBtn"></button><button id="v41ShowCoveredBtn"></button>
+  <button id="v41DedicatedGapsBtn"></button><button id="v41OperationalFocusBtn"></button>
+  <button id="v41CopyViewBtn"></button><button id="v41SavedViewsBtn"></button>
+  <button id="v41DedicatedExposureBtn"></button><button id="v41ManagerRollupBtn"></button>
+  <button id="v41GapFinderBtn"></button><button id="v41PlacementBtn"></button>
+  <button id="v41ResiliencyBtn"></button><button id="v41HelpBtn"></button>
+  <button id="v6ExecutiveIntelligenceBtn"></button><button id="v6StateIntelligenceBtn"></button>
+  <button id="v6ManagerIntelligenceBtn"></button><button id="v6StoreFinderBtn"></button>
+  <button id="v6HistoricalBtn"></button>
+  <button id="v4ExecutiveBtn"></button><button id="v4BriefBtn"></button>
+  <button id="v4LeadershipBtn"></button><button id="v4RtmBtn"></button>
+  <button id="v4GapHeatBtn"></button><button id="v4ProfilesBtn"></button>
+  <button id="v4HealthBtn"></button><button id="v4CompareBtn"></button>
+  <button id="v4HiringBtn"></button><button id="v4TimelineBtn"></button>
+  <button id="v4OptimizerBtn"></button><button id="v4BalancerBtn"></button>
+  <button id="v4TerritoryReportBtn"></button><button id="v4ExportSummaryBtn"></button>
+  <button id="executiveModeBtn"></button><button id="networkOptimizerBtn"></button>
+  <button id="multiHireBtn"></button><button id="healthBtn"></button>
+  <button id="rtmDashboardBtn"></button><button id="executiveBtn"></button>
+  <button id="leadershipReportBtn"></button><button id="balanceBtn"></button>
+  <button id="hiringPlanBtn"></button><button id="simulateBtn"></button>
+  <button id="modelBtn"></button><button id="gapFinderBtn"></button>
+  <button id="territoryBtn"></button><button id="compareBtn"></button>
+  <button id="resiliencyBtn"></button><button id="managerBtn"></button>
+  <button id="retailerBtn"></button>
+</div>
 <section class="section"><h3>Exports</h3><div class="body"><button id="exportStores" class="btn">Export Visible Stores</button><button id="exportGaps" class="btn">Export Current Gaps</button></div></section>
 </aside>
 <main class="mapstage"><div id="map" class="map"></div>
@@ -124,6 +140,6 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
-<script type="module" src="./js/app.js?v=platform-v6"></script>
+<script type="module" src="./js/app.js?v=platform-v7"></script>
 </body>
 </html>

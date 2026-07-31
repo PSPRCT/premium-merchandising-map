@@ -22,6 +22,25 @@ const {
 const PROGRAM_ELIGIBILITY =
   ACTIVE_PROGRAM.adapter?.isRtsEligibleForStore || (() => true);
 const DATA_WARNINGS = [];
+let ORG_HIERARCHY={regionalManagers:[],rdmToRegionalManager:{}};
+if(ACTIVE_PROGRAM_ID==='one-walmart'){
+ try{
+  const response=await fetch('./data/one-walmart/organization.json',{cache:'no-store'});
+  if(response.ok)ORG_HIERARCHY=await response.json();
+ }catch(error){console.warn('Organization hierarchy could not be loaded',error)}
+}
+
+function normalizeProgramRetailer(store){
+ if(ACTIVE_PROGRAM_ID!=='one-walmart')return store;
+ const raw=`${store.storeName||''} ${store.retailer||''}`.toLowerCase();
+ if(raw.includes('neighborhood'))store.retailer='Walmart Neighborhood Market';
+ else if(raw.includes('supercenter'))store.retailer='Walmart Supercenter';
+ else if(raw.includes("sam's")||raw.includes('sams club')||raw.includes('sam’s'))store.retailer="Sam's Club";
+ else store.retailer='Walmart';
+ return store;
+}
+RAW_STORES.forEach(normalizeProgramRetailer);
+
 const HOME = ACTIVE_PROGRAM.home;
 const $=x=>document.getElementById(x), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const map=L.map('map',{zoomControl:true,inertia:true}).setView(HOME.center,HOME.zoom);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
@@ -1185,7 +1204,7 @@ function v6OpenStateIntelligence(){
  openModal('State / Territory Intelligence',`
   <div class="callout">This view treats gaps as a network condition, not an RTS-owned problem. Select a state to move directly into its stores, gaps, managers, and placement opportunities.</div>
   <div class="tablewrap"><table><thead><tr><th>State</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>Managers</th><th>Retailers</th><th></th></tr></thead><tbody>
-   ${rows.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.managerCount}</td><td>${r.retailerCount}</td><td><button class="btn" onclick="window.v6FocusState('${esc(r.name)}')">Open</button></td></tr>`).join('')}
+   ${rows.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusState(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.managerCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
   </tbody></table></div>`);
 }
 window.v6FocusState=state=>{
@@ -1213,7 +1232,7 @@ function v6OpenManagerIntelligence(){
  openModal('Manager Intelligence',`
   <div class="v6-hero"><h2>Manager Coverage Overview</h2><p>Coverage, gap exposure, unique dependency, retailer complexity, and geographic breadth for the selected scope.</p></div>
   <div class="tablewrap"><table><thead><tr><th>Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody>
-   ${rows.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td><button class="btn" onclick="window.v6FocusManager(${JSON.stringify(r.name)})">Open</button></td></tr>`).join('')}
+   ${rows.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusManager(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
   </tbody></table></div>`);
 }
 window.v6FocusManager=name=>{
@@ -1275,6 +1294,249 @@ window.v6OpenStateIntelligence=v6OpenStateIntelligence;
 window.v6OpenManagerIntelligence=v6OpenManagerIntelligence;
 window.v6HistoricalReadiness=v6HistoricalReadiness;
 
+
+/* ===== Version 6.2 consolidated command center ===== */
+const V62_SCENARIO_KEY='psp_v62_scenarios';
+
+function v62ApplySingleFilter(id,value){
+ const el=$(id);if(!el)return;
+ [...el.options].forEach(o=>o.selected=(o.value===value));
+ applyFilters();
+ fitResults();
+}
+function v62FocusState(state){
+ $('modal').classList.remove('show');
+ v62ApplySingleFilter('fState',state);
+}
+function v62FocusManager(manager){
+ $('modal').classList.remove('show');
+ v62ApplySingleFilter('fManager',manager);
+}
+function v62FocusRts(id){
+ $('modal').classList.remove('show');
+ openTerritory(id);
+}
+function v62FocusStore(siteId){
+ $('modal').classList.remove('show');
+ const s=stores.find(x=>String(x.siteId)===String(siteId));
+ if(!s)return;
+ map.setView([s.lat,s.lng],Math.max(map.getZoom(),10));
+ const marker=storeMarkers.find(m=>String(m.store?.siteId)===String(siteId));
+ marker?.openPopup();
+}
+
+function v62GapSummary(){
+ const model=v4Model(filtered),gapIds=new Set(model.gaps.map(s=>s.siteId));
+ const byState=Object.values(filtered.reduce((o,s)=>{
+   const k=s.state||'Unknown';o[k]??={key:k,total:0,gaps:0,managers:new Set(),retailers:new Set()};
+   const r=o[k];r.total++;if(gapIds.has(s.siteId))r.gaps++;
+   if(s.manager)r.managers.add(s.manager);if(s.retailer)r.retailers.add(s.retailer);return o;
+ },{})).map(r=>({...r,coverage:r.total?(r.total-r.gaps)/r.total*100:0})).sort((a,b)=>b.gaps-a.gaps);
+
+ const byManager=Object.values(filtered.reduce((o,s)=>{
+   const k=s.manager||'Not listed';o[k]??={key:k,total:0,gaps:0,states:new Set(),retailers:new Set()};
+   const r=o[k];r.total++;if(gapIds.has(s.siteId))r.gaps++;
+   if(s.state)r.states.add(s.state);if(s.retailer)r.retailers.add(s.retailer);return o;
+ },{})).map(r=>({...r,coverage:r.total?(r.total-r.gaps)/r.total*100:0})).sort((a,b)=>b.gaps-a.gaps);
+
+ openModal('Gap Summary',`
+  <div class="callout">Every row is clickable. Drill into a state or manager, then continue into stores, RTS coverage, or placement planning.</div>
+  <div class="v62-summary-tabs">
+   <button class="btn primary" data-v62-tab="state">By State</button>
+   <button class="btn" data-v62-tab="manager">By Manager</button>
+  </div>
+  <div id="v62GapStatePane" class="v62-gap-pane">
+   <div class="tablewrap"><table><thead><tr><th>State</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Managers</th><th>Retailers</th></tr></thead><tbody>
+    ${byState.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusState(${JSON.stringify(r.key)})"><td><b>${esc(r.key)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.managers.size}</td><td>${r.retailers.size}</td></tr>`).join('')}
+   </tbody></table></div>
+  </div>
+  <div id="v62GapManagerPane" class="v62-gap-pane" hidden>
+   <div class="tablewrap"><table><thead><tr><th>Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>States</th><th>Retailers</th></tr></thead><tbody>
+    ${byManager.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusManager(${JSON.stringify(r.key)})"><td><b>${esc(r.key)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.states.size}</td><td>${r.retailers.size}</td></tr>`).join('')}
+   </tbody></table></div>
+  </div>
+  <div class="actions"><button class="btn" onclick="window.v62ExportGapSummary()">Export Summary</button></div>`);
+ window._v62GapSummary={byState,byManager};
+ setTimeout(()=>{
+   document.querySelectorAll('[data-v62-tab]').forEach(btn=>btn.onclick=()=>{
+     const state=btn.dataset.v62Tab==='state';
+     $('v62GapStatePane').hidden=!state;$('v62GapManagerPane').hidden=state;
+     document.querySelectorAll('[data-v62-tab]').forEach(x=>x.classList.toggle('primary',x===btn));
+   });
+ },0);
+}
+window.v62ExportGapSummary=()=>{
+ const d=window._v62GapSummary;if(!d)return;
+ csv([
+  ...d.byState.map(r=>({View:'State',Name:r.key,Stores:r.total,CoveragePercent:r.coverage.toFixed(1),Gaps:r.gaps})),
+  ...d.byManager.map(r=>({View:'Manager',Name:r.key,Stores:r.total,CoveragePercent:r.coverage.toFixed(1),Gaps:r.gaps}))
+ ],'gap_summary.csv');
+};
+
+function v62SaveScenario(){
+ const name=prompt('Scenario name:');if(!name)return;
+ const plan=v4Plan(filtered,10);
+ const model=v4Model(filtered);
+ const scenarios=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]');
+ scenarios.push({
+  name,savedAt:new Date().toISOString(),program:ACTIVE_PROGRAM_ID,radius:Number($('radius').value),
+  scope:scopeLabel(),currentCoverage:filtered.length?(filtered.length-model.gaps.length)/filtered.length*100:0,
+  placements:plan.map(x=>({rank:x.rank,city:x.city,state:x.state,gain:x.gain,lat:x.lat,lng:x.lng}))
+ });
+ localStorage.setItem(V62_SCENARIO_KEY,JSON.stringify(scenarios));
+ v62SavedScenarios();
+}
+function v62SavedScenarios(){
+ const scenarios=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]');
+ openModal('Saved Placement Scenarios',`
+  <div class="tools"><button class="btn primary" onclick="window.v62SaveScenario()">Save Current Top-10 Plan</button></div>
+  ${scenarios.length?scenarios.map((s,i)=>`<div class="v62-scenario-card">
+   <h4>${esc(s.name)}</h4><p>${esc(s.scope)} · ${s.radius} miles · ${s.currentCoverage.toFixed(1)}% starting coverage · ${s.placements.length} placements</p>
+   <div class="actions"><button class="btn" onclick="window.v62OpenScenario(${i})">Open on Map</button><button class="btn" onclick="window.v62ExportScenario(${i})">Export</button><button class="btn" onclick="window.v62DeleteScenario(${i})">Delete</button></div>
+  </div>`).join(''):'<div class="callout">No saved scenarios yet.</div>'}`);
+}
+window.v62SaveScenario=v62SaveScenario;
+window.v62OpenScenario=i=>{
+ const s=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]')[i];if(!s)return;
+ simLayer.clearLayers();
+ s.placements.forEach(p=>L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:`<div class="sim-icon">${p.rank}</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).bindTooltip(`${p.city}, ${p.state||''} · +${p.gain}`).addTo(simLayer));
+ $('modal').classList.remove('show');
+ if(s.placements.length)map.fitBounds(s.placements.map(p=>[p.lat,p.lng]),{padding:[35,35],maxZoom:7});
+};
+window.v62ExportScenario=i=>{
+ const s=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]')[i];if(!s)return;
+ csv(s.placements.map(p=>({Scenario:s.name,Rank:p.rank,City:p.city,State:p.state,NetNewStores:p.gain,Latitude:p.lat,Longitude:p.lng})),`${s.name.replace(/\W+/g,'_')}.csv`);
+};
+window.v62DeleteScenario=i=>{
+ const a=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]');a.splice(i,1);localStorage.setItem(V62_SCENARIO_KEY,JSON.stringify(a));v62SavedScenarios();
+};
+
+function v62InstallClickableDrilldowns(){
+ document.addEventListener('click',e=>{
+   const card=e.target.closest('[data-drill-type]');
+   if(!card)return;
+   const type=card.dataset.drillType,value=card.dataset.drillValue;
+   if(type==='state')v62FocusState(value);
+   if(type==='manager')v62FocusManager(value);
+   if(type==='rts')v62FocusRts(value);
+   if(type==='store')v62FocusStore(value);
+ });
+}
+window.v62FocusState=v62FocusState;
+window.v62FocusManager=v62FocusManager;
+window.v62FocusRts=v62FocusRts;
+window.v62FocusStore=v62FocusStore;
+window.v62GapSummary=v62GapSummary;
+window.v62SavedScenarios=v62SavedScenarios;
+
+
+/* ===== Version 7 Organization Hierarchy ===== */
+function v7NormalizeName(value){
+ return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,' ').trim().toLowerCase().replace(/\s+/g,' ');
+}
+function v7OrgForStore(store){
+ const area=store.areaManager||store.manager||'Not listed';
+ const regional=store.regionalManager||ORG_HIERARCHY.rdmToRegionalManager?.[v7NormalizeName(area)]||'Unaligned';
+ return {regionalManager:regional,areaManager:area};
+}
+function v7StoresForRegional(rm){
+ return stores.filter(s=>v7OrgForStore(s).regionalManager===rm);
+}
+function v7StoresForArea(rdm){
+ return stores.filter(s=>v7OrgForStore(s).areaManager===rdm);
+}
+function v7ModelForStores(scope){
+ return coverageModel(scope);
+}
+function v7MetricCard(label,value,detail=''){
+ return `<div class="v7-metric"><small>${esc(label)}</small><b>${value??'—'}</b><span>${esc(detail||'')}</span></div>`;
+}
+function v7Breadcrumb(items){
+ return `<div class="v7-breadcrumb">${items.map((x,i)=>`${i?'<span>›</span>':''}<button onclick="${x.action}">${esc(x.label)}</button>`).join('')}</div>`;
+}
+function v7RegionalDashboard(rmName){
+ const rm=(ORG_HIERARCHY.regionalManagers||[]).find(x=>x.name===rmName);
+ const scope=v7StoresForRegional(rmName),model=v7ModelForStores(scope),covered=scope.length-model.gaps.length;
+ const pct=scope.length?covered/scope.length*100:0;
+ const rdmRows=(rm?.areaManagers||[]).map(r=>{
+   const s=v7StoresForArea(r.name),m=v7ModelForStores(s),c=s.length-m.gaps.length;
+   return {...r,stores:s.length,gaps:m.gaps.length,coverage:s.length?c/s.length*100:0};
+ }).sort((a,b)=>b.gaps-a.gaps||b.stores-a.stores);
+ const metrics=rm?.metrics||{};
+ openModal(`Regional Manager — ${rmName}`,`
+  ${v7Breadcrumb([{label:'National',action:'window.v7OpenOrganizationNavigator()'},{label:rmName,action:'void(0)'}])}
+  <div class="v7-hero"><h2>${esc(rmName)}</h2><p>${rdmRows.length} Area Managers · ${scope.length.toLocaleString()} stores</p></div>
+  <div class="v7-metrics">
+   ${v7MetricCard('Coverage',pct.toFixed(1)+'%',`${model.gaps.length} gaps`)}
+   ${v7MetricCard('SO Executed',metrics.soExecuted!=null?metrics.soExecuted.toFixed(2)+'%':'—')}
+   ${v7MetricCard('Compliance',metrics.compliance!=null?metrics.compliance.toFixed(2)+'%':'—')}
+   ${v7MetricCard('Action Hours Utilized',metrics.actionHoursUtilized!=null?metrics.actionHoursUtilized.toFixed(2)+'%':'—')}
+   ${v7MetricCard('Efficiency Gained',metrics.efficiencyGained!=null?metrics.efficiencyGained.toFixed(2)+'%':'—')}
+  </div>
+  <div class="tablewrap"><table><thead><tr><th>Area Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
+   ${rdmRows.map(r=>`<tr class="v62-click-row" onclick="window.v7AreaDashboard(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="actions"><button class="btn primary" onclick="window.v7ApplyRegionalFilter(${JSON.stringify(rmName)})">Show Region on Map</button><button class="btn" onclick="window.v7ExportRegional(${JSON.stringify(rmName)})">Export</button></div>`);
+}
+function v7AreaDashboard(areaName){
+ const metric=Object.values((ORG_HIERARCHY.regionalManagers||[]).flatMap(r=>r.areaManagers||[])).find?.(()=>false);
+ const rm=(ORG_HIERARCHY.regionalManagers||[]).find(r=>(r.areaManagers||[]).some(a=>a.name===areaName));
+ const area=rm?.areaManagers?.find(a=>a.name===areaName);
+ const scope=v7StoresForArea(areaName),model=v7ModelForStores(scope),covered=scope.length-model.gaps.length;
+ const pct=scope.length?covered/scope.length*100:0;
+ const eligibleRts=activeRTS().filter(r=>scope.some(s=>PROGRAM_ELIGIBILITY(s,r)&&hav(s.lat,s.lng,r.lat,r.lng)<=Number($('radius').value)));
+ const rtsRows=eligibleRts.map(r=>{
+   const s=scope.filter(x=>PROGRAM_ELIGIBILITY(x,r)&&hav(x.lat,x.lng,r.lat,r.lng)<=Number($('radius').value));
+   return {r,count:s.length};
+ }).sort((a,b)=>b.count-a.count);
+ const m=area?.metrics||{};
+ openModal(`Area Manager — ${areaName}`,`
+  ${v7Breadcrumb([{label:'National',action:'window.v7OpenOrganizationNavigator()'},{label:rm?.name||'Region',action:`window.v7RegionalDashboard(${JSON.stringify(rm?.name||'')})`},{label:areaName,action:'void(0)'}])}
+  <div class="v7-hero"><h2>${esc(areaName)}</h2><p>${esc(rm?.name||'Unaligned Region')} · ${scope.length.toLocaleString()} stores</p></div>
+  <div class="v7-metrics">
+   ${v7MetricCard('Coverage',pct.toFixed(1)+'%',`${model.gaps.length} gaps`)}
+   ${v7MetricCard('RTS in Scope',rtsRows.length)}
+   ${v7MetricCard('SO Executed',m.soExecuted!=null?m.soExecuted.toFixed(2)+'%':'—')}
+   ${v7MetricCard('Compliance',m.compliance!=null?m.compliance.toFixed(2)+'%':'—')}
+   ${v7MetricCard('Action Hours Utilized',m.actionHoursUtilized!=null?m.actionHoursUtilized.toFixed(2)+'%':'—')}
+   ${v7MetricCard('Efficiency Gained',m.efficiencyGained!=null?m.efficiencyGained.toFixed(2)+'%':'—')}
+  </div>
+  <div class="v4-two">
+   <div class="v4-panel"><h3>RTS covering this area</h3>${rtsRows.slice(0,12).map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b><br>${esc(x.r.email||'')}</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">${x.count}</button></div>`).join('')||'<div class="callout">No RTS currently cover stores in this area.</div>'}</div>
+   <div class="v4-panel"><h3>Stores</h3>${scope.slice(0,12).map((s,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(s.retailer)} #${esc(s.storeNumber)}</b><br>${esc(s.city)}, ${esc(s.state)}</span><button class="btn" onclick="window.v6OpenStoreIntelligence('${esc(s.siteId)}')">${esc(s.coverageType||'Gap')}</button></div>`).join('')}</div>
+  </div>
+  <div class="actions"><button class="btn primary" onclick="window.v7ApplyAreaFilter(${JSON.stringify(areaName)})">Show Area on Map</button><button class="btn" onclick="window.v7ExportArea(${JSON.stringify(areaName)})">Export</button></div>`);
+}
+function v7OpenOrganizationNavigator(){
+ if(ACTIVE_PROGRAM_ID!=='one-walmart'){
+  openModal('Organization Navigator','<div class="callout">The Regional Manager / Area Manager hierarchy supplied is for One Walmart. Switch to One Walmart to use this navigator.</div>');return;
+ }
+ const rows=(ORG_HIERARCHY.regionalManagers||[]).map(r=>{
+   const scope=v7StoresForRegional(r.name),model=v7ModelForStores(scope),covered=scope.length-model.gaps.length;
+   return {...r,stores:scope.length,gaps:model.gaps.length,coverage:scope.length?covered/scope.length*100:0};
+ }).sort((a,b)=>b.gaps-a.gaps||b.stores-a.stores);
+ openModal('Organization Navigator',`
+  ${v7Breadcrumb([{label:'National',action:'void(0)'}])}
+  <div class="v7-hero"><h2>One Walmart Organization</h2><p>National → Regional Manager → Area Manager/RDM → RTS → Store</p></div>
+  <div class="tablewrap"><table><thead><tr><th>Regional Manager</th><th>Area Managers</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
+   ${rows.map(r=>`<tr class="v62-click-row" onclick="window.v7RegionalDashboard(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.areaManagers.length}</td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="actions"><button class="btn" onclick="window.v7ExportNational()">Export Hierarchy</button></div>`);
+}
+window.v7OpenOrganizationNavigator=v7OpenOrganizationNavigator;
+window.v7RegionalDashboard=v7RegionalDashboard;
+window.v7AreaDashboard=v7AreaDashboard;
+
+window.v7ApplyRegionalFilter=rm=>{
+ const subset=v7StoresForRegional(rm);filtered=[...subset];renderAll();$('modal').classList.remove('show');if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
+};
+window.v7ApplyAreaFilter=area=>{
+ const subset=v7StoresForArea(area);filtered=[...subset];renderAll();$('modal').classList.remove('show');if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
+};
+window.v7ExportRegional=rm=>csv(v7StoresForRegional(rm).map(s=>({RegionalManager:rm,AreaManager:s.areaManager,SiteID:s.siteId,StoreNumber:s.storeNumber,Address:s.address,City:s.city,State:s.state,ZIP:s.zip,Coverage:s.coverageType})),'regional_'+rm.replace(/\W+/g,'_')+'.csv');
+window.v7ExportArea=area=>csv(v7StoresForArea(area).map(s=>({RegionalManager:s.regionalManager,AreaManager:area,SiteID:s.siteId,StoreNumber:s.storeNumber,Address:s.address,City:s.city,State:s.state,ZIP:s.zip,Coverage:s.coverageType})),'area_'+area.replace(/\W+/g,'_')+'.csv');
+window.v7ExportNational=()=>csv((ORG_HIERARCHY.regionalManagers||[]).flatMap(r=>(r.areaManagers||[]).map(a=>({RegionalManager:r.name,AreaManager:a.name,SOExecuted:a.metrics?.soExecuted??'',Compliance:a.metrics?.compliance??'',ActionHoursUtilized:a.metrics?.actionHoursUtilized??'',EfficiencyGained:a.metrics?.efficiencyGained??''}))),'one_walmart_hierarchy.csv');
+
 function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
 ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
 $('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
@@ -1300,6 +1562,33 @@ if($('v4ExportSummaryBtn'))$('v4ExportSummaryBtn').onclick=()=>csv([{
  SharedStores:v4Model(filtered).sharedStores.length
 }],'psp_executive_summary.csv');
 if($('v4GapHeatToggle'))$('v4GapHeatToggle').onchange=e=>v4ToggleGapHeat(e.target.checked);
+
+v5SafeBind('v7OrganizationBtn',v7OpenOrganizationNavigator,'Organization Navigator');
+v5SafeBind('v62ExecutiveBtn',v6OpenExecutiveIntelligence,'Executive Overview');
+v5SafeBind('v62ShowGapsBtn',()=>{$('gapsOnly').click();v41OperationalFocus()},'Show Uncovered');
+v5SafeBind('v62OperationalBtn',v41OperationalFocusModal,'Operational Focus');
+v5SafeBind('v62GapSummaryBtn',v62GapSummary,'Gap Summary');
+v5SafeBind('v62StateBtn',v6OpenStateIntelligence,'State / Territory Intelligence');
+v5SafeBind('v62ManagerBtn',v6OpenManagerIntelligence,'Manager Intelligence');
+v5SafeBind('v62RtsBtn',v4RtsProfiles,'RTS Profiles');
+v5SafeBind('v62StoreBtn',()=>{$('search').focus();openModal('Store Intelligence','<div class="callout">Search for a store, open its popup, and choose Store Intelligence.</div>')},'Store Intelligence');
+v5SafeBind('v62DedicatedBtn',v41DedicatedAnalysis,'Dedicated Teams');
+v5SafeBind('v62ResiliencyBtn',resiliencySimulator,'Resiliency');
+v5SafeBind('v62SimulateBtn',simulate,'Simulate New RTS');
+v5SafeBind('v62OptimizerBtn',networkOptimizer,'Optimize Network');
+v5SafeBind('v62MultiHireBtn',multiHirePlanner,'Multi-Hire Plan');
+v5SafeBind('v62CompareBtn',v4CompareRts,'Compare RTS');
+v5SafeBind('v62TimelineBtn',v4CoverageTimeline,'Coverage Timeline');
+v5SafeBind('v62SavedPlansBtn',v62SavedScenarios,'Saved Scenarios');
+v5SafeBind('v62BriefBtn',v4ExecutiveBrief,'Executive Brief');
+v5SafeBind('v62LeadershipBtn',leadershipReport,'Leadership Report');
+v5SafeBind('v62TerritoryReportBtn',v4TerritoryReport,'Territory Report');
+v5SafeBind('v62HealthBtn',territoryHealthScores,'Coverage Health');
+v5SafeBind('v62BalancerBtn',territoryBalancer,'Territory Balancer');
+v5SafeBind('v62RetailerBtn',retailerRollups,'Retailer Rollups');
+v5SafeBind('v62SavedViewsBtn',v41SavedViews,'Saved Views');
+v5SafeBind('v62HelpBtn',v41Help,'Help / Guide');
+v62InstallClickableDrilldowns();
 v5SafeBind('v6ExecutiveIntelligenceBtn',v6OpenExecutiveIntelligence,'Executive Intelligence');
 v5SafeBind('v6StateIntelligenceBtn',v6OpenStateIntelligence,'State / Territory Intelligence');
 v5SafeBind('v6ManagerIntelligenceBtn',v6OpenManagerIntelligence,'Manager Intelligence');

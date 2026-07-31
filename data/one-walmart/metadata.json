@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 6 \u2014 Intelligence Workspaces",
+  "platformRelease": "Version 7 \u2014 Organization Navigator",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
@@ -50,5 +50,15 @@
     "Executive Brief",
     "Unified Navigation"
   ],
-  "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius"
+  "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius",
+  "retailerFieldRule": "Retailer is a normalized banner; storeName retains the detailed store name.",
+  "retailerBannerCounts": {
+    "Walmart Supercenter": 3562,
+    "Walmart Neighborhood Market": 674,
+    "Walmart": 362
+  },
+  "organizationMatchedStoreCount": 4598,
+  "organizationUnmatchedStoreCount": 0,
+  "regionalManagerCount": 12,
+  "areaManagerCount": 104
 }
