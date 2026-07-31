@@ -50,3 +50,12 @@ This release adds:
 - Exportable store-transfer recommendations
 
 The recommendations are geographic planning outputs based on the current data, filters, active RTS roster, and selected radius. They are not automatic staffing decisions.
+
+
+## Radius-model calibration
+
+- RTS territory = all stores within selected radius.
+- Shared stores may be in more than one RTS service area.
+- Stores outside every RTS radius are network gaps.
+- Out-of-radius stores do not reduce an existing RTS health score.
+- Optimizer prioritizes new RTS placement for those gaps.
