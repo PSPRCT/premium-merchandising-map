@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Premium Merchandising Coverage Command Center</title>
+<link rel="stylesheet" href="./css/app.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+</head>
+<body>
+
+<div class="top"><button id="panelBtn" class="btn">☰ Controls</button><div class="brand">Premium Merchandising Coverage Command Center<small>RTS territory, coverage and placement planning</small></div><div class="search"><input id="search" placeholder="Search store #, SiteID, address, city, manager or RTS…"><div id="results" class="results"></div></div><button id="clearSearch" class="btn">Clear</button></div>
+<div class="workspace" id="workspace"><aside class="controls">
+<div class="panel-head"><span>Map Controls</span><button id="hidePanel" class="btn">Hide</button></div>
+<section class="section"><h3>Coverage Snapshot</h3><div class="body grid2"><div class="metric"><small>Stores</small><b id="kStores">0</b></div><div class="metric"><small>Active RTS</small><b id="kRts">0</b></div><div class="metric"><small>Covered</small><b id="kCovered">0</b></div><div class="metric"><small>Gaps</small><b id="kGaps">0</b></div><div class="metric"><small>Coverage</small><b id="kPct">0%</b></div><div class="metric"><small>Avg nearest</small><b id="kAvg">0</b></div><div class="metric"><small>Avg territory</small><b id="kAvgTerritory">0</b></div><div class="metric"><small>Largest territory</small><b id="kLargestTerritory">0</b></div><div class="metric"><small>Smallest territory</small><b id="kSmallestTerritory">0</b></div><div class="metric"><small>Median territory</small><b id="kMedianTerritory">0</b></div></div><div class="filter-scope-note"><b>Live scope:</b> All snapshot metrics update with the current Coverage, Retailer, State, Manager, and Nearest RTS filters.</div></section>
+<section class="section"><h3>View</h3><div class="body"><div class="actions"><button id="fit" class="btn">Fit Results</button><button id="home" class="btn">Home</button><button id="reset" class="btn">Reset</button></div><div class="actions"><button id="gapsOnly" class="btn">Current Gaps</button><button id="coveredOnly" class="btn">Covered Stores</button></div></div></section>
+<section class="section"><h3>Filters</h3><div class="body"><div class="field"><label>Coverage</label><select id="fCoverage"><option value="">All</option><option value="covered">Covered</option><option value="gap">Gap / Uncovered</option></select></div><div class="field"><label>Retailer</label><select id="fRetailer"><option value="">All retailers</option></select></div><div class="field"><label>State</label><select id="fState"><option value="">All states</option></select></div><div class="field"><label>Manager</label><select id="fManager"><option value="">All managers</option></select></div><div class="field"><label>Nearest RTS</label><select id="fRts"><option value="">All RTS</option></select></div><button id="clearFilters" class="btn">Clear Filters</button></div></section>
+<section class="section"><h3>RTS Visibility & Radius</h3><div class="body"><label class="toggle"><input id="showRts" type="checkbox" checked>Active RTS hubs</label><label class="toggle"><input id="showRings" type="checkbox">Coverage rings</label><div class="field"><label>Radius: <b id="radiusLbl">75</b> miles</label><input id="radius" type="range" min="25" max="150" step="5" value="75"></div></div></section>
+<section class="section"><h3>Map Layers</h3><div class="body"><label class="toggle"><input id="cluster" type="checkbox" checked>Cluster stores</label><label class="toggle"><input id="heat" type="checkbox">Store density heatmap</label><label class="toggle"><input id="territories" type="checkbox">Nearest-RTS territory boundaries</label><label class="toggle"><input id="territoryLabels" type="checkbox">Territory labels</label><label class="toggle"><input id="overlap" type="checkbox">Highlight 2+ RTS overlap</label><label class="toggle"><input id="within" type="checkbox">Stores inside visible radius</label></div></section>
+<section class="section"><h3>Planning & Analysis</h3><div class="body"><button id="executiveBtn" class="btn primary">Executive Coverage Dashboard</button><button id="leadershipReportBtn" class="btn">Printable Leadership Report</button><button id="balanceBtn" class="btn">Territory Balancer</button><button id="hiringPlanBtn" class="btn">Hiring Recommendation Plan</button><button id="simulateBtn" class="btn">Simulate New RTS</button><button id="modelBtn" class="btn">Model New RTS Placement</button><button id="gapFinderBtn" class="btn">Current Gap Finder</button><button id="territoryBtn" class="btn">RTS Territory Profiles</button><button id="compareBtn" class="btn">Compare RTS Territories</button><button id="resiliencyBtn" class="btn">RTS Resiliency Simulator</button><button id="managerBtn" class="btn">Manager Rollups</button><button id="retailerBtn" class="btn">Retailer Rollups</button></div></section>
+<section class="section"><h3>Exports</h3><div class="body"><button id="exportStores" class="btn">Export Visible Stores</button><button id="exportGaps" class="btn">Export Current Gaps</button></div></section>
+</aside>
+<main class="mapstage"><div id="map" class="map"></div>
+<div class="hud"><div class="kpi"><small>Visible</small><b id="hVisible">0</b></div><div class="kpi"><small>Coverage</small><b id="hPct">0%</b></div><div class="kpi"><small>Gaps</small><b id="hGaps">0</b></div></div>
+<div class="rail"><button id="railGaps" class="btn">Gaps</button><button id="railSim" class="btn primary">Simulate</button><button id="railTerritory" class="btn">Territory</button><button id="railModel" class="btn">Model</button></div>
+<div class="legend"><span><i class="dot" style="background:#16a34a"></i>Covered</span><span><i class="dot" style="background:#dc2626"></i>Current gap</span><span><i class="dot" style="background:#7c3aed"></i>Active RTS</span><span><i class="dot" style="background:#0ea5e9"></i>Simulated RTS</span></div>
+<div id="drawer" class="drawer"><header><h2 id="drawerTitle">Territory Review</h2><button id="drawerClose" class="btn">Close</button></header><div id="drawerContent" class="content"></div></div>
+<div id="status" class="status"><div>Loading stores and calculating RTS coverage…</div></div>
+</main></div>
+<div id="modal" class="modal"><div class="card"><header><h2 id="modalTitle">Analysis</h2><button id="modalClose" class="btn">Close</button></header><div id="modalContent" class="content"></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
