@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PSP Coverage Intelligence Platform</title>
-<link rel="stylesheet" href="./css/app.css?v=platform-v5-stable">
+<link rel="stylesheet" href="./css/app.css?v=platform-v6">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -67,6 +67,17 @@
   </div>
 </section>
 <section class="section"><h3>Coverage Model</h3><div class="body"><div class="filter-scope-note"><b>Model v2:</b> RTS workload is every store within the selected radius. Stores may be unique, shared, or uncovered. Uncovered stores are network gaps and are never assigned to the nearest RTS.</div></div></section>
+
+<section class="section v6-nav-section">
+  <h3>Version 6 Intelligence</h3>
+  <div class="body v6-nav-grid">
+    <button id="v6ExecutiveIntelligenceBtn" class="btn primary">Executive Intelligence</button>
+    <button id="v6StateIntelligenceBtn" class="btn">State / Territory Intelligence</button>
+    <button id="v6ManagerIntelligenceBtn" class="btn">Manager Intelligence</button>
+    <button id="v6StoreFinderBtn" class="btn">Store Intelligence</button>
+    <button id="v6HistoricalBtn" class="btn">Historical Trends</button>
+  </div>
+</section>
 <section class="section v4-nav-section">
   <h3>Platform Workspaces</h3>
   <div class="body">
@@ -113,6 +124,6 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
-<script type="module" src="./js/app.js?v=platform-v5-stable"></script>
+<script type="module" src="./js/app.js?v=platform-v6"></script>
 </body>
 </html>

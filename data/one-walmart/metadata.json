@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 5 \u2014 Production Stabilization",
+  "platformRelease": "Version 6 \u2014 Intelligence Workspaces",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
@@ -49,5 +49,6 @@
     "Hiring Timeline",
     "Executive Brief",
     "Unified Navigation"
-  ]
+  ],
+  "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius"
 }

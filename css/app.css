@@ -1090,3 +1090,71 @@ button:disabled{
   background:#ecfdf5;
   color:#166534;
 }
+
+/* ===== Version 6 Intelligence Workspaces ===== */
+.v6-nav-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.v6-nav-grid .btn:first-child{grid-column:1/-1}
+.v6-hero{
+  border:1px solid #bfdbfe;
+  background:linear-gradient(135deg,#eff6ff,#f8fafc);
+  border-radius:15px;
+  padding:13px;
+  margin-bottom:10px;
+}
+.v6-hero h2{margin:0;font-size:20px;color:#0f172a}
+.v6-hero p{margin:5px 0 0;color:#475569;font-size:11.5px;line-height:1.45}
+.v6-kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(150px,1fr));
+  gap:8px;
+  margin-bottom:10px;
+}
+.v6-kpi{
+  border:1px solid #e2e8f0;
+  border-radius:13px;
+  padding:10px;
+  background:#fff;
+}
+.v6-kpi small{
+  display:block;
+  color:#64748b;
+  font-size:9px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.v6-kpi b{
+  display:block;
+  color:#0f172a;
+  font-size:19px;
+  margin-top:3px;
+  line-height:1.15;
+}
+.v6-kpi span{
+  display:block;
+  color:#64748b;
+  font-size:10.5px;
+  margin-top:4px;
+}
+.v6-trend-ready{
+  border:1px dashed #93c5fd;
+  background:#f8fbff;
+  color:#1e3a8a;
+  border-radius:12px;
+  padding:11px;
+  font-size:11.5px;
+  line-height:1.5;
+  margin-top:10px;
+}
+.v6-store-popup .s2-popup-actions{grid-template-columns:1fr 1fr}
+@media(max-width:800px){
+  .v6-kpi-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .v6-nav-grid,.v6-kpi-grid{grid-template-columns:1fr}
+  .v6-nav-grid .btn:first-child{grid-column:1}
+}

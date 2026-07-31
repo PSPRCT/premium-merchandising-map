@@ -28,50 +28,56 @@ const map=L.map('map',{zoomControl:true,inertia:true}).setView(HOME.center,HOME.
 const clusterLayer=L.markerClusterGroup({disableClusteringAtZoom:12,chunkedLoading:true,showCoverageOnHover:false}),plainLayer=L.layerGroup(),rtsLayer=L.layerGroup().addTo(map),ringLayer=L.layerGroup().addTo(map),highlightLayer=L.layerGroup().addTo(map),simLayer=L.layerGroup().addTo(map),territoryLayer=L.layerGroup().addTo(map),territoryLabelLayer=L.layerGroup().addTo(map);
 map.addLayer(clusterLayer);let heatLayer=null,stores=[],filtered=[],markerById=new Map(),simMarker=null,simMode=false,selectedSearch=-1;
 function hav(a,b,c,d){return haversineMiles(a,b,c,d)}
-function activeRTS(){return RTS.filter(r=>r.active)}
-function calculate(s){const near=activeRTS().map(r=>({...r,distance:hav(s.lat,s.lng,r.lat,r.lng)})).sort((a,b)=>a.distance-b.distance);s.nearest=near.slice(0,3);s.coverCount=near.filter(r=>r.distance<=Number($('radius')?.value||75)).length;s.covered=s.coverCount>0;return s}
+function activeRTS(){return RTS}
+function calculate(s){
+ const eligible=activeRTS().filter(r=>PROGRAM_ELIGIBILITY(s,r));
+ const near=eligible.map(r=>({...r,distance:hav(s.lat,s.lng,r.lat,r.lng)})).sort((a,b)=>a.distance-b.distance);
+ s.nearest=near.slice(0,3);
+ s.coverCount=near.filter(r=>r.distance<=Number($('radius')?.value||75)).length;
+ s.covered=s.coverCount>0;
+ s.coverageType=s.coverCount===0?'Gap':s.coverCount===1?'Unique':'Shared';
+ s.eligibleRtsCount=eligible.length;
+ return s
+}
 function recompute(){stores.forEach(calculate);applyFilters();drawRts();updateMetrics();drawTerritories()}
 function uniq(a){return [...new Set(a.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)))}
 function options(id,vals){const e=$(id);vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;e.appendChild(o)})}
 function storeMarker(s){const color=s.covered?'#16a34a':'#dc2626',icon=L.divIcon({className:'',html:`<div class="store-dot" style="background:${color}"></div>`,iconSize:[11,11],iconAnchor:[5,5]});const m=L.marker([s.lat,s.lng],{icon}).bindPopup(()=>storePopup(s),{maxWidth:440,autoPanPadding:[80,80]});m.on('click',()=>{map.flyTo([s.lat,s.lng],Math.max(11,map.getZoom()),{duration:.55})});return m}
 function storePopup(s){
- const addr=s.address?esc(s.address):'<span style="color:#94a3b8">Street address unavailable in matched master list</span>';
+ const addr=s.address?esc(s.address):'<span style="color:#94a3b8">Street address unavailable</span>';
  const nearest=s.nearest.map((r,i)=>`<div class="s2-near-row ${i===0?'primary':''}">
    <span class="s2-rank">${i+1}</span>
    <span><span class="s2-near-name">${esc(r.name)}</span><span class="s2-near-email">${esc(r.email)}</span></span>
    <span class="s2-near-dist">${r.distance.toFixed(1)} mi</span>
  </div>`).join('');
- const nearestName=s.nearest[0]?.name||'No active RTS';
+ const teamText=(s.dedicatedTeams||[]).length?(s.dedicatedTeams||[]).join(', '):'Core program';
  const nearestDistance=s.nearest[0]?.distance;
- return `<div class="popup sprint2-popup">
+ const backup=s.nearest.find((r,i)=>i>0&&r.distance<=Number($('radius').value));
+ return `<div class="popup sprint2-popup v6-store-popup">
    <div class="s2-popup-head">
      <div class="s2-popup-headline">
-       <div class="s2-popup-title">${esc(s.retailer)} #${esc(s.storeNumber||'—')}</div>
-       <span class="badge ${s.covered?'covered':'gap'}">${s.covered?'Covered':'Gap'}</span>
+       <div class="s2-popup-title">${esc(s.retailer||s.storeName||'Store')} #${esc(s.storeNumber||'—')}</div>
+       <span class="badge ${s.covered?'covered':'gap'}">${esc(s.coverageType||'Gap')}</span>
      </div>
      <div class="s2-popup-address">📍 ${addr}<br>${esc(s.city)}, ${esc(s.state)} ${esc(s.zip)}</div>
-     <div class="s2-popup-meta">Store # ${esc(s.storeNumber||'—')} · SiteID ${esc(s.siteId)}</div>
+     <div class="s2-popup-meta">SiteID ${esc(s.siteId)}${s.mdmStoreId?` · MDM ${esc(s.mdmStoreId)}`:''}</div>
    </div>
    <div class="s2-popup-scroll">
      <div class="s2-grid">
-       <div class="s2-card">
-         <span class="s2-label">Manager</span>
-         <div class="s2-value">${esc(s.manager||'Not listed')}${s.managerEmail?`<br>${esc(s.managerEmail)}`:''}</div>
-       </div>
-       <div class="s2-card">
-         <span class="s2-label">Coverage status</span>
-         <div class="s2-value">${s.covered?`Within ${$('radius').value} miles`:'Outside current radius'}${Number.isFinite(nearestDistance)?`<br>${nearestDistance.toFixed(1)} mi to ${esc(nearestName)}`:''}</div>
-       </div>
-       <div class="s2-card full">
-         <span class="s2-label">Nearest Premium Merchandising RTS</span>
-         <div class="s2-nearest">${nearest}</div>
-       </div>
+       <div class="s2-card"><span class="s2-label">Program</span><div class="s2-value">${esc(v4ProgramLabel())}</div></div>
+       <div class="s2-card"><span class="s2-label">Team exposure</span><div class="s2-value">${esc(teamText)}</div></div>
+       <div class="s2-card"><span class="s2-label">Manager</span><div class="s2-value">${esc(s.manager||'Not listed')}</div></div>
+       <div class="s2-card"><span class="s2-label">Market</span><div class="s2-value">${esc(s.market||'Not listed')}</div></div>
+       <div class="s2-card"><span class="s2-label">Coverage</span><div class="s2-value">${esc(s.coverageType||'Gap')}${Number.isFinite(nearestDistance)?`<br>${nearestDistance.toFixed(1)} mi to nearest eligible RTS`:''}</div></div>
+       <div class="s2-card"><span class="s2-label">Backup RTS</span><div class="s2-value">${backup?`${esc(backup.name)}<br>${backup.distance.toFixed(1)} mi`:'None inside radius'}</div></div>
+       <div class="s2-card full"><span class="s2-label">Nearest eligible RTS</span><div class="s2-nearest">${nearest||'<div class="callout">No eligible RTS found.</div>'}</div></div>
      </div>
    </div>
    <div class="s2-popup-actions">
-     <button class="btn primary" onclick="window.openTerritory('${esc(s.nearest[0]?.id||'')}')">Open RTS Territory</button>
+     ${s.nearest[0]?`<button class="btn primary" onclick="window.openTerritory('${esc(s.nearest[0].id)}')">Open RTS Profile</button>`:''}
+     <button class="btn" onclick="window.v6OpenStoreIntelligence('${esc(s.siteId)}')">Store Intelligence</button>
      <button class="btn" onclick="window.simulateAt(${s.lat},${s.lng})">Simulate RTS Here</button>
-     <button class="btn" onclick="window.showNearbyStores('${esc(s.siteId)}')">View Nearby Stores</button>
+     <button class="btn" onclick="window.showNearbyStores('${esc(s.siteId)}')">Nearby Stores</button>
    </div>
  </div>`;
 }
@@ -79,18 +85,18 @@ function drawRts(){
  rtsLayer.clearLayers();
  ringLayer.clearLayers();
  if($('showRts').checked)activeRTS().forEach(r=>{
-   const owned=stores.filter(s=>s.nearest[0]?.id===r.id);
-   const inside=stores.filter(s=>hav(s.lat,s.lng,r.lat,r.lng)<=Number($('radius').value));
-   const coveredOwned=owned.filter(s=>s.covered).length;
-   const coveragePct=owned.length?coveredOwned/owned.length*100:0;
+   const inside=stores.filter(s=>PROGRAM_ELIGIBILITY(s,r)&&hav(s.lat,s.lng,r.lat,r.lng)<=Number($('radius').value));
+   const unique=inside.filter(s=>s.coverCount===1);
+   const shared=inside.filter(s=>s.coverCount>=2);
+   const coveragePct=inside.length?100:0;
    const icon=L.divIcon({className:'',html:'<div class="rts-icon"></div>',iconSize:[22,22],iconAnchor:[11,11]});
    const hover=`<div class="s2-hover">
      <b>${esc(r.name)}</b>
-     <span>Premium Merchandising RTS</span>
+     <span>${esc(v4ProgramLabel())} RTS</span>
      <div class="s2-hover-grid">
-       <div><small>In-radius stores</small><strong>${owned.length}</strong></div>
-       <div><small>Inside radius</small><strong>${inside.length}</strong></div>
-       <div><small>Coverage</small><strong>${coveragePct.toFixed(1)}%</strong></div>
+       <div><small>Stores in radius</small><strong>${inside.length}</strong></div>
+       <div><small>Unique</small><strong>${unique.length}</strong></div>
+       <div><small>Shared</small><strong>${shared.length}</strong></div>
        <div><small>Radius</small><strong>${$('radius').value} mi</strong></div>
      </div>
      <span style="margin-top:5px">Click to open territory review</span>
@@ -1155,6 +1161,120 @@ window.addEventListener('unhandledrejection',event=>{
   setDataStatus('warning','A background task encountered an error');
 });
 
+
+/* ===== Version 6 Intelligence Workspaces ===== */
+function v6ScopeModel(){return v4Model(filtered)}
+function v6StateRows(){
+ const model=v6ScopeModel();
+ const gapIds=new Set(model.gaps.map(s=>s.siteId));
+ return Object.values(filtered.reduce((o,s)=>{
+   const key=s.state||'Unknown';
+   o[key]??={name:key,total:0,covered:0,gaps:0,unique:0,shared:0,managers:new Set(),retailers:new Set()};
+   const row=o[key];row.total++;
+   if(gapIds.has(s.siteId))row.gaps++;else row.covered++;
+   if(s.coverageType==='Unique')row.unique++;
+   if(s.coverageType==='Shared')row.shared++;
+   if(s.manager)row.managers.add(s.manager);
+   if(s.retailer)row.retailers.add(s.retailer);
+   return o;
+ },{})).map(r=>({...r,managerCount:r.managers.size,retailerCount:r.retailers.size,coverage:r.total?r.covered/r.total*100:0}))
+   .sort((a,b)=>b.gaps-a.gaps||b.total-a.total);
+}
+function v6OpenStateIntelligence(){
+ const rows=v6StateRows();
+ openModal('State / Territory Intelligence',`
+  <div class="callout">This view treats gaps as a network condition, not an RTS-owned problem. Select a state to move directly into its stores, gaps, managers, and placement opportunities.</div>
+  <div class="tablewrap"><table><thead><tr><th>State</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>Managers</th><th>Retailers</th><th></th></tr></thead><tbody>
+   ${rows.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.managerCount}</td><td>${r.retailerCount}</td><td><button class="btn" onclick="window.v6FocusState('${esc(r.name)}')">Open</button></td></tr>`).join('')}
+  </tbody></table></div>`);
+}
+window.v6FocusState=state=>{
+ const el=$('fState');if(el){[...el.options].forEach(o=>o.selected=o.value===state);applyFilters()}
+ $('modal').classList.remove('show');fitResults();
+};
+
+function v6ManagerRows(){
+ const model=v6ScopeModel(),gapIds=new Set(model.gaps.map(s=>s.siteId));
+ return Object.values(filtered.reduce((o,s)=>{
+   const key=s.manager||'Not listed';
+   o[key]??={name:key,total:0,covered:0,gaps:0,unique:0,shared:0,states:new Set(),retailers:new Set()};
+   const row=o[key];row.total++;
+   if(gapIds.has(s.siteId))row.gaps++;else row.covered++;
+   if(s.coverageType==='Unique')row.unique++;
+   if(s.coverageType==='Shared')row.shared++;
+   if(s.state)row.states.add(s.state);
+   if(s.retailer)row.retailers.add(s.retailer);
+   return o;
+ },{})).map(r=>({...r,coverage:r.total?r.covered/r.total*100:0,stateCount:r.states.size,retailerCount:r.retailers.size}))
+   .sort((a,b)=>b.gaps-a.gaps||b.total-a.total);
+}
+function v6OpenManagerIntelligence(){
+ const rows=v6ManagerRows();
+ openModal('Manager Intelligence',`
+  <div class="v6-hero"><h2>Manager Coverage Overview</h2><p>Coverage, gap exposure, unique dependency, retailer complexity, and geographic breadth for the selected scope.</p></div>
+  <div class="tablewrap"><table><thead><tr><th>Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody>
+   ${rows.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td><button class="btn" onclick="window.v6FocusManager(${JSON.stringify(r.name)})">Open</button></td></tr>`).join('')}
+  </tbody></table></div>`);
+}
+window.v6FocusManager=name=>{
+ const el=$('fManager');if(el){[...el.options].forEach(o=>o.selected=o.value===name);applyFilters()}
+ $('modal').classList.remove('show');fitResults();
+};
+
+function v6OpenStoreIntelligence(siteId){
+ const s=stores.find(x=>String(x.siteId)===String(siteId));if(!s)return;
+ const radius=Number($('radius').value),eligible=activeRTS().filter(r=>PROGRAM_ELIGIBILITY(s,r));
+ const ranked=eligible.map(r=>({...r,distance:hav(s.lat,s.lng,r.lat,r.lng)})).sort((a,b)=>a.distance-b.distance);
+ const inside=ranked.filter(r=>r.distance<=radius);
+ const nearby=stores.filter(x=>x.siteId!==s.siteId&&hav(s.lat,s.lng,x.lat,x.lng)<=25).sort((a,b)=>hav(s.lat,s.lng,a.lat,a.lng)-hav(s.lat,s.lng,b.lat,b.lng));
+ openModal('Store Intelligence',`
+  <div class="v6-hero"><h2>${esc(s.retailer||s.storeName||'Store')} #${esc(s.storeNumber||'—')}</h2><p>${esc(s.address||'Address unavailable')} · ${esc(s.city)}, ${esc(s.state)} ${esc(s.zip)}</p></div>
+  <div class="v6-kpi-grid">
+   <div class="v6-kpi"><small>Coverage Type</small><b>${esc(s.coverageType||'Gap')}</b><span>${inside.length} eligible RTS inside ${radius} miles</span></div>
+   <div class="v6-kpi"><small>Nearest RTS</small><b>${ranked[0]?esc(ranked[0].name):'None'}</b><span>${ranked[0]?ranked[0].distance.toFixed(1)+' miles':'No eligible RTS'}</span></div>
+   <div class="v6-kpi"><small>Backup RTS</small><b>${inside[1]?esc(inside[1].name):'None'}</b><span>${inside[1]?inside[1].distance.toFixed(1)+' miles':'No second RTS in radius'}</span></div>
+   <div class="v6-kpi"><small>Nearby Stores</small><b>${nearby.length}</b><span>Other stores within 25 miles</span></div>
+   <div class="v6-kpi"><small>Manager</small><b>${esc(s.manager||'Not listed')}</b><span>${esc(s.market||'Market not listed')}</span></div>
+   <div class="v6-kpi"><small>Team Exposure</small><b>${esc((s.dedicatedTeams||[]).join(', ')||'Core')}</b><span>${esc(v4ProgramLabel())}</span></div>
+  </div>
+  <div class="v4-two">
+   <div class="v4-panel"><h3>Eligible RTS ranking</h3>${ranked.slice(0,8).map((r,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(r.name)}</b><br>${esc(r.email||'')}</span><span>${r.distance.toFixed(1)} mi</span></div>`).join('')}</div>
+   <div class="v4-panel"><h3>Nearby store concentration</h3>${nearby.slice(0,8).map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.retailer)} #${esc(x.storeNumber)}</b><br>${esc(x.city)}, ${esc(x.state)}</span><span>${hav(s.lat,s.lng,x.lat,x.lng).toFixed(1)} mi</span></div>`).join('')||'<div class="callout">No nearby stores within 25 miles.</div>'}</div>
+  </div>
+  <div class="actions"><button class="btn primary" onclick="window.simulateAt(${s.lat},${s.lng});document.getElementById('modal').classList.remove('show')">Simulate RTS Here</button><button class="btn" onclick="window.v6FocusManager(${JSON.stringify(s.manager||'Not listed')})">Open Manager</button></div>`);
+}
+window.v6OpenStoreIntelligence=v6OpenStoreIntelligence;
+
+function v6OpenExecutiveIntelligence(){
+ const model=v6ScopeModel(),health=v4Health(filtered),plan=v4Plan(filtered,5);
+ const covered=filtered.length-model.gaps.length,pct=filtered.length?covered/filtered.length*100:0;
+ const avgHealth=health.length?health.reduce((a,x)=>a+x.score,0)/health.length:0;
+ const avgWork=health.length?health.reduce((a,x)=>a+x.count,0)/health.length:0;
+ const states=v6StateRows(),managers=v6ManagerRows();
+ openModal('Executive Intelligence',`
+  <div class="v6-hero"><h2>${esc(v4ProgramLabel())} Executive Intelligence</h2><p>Current network condition, operational risk, manager exposure, and modeled placement return for ${esc(scopeLabel())}.</p></div>
+  <div class="v6-kpi-grid">
+   <div class="v6-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered</span></div>
+   <div class="v6-kpi"><small>Network Gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No eligible RTS in radius</span></div>
+   <div class="v6-kpi"><small>Average Health</small><b>${avgHealth.toFixed(0)}</b><span>Across RTS service areas</span></div>
+   <div class="v6-kpi"><small>Average Workload</small><b>${Math.round(avgWork)}</b><span>In-radius stores per RTS</span></div>
+   <div class="v6-kpi"><small>Top Gap State</small><b>${esc(states[0]?.name||'—')}</b><span>${states[0]?.gaps||0} gaps</span></div>
+   <div class="v6-kpi"><small>Top Manager Exposure</small><b>${esc(managers[0]?.name||'—')}</b><span>${managers[0]?.gaps||0} gaps</span></div>
+  </div>
+  <div class="v4-two">
+   <div class="v4-panel"><h3>Top placement return</h3>${plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.manager||'')} · ${esc(x.retailer||'')}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}</div>
+   <div class="v4-panel"><h3>Highest-risk RTS service areas</h3>${health.slice(0,5).map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b><br>${x.count} stores · ${x.uniqueCount} unique</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">${x.score.toFixed(0)}</button></div>`).join('')}</div>
+  </div>
+  <div class="v6-trend-ready"><b>Historical trends:</b> Ready for monthly snapshot files. No trend line is shown until actual dated snapshots are supplied.</div>`);
+}
+function v6HistoricalReadiness(){
+ openModal('Historical Trends',`<div class="v6-trend-ready"><h3>Historical analytics are ready, but no history has been invented.</h3><p>To enable month-over-month coverage, gap reduction, hiring impact, workload change, and before/after comparisons, add dated snapshots of the store and RTS datasets. The platform will then compare actual periods rather than estimating history.</p><p><b>Recommended cadence:</b> one snapshot at month-end and one whenever a major roster or store-universe change occurs.</p></div>`);
+}
+window.v6OpenExecutiveIntelligence=v6OpenExecutiveIntelligence;
+window.v6OpenStateIntelligence=v6OpenStateIntelligence;
+window.v6OpenManagerIntelligence=v6OpenManagerIntelligence;
+window.v6HistoricalReadiness=v6HistoricalReadiness;
+
 function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
 ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
 $('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
@@ -1180,6 +1300,11 @@ if($('v4ExportSummaryBtn'))$('v4ExportSummaryBtn').onclick=()=>csv([{
  SharedStores:v4Model(filtered).sharedStores.length
 }],'psp_executive_summary.csv');
 if($('v4GapHeatToggle'))$('v4GapHeatToggle').onchange=e=>v4ToggleGapHeat(e.target.checked);
+v5SafeBind('v6ExecutiveIntelligenceBtn',v6OpenExecutiveIntelligence,'Executive Intelligence');
+v5SafeBind('v6StateIntelligenceBtn',v6OpenStateIntelligence,'State / Territory Intelligence');
+v5SafeBind('v6ManagerIntelligenceBtn',v6OpenManagerIntelligence,'Manager Intelligence');
+v5SafeBind('v6StoreFinderBtn',()=>{$('search').focus();openModal('Store Intelligence',`<div class="callout">Search by store number, address, city, ZIP, SiteID, or MDM ID. Select a store result, then choose <b>Store Intelligence</b> from its popup.</div>`)},'Store Intelligence');
+v5SafeBind('v6HistoricalBtn',v6HistoricalReadiness,'Historical Trends');
 v5SafeBind('v41ShowGapsBtn',()=>{$('gapsOnly').click();v41OperationalFocus()},'Show Uncovered');
 v5SafeBind('v41ShowCoveredBtn',()=>{$('coveredOnly').click();v41OperationalFocus()},'Show Covered');
 v5SafeBind('v41DedicatedGapsBtn',v41DedicatedGapsQuick,'Dedicated Gaps');
