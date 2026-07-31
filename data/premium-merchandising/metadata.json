@@ -1,6 +1,6 @@
 {
   "application": "Premium Merchandising Coverage Command Center",
-  "release": "Rollback copy \u2014 Platform v3",
+  "release": "PSP Coverage Intelligence Platform v3",
   "storeCount": 9473,
   "rtsCount": 45,
   "coverageRadiusMiles": 75,
@@ -25,5 +25,6 @@
     "Network gaps have no active RTS in range",
     "Out-of-radius stores are not assigned to the nearest RTS",
     "Hiring recommendations are gap-driven"
-  ]
+  ],
+  "platformProgramId": "premium-merchandising"
 }

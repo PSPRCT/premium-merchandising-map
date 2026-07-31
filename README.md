@@ -1,87 +1,24 @@
-# Premium Merchandising Coverage Command Center
+# PSP Coverage Intelligence Platform v3
 
-This is the modular GitHub Pages version of the working Sprint 4 map.
+This release converts the Premium Merchandising command center into the first
+active program on a shared PSP analytics platform.
 
-## Repository structure
+## Active program
 
-- `index.html` — page layout and external library references
-- `css/app.css` — all visual styling
-- `js/app.js` — map, search, filters, territory, planning, and report logic
-- `js/data.js` — data loader
-- `data/stores.json` — Premium Merchandising store data
-- `data/rts.json` — Premium Merchandising RTS roster
-- `data/metadata.json` — release and dataset summary
+- Premium Merchandising — fully functional
 
-## Publish on GitHub Pages
+## Scaffolded program
 
-1. Create a new repository or clear the files from the existing Premium Merchandising repository.
-2. Upload the complete contents of this folder while preserving the folder structure.
-3. In **Settings → Pages**, select:
-   - Source: **Deploy from a branch**
-   - Branch: **main**
-   - Folder: **/(root)**
-4. Open the published Pages URL after deployment finishes.
+- One Walmart PSP — shared UI ready; routing adapter migration pending
 
 ## Important
 
-Do not open `index.html` directly from the computer with a `file://` address. Browser security normally blocks the JSON fetches. Test through GitHub Pages or another local web server.
+Version 3 does not silently apply Premium's radius-only logic to One Walmart.
+The One Walmart adapter must preserve its dedicated-team and remote-routing
+business rules.
 
-## Updating data later
+See:
 
-Replace `data/stores.json` and/or `data/rts.json`. The HTML and application logic do not need to be rebuilt when only the data changes.
-
-
-## Maintenance release
-
-This release loads and validates `metadata.json`, shows the data-update date and record counts in the header, and displays a clear error when a required data file is missing or invalid.
-
-See `DATA_REFRESH_GUIDE.md` for the recurring refresh process.
-
-
-## Sprint 6 — Network Optimization
-
-This release adds:
-
-- Executive Mode
-- Network Optimizer
-- Multi-Hire Coverage Planner
-- Territory Health Scores
-- RTM Dashboard
-- Exportable store-transfer recommendations
-
-The recommendations are geographic planning outputs based on the current data, filters, active RTS roster, and selected radius. They are not automatic staffing decisions.
-
-
-## Radius-model calibration
-
-- RTS territory = all stores within selected radius.
-- Shared stores may be in more than one RTS service area.
-- Stores outside every RTS radius are network gaps.
-- Out-of-radius stores do not reduce an existing RTS health score.
-- Optimizer prioritizes new RTS placement for those gaps.
-
-
-## Sprint 7 — Premium Merchandising Coverage Model v2
-
-All tools now use the same operating model:
-
-- RTS workload = every store within the selected radius
-- Unique store = exactly one RTS is in range
-- Shared store = two or more RTS are in range
-- Network gap = no active RTS is in range
-- Out-of-radius stores are never assigned to the nearest RTS
-- Hiring recommendations are based only on uncovered gap clusters
-
-Updated tools include:
-
-- RTS territory drawer
-- Coverage snapshot and executive dashboard
-- Executive Mode
-- Territory Balancer
-- Territory Health Scores
-- RTM Dashboard
-- Printable Leadership Report
-- Network Optimizer
-- Multi-Hire Planner
-- Hiring Recommendation Plan
-- Territory and balance exports
+- `docs/ARCHITECTURE.md`
+- `docs/ONE_WALMART_MIGRATION.md`
+- `docs/DEPLOYMENT.md`

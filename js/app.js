@@ -1,12 +1,27 @@
-import { loadData } from "./data.js?v=20260731-0415";
-console.info("Premium Merchandising map build 20260731-0415");
+import { getProgram, listPrograms } from "../core/program-registry.js";
+import { loadProgramData } from "../core/program-loader.js";
+import { haversineMiles } from "../core/geo.js";
+import {
+  buildCoverageModel,
+  buildTerritoryHealth,
+  buildGapPlacementPlan
+} from "../core/coverage-engine.js";
+import { initializeProgramSwitcher } from "../modules/program-switcher.js";
 
-const {stores:RAW_STORES,rts:RTS,metadata:DATA_METADATA,warnings:DATA_WARNINGS}=await loadData();const HOME={center:[39.5,-98.35],zoom:5};
+const ACTIVE_PROGRAM_ID = "premium-merchandising";
+const ACTIVE_PROGRAM = getProgram(ACTIVE_PROGRAM_ID);
+const {
+  stores: RAW_STORES,
+  rts: RTS,
+  metadata: DATA_METADATA
+} = await loadProgramData(ACTIVE_PROGRAM);
+const DATA_WARNINGS = [];
+const HOME = ACTIVE_PROGRAM.home;
 const $=x=>document.getElementById(x), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const map=L.map('map',{zoomControl:true,inertia:true}).setView(HOME.center,HOME.zoom);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
 const clusterLayer=L.markerClusterGroup({disableClusteringAtZoom:12,chunkedLoading:true,showCoverageOnHover:false}),plainLayer=L.layerGroup(),rtsLayer=L.layerGroup().addTo(map),ringLayer=L.layerGroup().addTo(map),highlightLayer=L.layerGroup().addTo(map),simLayer=L.layerGroup().addTo(map),territoryLayer=L.layerGroup().addTo(map),territoryLabelLayer=L.layerGroup().addTo(map);
 map.addLayer(clusterLayer);let heatLayer=null,stores=[],filtered=[],markerById=new Map(),simMarker=null,simMode=false,selectedSearch=-1;
-function hav(a,b,c,d){const R=3958.7613,t=x=>x*Math.PI/180,dl=t(c-a),dn=t(d-b),q=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
+function hav(a,b,c,d){return haversineMiles(a,b,c,d)}
 function activeRTS(){return RTS.filter(r=>r.active)}
 function calculate(s){const near=activeRTS().map(r=>({...r,distance:hav(s.lat,s.lng,r.lat,r.lng)})).sort((a,b)=>a.distance-b.distance);s.nearest=near.slice(0,3);s.coverCount=near.filter(r=>r.distance<=Number($('radius')?.value||75)).length;s.covered=s.coverCount>0;return s}
 function recompute(){stores.forEach(calculate);applyFilters();drawRts();updateMetrics();drawTerritories()}
@@ -385,115 +400,35 @@ window.exportLeadershipSummary=()=>csv(window._leadershipSummary||[],'premium_me
 
 
 function coverageModel(scope=stores){
- const rad=Number($('radius').value);
- const active=activeRTS();
-
- const storeCoverage=scope.map(s=>{
-   const covering=active
-     .map(r=>({...r,distance:hav(s.lat,s.lng,r.lat,r.lng)}))
-     .filter(r=>r.distance<=rad)
-     .sort((a,b)=>a.distance-b.distance);
-   return {
-     store:s,
-     covering,
-     coverageType:covering.length===0?'Gap':covering.length===1?'Unique':'Shared'
-   };
+ return buildCoverageModel({
+   stores: scope,
+   rts: RTS,
+   radiusMiles: Number($('radius').value)
  });
-
- const byRts=active.map(r=>{
-   const entries=storeCoverage.filter(x=>x.covering.some(c=>c.id===r.id));
-   const unique=entries.filter(x=>x.coverageType==='Unique');
-   const shared=entries.filter(x=>x.coverageType==='Shared');
-   const distances=entries.map(x=>hav(x.store.lat,x.store.lng,r.lat,r.lng));
-   return {
-     r,
-     entries,
-     stores:entries.map(x=>x.store),
-     count:entries.length,
-     uniqueCount:unique.length,
-     sharedCount:shared.length,
-     avgDistance:distances.length?distances.reduce((a,b)=>a+b,0)/distances.length:0,
-     farthest:distances.length?Math.max(...distances):0
-   };
- });
-
- const gaps=storeCoverage.filter(x=>x.coverageType==='Gap').map(x=>x.store);
- const uniqueStores=storeCoverage.filter(x=>x.coverageType==='Unique').map(x=>x.store);
- const sharedStores=storeCoverage.filter(x=>x.coverageType==='Shared').map(x=>x.store);
-
- return {rad,active,storeCoverage,byRts,gaps,uniqueStores,sharedStores};
 }
 
 function territoryHealthV2(scope=filtered){
- const model=coverageModel(scope);
- const counts=model.byRts.map(x=>x.count);
- const avg=counts.length?counts.reduce((a,b)=>a+b,0)/counts.length:0;
-
- return model.byRts.map(x=>{
-   const ratio=x.count/Math.max(1,avg);
-   const uniqueShare=x.count?x.uniqueCount/x.count*100:0;
-   let score=100;
-
-   // Workload and travel only; no penalty for external network gaps.
-   if(x.avgDistance>50)score-=20;
-   else if(x.avgDistance>40)score-=12;
-   else if(x.avgDistance>30)score-=6;
-
-   if(ratio>1.65)score-=20;
-   else if(ratio>1.35)score-=12;
-   else if(ratio<.40)score-=8;
-
-   if(uniqueShare>85 && x.uniqueCount>100)score-=12;
-   else if(uniqueShare>70 && x.uniqueCount>75)score-=6;
-
-   score=Math.max(0,Math.min(100,score));
-
-   let health='Excellent',cls='excellent';
-   if(score<50){health='Needs Attention';cls='critical'}
-   else if(score<68){health='Fair';cls='watch'}
-   else if(score<84){health='Good';cls='good'}
-
-   return {...x,ratio,uniqueShare,score,health,cls};
- }).sort((a,b)=>a.score-b.score||b.count-a.count);
+ return buildTerritoryHealth({
+   stores: scope,
+   rts: RTS,
+   radiusMiles: Number($('radius').value)
+ }).map(item=>({
+   ...item,
+   r:item.rts,
+   avgDistance:item.averageDistance,
+   farthest:item.farthestDistance,
+   ratio:item.workloadRatio,
+   cls:item.className
+ }));
 }
 
 function gapClustersV2(scope=filtered,limit=25){
- const model=coverageModel(scope);
- let remaining=[...model.gaps];
- const out=[];
-
- for(let i=0;i<limit && remaining.length;i++){
-   let best=null;
-   for(const c of remaining){
-     const gain=remaining.filter(s=>hav(c.lat,c.lng,s.lat,s.lng)<=75);
-     if(!best||gain.length>best.gain.length)best={center:c,gain};
-   }
-   if(!best||best.gain.length<3)break;
-
-   const managers=Object.entries(best.gain.reduce((o,s)=>{
-     const k=s.manager||'Not listed';o[k]=(o[k]||0)+1;return o;
-   },{})).sort((a,b)=>b[1]-a[1]);
-
-   const retailers=Object.entries(best.gain.reduce((o,s)=>{
-     const k=s.retailer||'Unknown';o[k]=(o[k]||0)+1;return o;
-   },{})).sort((a,b)=>b[1]-a[1]);
-
-   out.push({
-     rank:i+1,
-     lat:best.center.lat,
-     lng:best.center.lng,
-     city:best.center.city,
-     state:best.center.state,
-     gain:best.gain.length,
-     stores:best.gain,
-     manager:managers[0]?.[0]||'',
-     retailer:retailers[0]?.[0]||''
-   });
-
-   const ids=new Set(best.gain.map(s=>s.siteId));
-   remaining=remaining.filter(s=>!ids.has(s.siteId));
- }
- return out;
+ return buildGapPlacementPlan({
+   stores: scope,
+   rts: RTS,
+   radiusMiles: Number($('radius').value),
+   limit
+ });
 }
 
 function s6Scope(){return filtered}
@@ -834,7 +769,33 @@ function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFini
 $('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
 $('executiveModeBtn').onclick=executiveMode;$('networkOptimizerBtn').onclick=networkOptimizer;$('multiHireBtn').onclick=multiHirePlanner;$('healthBtn').onclick=territoryHealthScores;$('rtmDashboardBtn').onclick=rtmDashboard;$('executiveBtn').onclick=executiveDashboard;$('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;if($('railExecutive'))$('railExecutive').onclick=executiveMode;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
 $('exportStores').onclick=()=>csv(storeRows(filtered),'visible_stores.csv');$('exportGaps').onclick=()=>csv(storeRows(stores.filter(s=>!s.covered)),'current_coverage_gaps.csv');
-$('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});try {
+$('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});initializeProgramSwitcher({
+  programs: listPrograms(),
+  activeProgramId: ACTIVE_PROGRAM_ID,
+  onProgramSelected(program) {
+    if (program.id === ACTIVE_PROGRAM_ID) return;
+
+    const message = program.available
+      ? `${program.name} is available but requires a page reload.`
+      : program.unavailableMessage;
+
+    openModal(program.name, `
+      <div class="platform-message">
+        <b>${esc(program.name)}</b><br><br>
+        ${esc(message)}
+        <br><br>
+        The shared Version 3 platform is active. Premium Merchandising is the
+        first migrated program. One Walmart will use the same dashboards,
+        reports, visual layers, and planning shell, but it requires its own
+        routing adapter for dedicated teams and remote-routing rules.
+      </div>
+    `);
+
+    document.getElementById("programSelect").value = ACTIVE_PROGRAM_ID;
+  }
+});
+
+try {
   init();
 } catch (error) {
   console.error(error);

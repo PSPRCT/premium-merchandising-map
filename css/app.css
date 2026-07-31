@@ -658,3 +658,44 @@ body.territory-focus .leaflet-marker-pane .territory-focus-marker{
   font-size:10.5px;
   line-height:1.4;
 }
+
+
+/* ===== PSP Coverage Intelligence Platform v3 ===== */
+.program-picker{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  border:1px solid #cbd5e1;
+  border-radius:9px;
+  padding:4px 7px;
+  background:#f8fafc;
+}
+.program-picker label{
+  font-size:9px;
+  color:#64748b;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.program-picker select{
+  border:0;
+  background:transparent;
+  color:#0f172a;
+  font-size:11px;
+  font-weight:850;
+  outline:none;
+  max-width:190px;
+}
+.platform-message{
+  border:1px solid #bfdbfe;
+  background:#eff6ff;
+  color:#1e3a8a;
+  border-radius:12px;
+  padding:10px 12px;
+  line-height:1.45;
+  font-size:11.5px;
+}
+@media(max-width:850px){
+  .program-picker label{display:none}
+  .program-picker select{max-width:120px}
+}
