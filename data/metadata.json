@@ -1,7 +1,13 @@
 {
   "application": "Premium Merchandising Coverage Command Center",
-  "release": "Modular Baseline based on Sprint 4",
+  "release": "Maintenance Baseline",
   "storeCount": 9473,
   "rtsCount": 45,
-  "coverageRadiusMiles": 75
+  "coverageRadiusMiles": 75,
+  "dataUpdated": "2026-07-31",
+  "storeDataFile": "data/stores.json",
+  "rtsDataFile": "data/rts.json",
+  "metadataFile": "data/metadata.json",
+  "managementGroup": "Premium Merchandising",
+  "managementGroupID": 245
 }

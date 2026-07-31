@@ -1,6 +1,6 @@
 import { loadData } from "./data.js";
 
-const {stores:RAW_STORES,rts:RTS}=await loadData();const HOME={center:[39.5,-98.35],zoom:5};
+const {stores:RAW_STORES,rts:RTS,metadata:DATA_METADATA,warnings:DATA_WARNINGS}=await loadData();const HOME={center:[39.5,-98.35],zoom:5};
 const $=x=>document.getElementById(x), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const map=L.map('map',{zoomControl:true,inertia:true}).setView(HOME.center,HOME.zoom);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
 const clusterLayer=L.markerClusterGroup({disableClusteringAtZoom:12,chunkedLoading:true,showCoverageOnHover:false}),plainLayer=L.layerGroup(),rtsLayer=L.layerGroup().addTo(map),ringLayer=L.layerGroup().addTo(map),highlightLayer=L.layerGroup().addTo(map),simLayer=L.layerGroup().addTo(map),territoryLayer=L.layerGroup().addTo(map),territoryLabelLayer=L.layerGroup().addTo(map);
@@ -499,7 +499,33 @@ function selectHit(h){
  }
  $('results').classList.remove('show');
 }
-function init(){stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
+
+function setDataStatus(kind,text){
+ const box=$('dataStatus'),label=$('dataStatusText');
+ if(!box||!label)return;
+ box.classList.remove('ready','warning','error');
+ if(kind)box.classList.add(kind);
+ label.textContent=text;
+}
+function formatDataDate(value){
+ if(!value)return 'date not supplied';
+ const d=new Date(`${value}T00:00:00`);
+ if(Number.isNaN(d.getTime()))return value;
+ return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+}
+function initializeDataStatus(){
+ const updated=formatDataDate(DATA_METADATA?.dataUpdated);
+ const activeCount=RTS.filter(r=>r.active).length;
+ const base=`Updated ${updated} · ${RAW_STORES.length.toLocaleString()} stores · ${activeCount.toLocaleString()} active RTS`;
+ if(DATA_WARNINGS?.length){
+   console.warn('Data validation warnings:',DATA_WARNINGS);
+   setDataStatus('warning',`${base} · data count warning`);
+ }else{
+   setDataStatus('ready',base);
+ }
+}
+
+function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
 ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
 $('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
 $('executiveBtn').onclick=executiveDashboard;$('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
@@ -508,9 +534,10 @@ $('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggl
   init();
 } catch (error) {
   console.error(error);
+  setDataStatus('error','Data failed to load');
   const status = document.getElementById("status");
   if (status) {
     status.style.display = "flex";
-    status.innerHTML = `<div>Map startup failed: ${String(error.message || error)}</div>`;
+    status.innerHTML = `<div class="data-error-panel"><b>Map startup failed.</b><br>${String(error.message || error)}<br><br>Confirm that <code>data/stores.json</code>, <code>data/rts.json</code>, and <code>data/metadata.json</code> exist in the GitHub repository and contain valid JSON.</div>`;
   }
 }

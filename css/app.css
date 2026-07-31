@@ -457,3 +457,47 @@ body.territory-focus .leaflet-marker-pane .territory-focus-marker{
  #modal header,.report-actions{display:none!important}#modalContent{overflow:visible!important}
  .report-section,.report-header{break-inside:avoid}
 }
+
+
+/* ===== Data maintenance status ===== */
+.data-status{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin-top:2px;
+  color:#64748b;
+  font-size:8.8px;
+  font-weight:750;
+  white-space:nowrap;
+}
+.data-status-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#94a3b8;
+  box-shadow:0 0 0 2px rgba(148,163,184,.16);
+}
+.data-status.ready .data-status-dot{
+  background:#16a34a;
+  box-shadow:0 0 0 2px rgba(22,163,74,.14);
+}
+.data-status.warning .data-status-dot{
+  background:#d97706;
+  box-shadow:0 0 0 2px rgba(217,119,6,.14);
+}
+.data-status.error .data-status-dot{
+  background:#dc2626;
+  box-shadow:0 0 0 2px rgba(220,38,38,.14);
+}
+.data-error-panel{
+  border:1px solid #fecaca;
+  background:#fef2f2;
+  color:#991b1b;
+  border-radius:12px;
+  padding:10px 12px;
+  max-width:560px;
+  line-height:1.45;
+}
+.data-error-panel b{
+  color:#7f1d1d;
+}

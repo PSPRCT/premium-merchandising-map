@@ -29,3 +29,10 @@ Do not open `index.html` directly from the computer with a `file://` address. Br
 ## Updating data later
 
 Replace `data/stores.json` and/or `data/rts.json`. The HTML and application logic do not need to be rebuilt when only the data changes.
+
+
+## Maintenance release
+
+This release loads and validates `metadata.json`, shows the data-update date and record counts in the header, and displays a clear error when a required data file is missing or invalid.
+
+See `DATA_REFRESH_GUIDE.md` for the recurring refresh process.
