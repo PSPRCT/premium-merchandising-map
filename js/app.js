@@ -1084,6 +1084,77 @@ window.v41OperationalFocusModal=v41OperationalFocusModal;
 window.v41DedicatedAnalysis=v41DedicatedAnalysis;
 window.v41Help=v41Help;
 
+
+/* ===== Version 5 production stabilization ===== */
+function managerRollups(){
+  return rollup('manager','Manager Rollups');
+}
+function retailerRollups(){
+  return rollup('retailer','Retailer Rollups');
+}
+function gapFinder(){
+  return openGapFinder();
+}
+function resiliencySimulator(){
+  return resiliency();
+}
+
+function v5SafeBind(id, handler, label=id){
+  const element=$(id);
+  if(!element)return false;
+  if(typeof handler!=='function'){
+    console.warn(`[V5] Tool unavailable: ${label}`);
+    element.disabled=true;
+    element.title=`${label} is temporarily unavailable`;
+    return false;
+  }
+  element.onclick=(event)=>{
+    try{
+      return handler(event);
+    }catch(error){
+      console.error(`[V5] ${label} failed`,error);
+      setDataStatus('warning',`${label} encountered an error`);
+      openModal('Tool Error',`
+        <div class="data-error-panel">
+          <b>${esc(label)} could not open.</b><br><br>
+          ${esc(String(error.message||error))}
+          <br><br>The map and all other tools remain available.
+        </div>`);
+    }
+  };
+  return true;
+}
+
+function v5StartupDiagnostics(){
+  const required={
+    program:ACTIVE_PROGRAM?.name,
+    stores:Array.isArray(RAW_STORES)?RAW_STORES.length:0,
+    rts:Array.isArray(RTS)?RTS.length:0,
+    metadata:!!DATA_METADATA,
+    map:!!map
+  };
+  const missing=[];
+  if(!required.stores)missing.push('store data');
+  if(!required.rts)missing.push('RTS data');
+  if(!required.metadata)missing.push('metadata');
+  if(!required.map)missing.push('map');
+  if(missing.length){
+    throw new Error(`Startup validation failed: ${missing.join(', ')}`);
+  }
+  console.info('[V5] Startup diagnostics passed',required);
+}
+
+window.addEventListener('error',event=>{
+  console.error('[V5] Unhandled error',event.error||event.message);
+  if(document.getElementById('status')?.style.display!=='flex'){
+    setDataStatus('warning','A tool error occurred; core map remains available');
+  }
+});
+window.addEventListener('unhandledrejection',event=>{
+  console.error('[V5] Unhandled promise rejection',event.reason);
+  setDataStatus('warning','A background task encountered an error');
+});
+
 function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
 ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
 $('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
@@ -1109,27 +1180,28 @@ if($('v4ExportSummaryBtn'))$('v4ExportSummaryBtn').onclick=()=>csv([{
  SharedStores:v4Model(filtered).sharedStores.length
 }],'psp_executive_summary.csv');
 if($('v4GapHeatToggle'))$('v4GapHeatToggle').onchange=e=>v4ToggleGapHeat(e.target.checked);
-if($('v41ShowGapsBtn'))$('v41ShowGapsBtn').onclick=()=>{$('gapsOnly').click();v41OperationalFocus()};
-if($('v41ShowCoveredBtn'))$('v41ShowCoveredBtn').onclick=()=>{$('coveredOnly').click();v41OperationalFocus()};
-if($('v41DedicatedGapsBtn'))$('v41DedicatedGapsBtn').onclick=v41DedicatedGapsQuick;
-if($('v41OperationalFocusBtn'))$('v41OperationalFocusBtn').onclick=v41OperationalFocusModal;
-if($('v41CopyViewBtn'))$('v41CopyViewBtn').onclick=v41CopyViewLink;
-if($('v41SavedViewsBtn'))$('v41SavedViewsBtn').onclick=v41SavedViews;
-if($('v41DedicatedExposureBtn'))$('v41DedicatedExposureBtn').onclick=v41DedicatedAnalysis;
-if($('v41ManagerRollupBtn'))$('v41ManagerRollupBtn').onclick=managerRollups;
-if($('v41GapFinderBtn'))$('v41GapFinderBtn').onclick=gapFinder;
-if($('v41PlacementBtn'))$('v41PlacementBtn').onclick=modelPlacement;
-if($('v41ResiliencyBtn'))$('v41ResiliencyBtn').onclick=resiliencySimulator;
-if($('v41HelpBtn'))$('v41HelpBtn').onclick=v41Help;
-if($('v41FocusRefresh'))$('v41FocusRefresh').onclick=v41OperationalFocus;
-if($('v41FocusGapCard'))$('v41FocusGapCard').onclick=gapFinder;
-if($('v41FocusWorkloadCard'))$('v41FocusWorkloadCard').onclick=territoryHealthScores;
-if($('v41FocusHireCard'))$('v41FocusHireCard').onclick=modelPlacement;
-if($('v41FocusActionCard'))$('v41FocusActionCard').onclick=v41OperationalFocusModal;
+v5SafeBind('v41ShowGapsBtn',()=>{$('gapsOnly').click();v41OperationalFocus()},'Show Uncovered');
+v5SafeBind('v41ShowCoveredBtn',()=>{$('coveredOnly').click();v41OperationalFocus()},'Show Covered');
+v5SafeBind('v41DedicatedGapsBtn',v41DedicatedGapsQuick,'Dedicated Gaps');
+v5SafeBind('v41OperationalFocusBtn',v41OperationalFocusModal,'Operational Focus');
+v5SafeBind('v41CopyViewBtn',v41CopyViewLink,'Copy View Link');
+v5SafeBind('v41SavedViewsBtn',v41SavedViews,'Saved Views');
+v5SafeBind('v41DedicatedExposureBtn',v41DedicatedAnalysis,'Dedicated Team Exposure');
+v5SafeBind('v41ManagerRollupBtn',managerRollups,'Manager Rollups');
+v5SafeBind('v41GapFinderBtn',gapFinder,'Current Gap Finder');
+v5SafeBind('v41PlacementBtn',modelPlacement,'Model New RTS Placement');
+v5SafeBind('v41ResiliencyBtn',resiliencySimulator,'RTS Resiliency');
+v5SafeBind('v41HelpBtn',v41Help,'Help / Workflow Guide');
+v5SafeBind('v41FocusRefresh',v41OperationalFocus,'Refresh Operational Focus');
+v5SafeBind('v41FocusGapCard',gapFinder,'Largest Gap Signal');
+v5SafeBind('v41FocusWorkloadCard',territoryHealthScores,'Highest RTS Workload');
+v5SafeBind('v41FocusHireCard',modelPlacement,'Top Placement Opportunity');
+v5SafeBind('v41FocusActionCard',v41OperationalFocusModal,'Recommended Action');
 setTimeout(()=>{v41OperationalFocus();v41LoadUrlView();const p=localStorage.getItem('psp_v41_pending_view');if(p){localStorage.removeItem('psp_v41_pending_view');v41ApplyViewState(JSON.parse(p));}},500);
 
 if($('v4CoverageRingsToggle'))$('v4CoverageRingsToggle').onchange=e=>v4ToggleRings(e.target.checked);
 $('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;if($('railExecutive'))$('railExecutive').onclick=executiveMode;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
+v5StartupDiagnostics();
 $('exportStores').onclick=()=>csv(storeRows(filtered),'visible_stores.csv');$('exportGaps').onclick=()=>csv(storeRows(stores.filter(s=>!s.covered)),'current_coverage_gaps.csv');
 $('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});initializeProgramSwitcher({
   programs: listPrograms(),
@@ -1146,11 +1218,16 @@ $('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggl
 try {
   init();
 } catch (error) {
-  console.error(error);
-  setDataStatus('error','Data failed to load');
-  const status = document.getElementById("status");
-  if (status) {
-    status.style.display = "flex";
-    status.innerHTML = `<div class="data-error-panel"><b>Map startup failed.</b><br>${String(error.message || error)}<br><br>Confirm that <code>data/stores.json</code>, <code>data/rts.json</code>, and <code>data/metadata.json</code> exist in the GitHub repository and contain valid JSON.</div>`;
+  console.error('[V5] Startup failed',error);
+  setDataStatus('error','Startup failed');
+  const status=document.getElementById('status');
+  if(status){
+    status.style.display='flex';
+    status.innerHTML=`<div class="data-error-panel">
+      <b>Platform startup failed.</b><br><br>
+      ${String(error.message||error)}
+      <br><br>
+      Open the browser console for the exact file and line. The most common causes are an incomplete upload or an older cached JavaScript file.
+    </div>`;
   }
 }

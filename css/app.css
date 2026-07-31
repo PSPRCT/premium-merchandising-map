@@ -1079,3 +1079,14 @@ body.territory-focus .leaflet-marker-pane .territory-focus-marker{
   .v41-quick-grid,.v41-tool-grid,.v41-help-grid,.v41-parity-grid{grid-template-columns:1fr}
   .v41-focus-ribbon{grid-template-columns:1fr}
 }
+
+/* ===== Version 5 production stabilization ===== */
+button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+.v5-status-ok{
+  border:1px solid #86efac;
+  background:#ecfdf5;
+  color:#166534;
+}

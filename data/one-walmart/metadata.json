@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 4.1 \u2014 One Walmart Feature Parity",
+  "platformRelease": "Version 5 \u2014 Production Stabilization",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
