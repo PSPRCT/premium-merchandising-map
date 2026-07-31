@@ -36,5 +36,18 @@
   "addressMatchedCount": 4582,
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
-  "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity"
+  "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
+  "platformRelease": "Version 4.1 \u2014 One Walmart Feature Parity",
+  "featureSet": [
+    "Executive Home",
+    "Coverage Rings",
+    "Gap Heatmap",
+    "Universal Search",
+    "Enhanced Store Popup",
+    "RTS Profile",
+    "Territory Comparison",
+    "Hiring Timeline",
+    "Executive Brief",
+    "Unified Navigation"
+  ]
 }

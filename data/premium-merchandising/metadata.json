@@ -11,11 +11,16 @@
   "managementGroup": "Premium Merchandising",
   "managementGroupID": 245,
   "featureSet": [
-    "Network Optimizer",
-    "Multi-Hire Coverage Planner",
-    "Territory Health Scores",
-    "RTM Dashboard",
-    "Executive Mode"
+    "Executive Home",
+    "Coverage Rings",
+    "Gap Heatmap",
+    "Universal Search",
+    "Enhanced Store Popup",
+    "RTS Profile",
+    "Territory Comparison",
+    "Hiring Timeline",
+    "Executive Brief",
+    "Unified Navigation"
   ],
   "territoryModel": "Radius-based coverage only",
   "coveragePrinciples": [
@@ -26,5 +31,6 @@
     "Out-of-radius stores are not assigned to the nearest RTS",
     "Hiring recommendations are gap-driven"
   ],
-  "platformProgramId": "premium-merchandising"
+  "platformProgramId": "premium-merchandising",
+  "platformRelease": "Version 4.1 \u2014 One Walmart Feature Parity"
 }

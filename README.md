@@ -47,3 +47,10 @@ master is connected.
 - 16 stores remain unmatched
 - Duplicate store numbers were resolved using the existing map coordinates
 - Full match details are in `docs/ONE_WALMART_ADDRESS_MATCH_REPORT.csv`
+
+
+## Version 4.0
+
+Version 4 adds the Executive Experience, grouped platform workspaces, coverage
+rings, uncovered-store heatmap, RTS comparison, executive brief, hiring
+timeline, territory report, and expanded search.

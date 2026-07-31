@@ -773,10 +773,363 @@ function initializeDataStatus(){
  }
 }
 
+
+function v4Model(scope=filtered){
+ return coverageModel(scope);
+}
+function v4Health(scope=filtered){
+ return territoryHealthV2(scope);
+}
+function v4Plan(scope=filtered,limit=10){
+ return gapClustersV2(scope,limit);
+}
+function v4ProgramLabel(){
+ return ACTIVE_PROGRAM?.name || 'Current Program';
+}
+function v4OpenExecutive(){
+ const scope=filtered;
+ const model=v4Model(scope);
+ const health=v4Health(scope);
+ const plan=v4Plan(scope,5);
+ const covered=scope.length-model.gaps.length;
+ const pct=scope.length?covered/scope.length*100:0;
+ const avgWork=health.length?health.reduce((a,x)=>a+x.count,0)/health.length:0;
+ const avgDrive=health.length?health.reduce((a,x)=>a+x.avgDistance,0)/health.length:0;
+ const highest=[...health].sort((a,b)=>b.count-a.count)[0];
+ const risk=[...health].sort((a,b)=>a.score-b.score)[0];
+
+ openModal('Executive Dashboard',`
+  <div class="v4-dashboard">
+   <div class="v4-hero">
+    <h1>${esc(v4ProgramLabel())}</h1>
+    <p>Coverage Intelligence Platform · ${model.rad||Number($('radius').value)}-mile service radius · ${scopeLabel()}</p>
+   </div>
+   <div class="v4-kpi-grid">
+    <div class="v4-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} of ${scope.length.toLocaleString()} stores</span></div>
+    <div class="v4-kpi"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No eligible RTS in radius</span></div>
+    <div class="v4-kpi"><small>Average workload</small><b>${Math.round(avgWork)}</b><span>Stores per RTS service area</span></div>
+    <div class="v4-kpi"><small>Average drive</small><b>${avgDrive.toFixed(1)} mi</b><span>Across RTS service areas</span></div>
+    <div class="v4-kpi"><small>Unique stores</small><b>${model.uniqueStores.length.toLocaleString()}</b><span>Exactly one eligible RTS</span></div>
+    <div class="v4-kpi"><small>Shared stores</small><b>${model.sharedStores.length.toLocaleString()}</b><span>Two or more eligible RTS</span></div>
+    <div class="v4-kpi"><small>Highest workload</small><b>${highest?highest.count:'—'}</b><span>${highest?esc(highest.r.name):'No RTS'}</span></div>
+    <div class="v4-kpi"><small>Highest risk</small><b>${risk?risk.score.toFixed(0):'—'}</b><span>${risk?esc(risk.r.name):'No RTS'}</span></div>
+   </div>
+   <div class="v4-two">
+    <div class="v4-panel"><h3>Top hiring opportunities</h3>
+     ${plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.manager||'')} · ${esc(x.retailer||'')}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+    </div>
+    <div class="v4-panel"><h3>RTS workload leaders</h3>
+     ${[...health].sort((a,b)=>b.count-a.count).slice(0,6).map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b><br>${x.uniqueCount} unique · ${x.sharedCount} shared</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">${x.count}</button></div>`).join('')}
+    </div>
+   </div>
+  </div>
+ `);
+}
+function v4ExecutiveBrief(){
+ const scope=filtered,model=v4Model(scope),health=v4Health(scope),plan=v4Plan(scope,3);
+ const covered=scope.length-model.gaps.length,pct=scope.length?covered/scope.length*100:0;
+ const highest=[...health].sort((a,b)=>b.count-a.count)[0];
+ const risk=[...health].sort((a,b)=>a.score-b.score)[0];
+ const after3=scope.length?Math.min(scope.length,covered+plan.reduce((a,x)=>a+x.gain,0))/scope.length*100:0;
+ const text=`${v4ProgramLabel()} currently covers ${pct.toFixed(1)}% of the ${scope.length.toLocaleString()} stores in the selected scope, leaving ${model.gaps.length.toLocaleString()} network gaps. ${model.uniqueStores.length.toLocaleString()} stores depend on exactly one eligible RTS, while ${model.sharedStores.length.toLocaleString()} have shared coverage.
+
+${highest?`${highest.r.name} has the highest current in-radius workload at ${highest.count} stores.`:''} ${risk?`${risk.r.name} has the lowest current coverage-health score at ${risk.score.toFixed(0)} out of 100.`:''}
+
+The strongest modeled hiring opportunity is ${plan[0]?`${plan[0].city}, ${plan[0].state||''}, with approximately ${plan[0].gain} net-new stores`:'not available in the current scope'}. The top three modeled placements would increase projected coverage to approximately ${after3.toFixed(1)}%.
+
+Recommended leadership action: validate the highest-value gap clusters, review high unique-dependency service areas, and confirm staffing feasibility before finalizing placement decisions.`;
+ openModal('Executive Brief',`<div class="v4-brief">${esc(text)}</div><div class="actions"><button class="btn" onclick="navigator.clipboard.writeText(${JSON.stringify(text)})">Copy Brief</button><button class="btn primary" onclick="window.print()">Print / Save PDF</button></div>`);
+}
+function v4CompareRts(){
+ const options=activeRTS().map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
+ openModal('Compare RTS',`
+  <div class="tools"><label>RTS A <select id="v4CmpA">${options}</select></label><label>RTS B <select id="v4CmpB">${options}</select></label><button class="btn primary" onclick="window.v4RenderCompare()">Compare</button></div>
+  <div id="v4CompareResults"></div>
+ `);
+ const b=$('v4CmpB');if(b&&b.options.length>1)b.selectedIndex=1;
+ v4RenderCompare();
+}
+window.v4RenderCompare=()=>{
+ const aId=$('v4CmpA')?.value,bId=$('v4CmpB')?.value;
+ const rows=v4Health(stores);
+ const a=rows.find(x=>String(x.r.id)===String(aId)),b=rows.find(x=>String(x.r.id)===String(bId));
+ const el=$('v4CompareResults');if(!el||!a||!b)return;
+ const card=x=>`<div class="v4-compare-card"><h3>${esc(x.r.name)}</h3>
+  <div class="v4-score-grid">
+   <div class="v4-score"><b>${x.count}</b><span>Stores in radius</span></div>
+   <div class="v4-score"><b>${x.uniqueCount}</b><span>Unique</span></div>
+   <div class="v4-score"><b>${x.sharedCount}</b><span>Shared</span></div>
+   <div class="v4-score"><b>${x.avgDistance.toFixed(1)}</b><span>Avg miles</span></div>
+   <div class="v4-score"><b>${x.farthest.toFixed(1)}</b><span>Farthest miles</span></div>
+   <div class="v4-score"><b>${x.score.toFixed(0)}</b><span>Health score</span></div>
+  </div></div>`;
+ el.innerHTML=`<div class="v4-compare-grid">${card(a)}${card(b)}</div>`;
+};
+function v4CoverageTimeline(){
+ const scope=filtered,model=v4Model(scope),covered=scope.length-model.gaps.length,plan=v4Plan(scope,10);
+ const steps=[0,1,2,3,5,10].map(n=>{
+   const gain=plan.slice(0,n).reduce((a,x)=>a+x.gain,0);
+   const pct=scope.length?Math.min(scope.length,covered+gain)/scope.length*100:0;
+   return {n,pct,gain};
+ });
+ openModal('Coverage Timeline',`
+  <div class="callout">Projected coverage assumes each modeled hire covers the largest remaining uncovered cluster and that placements are added sequentially.</div>
+  <div class="v4-timeline">${steps.map(x=>`<div class="v4-timeline-step"><span>${x.n===0?'Today':`+${x.n} RTS`}</span><b>${x.pct.toFixed(1)}%</b><span>${x.n?`+${x.gain.toLocaleString()} stores`:'Current network'}</span></div>`).join('')}</div>
+ `);
+}
+function v4TerritoryReport(){
+ const rows=v4Health(stores);
+ openModal('Territory Report',`
+  <div class="tools"><button class="btn primary" onclick="window.print()">Print / Save PDF</button><button class="btn" onclick="window.v4ExportTerritorySummary()">Export CSV</button></div>
+  <div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores</th><th>Unique</th><th>Shared</th><th>Avg Miles</th><th>Farthest</th><th>Health</th></tr></thead><tbody>
+  ${rows.map(x=>`<tr><td>${esc(x.r.name)}</td><td>${x.count}</td><td>${x.uniqueCount}</td><td>${x.sharedCount}</td><td>${x.avgDistance.toFixed(1)}</td><td>${x.farthest.toFixed(1)}</td><td>${x.score.toFixed(0)} · ${esc(x.health)}</td></tr>`).join('')}
+  </tbody></table></div>`);
+ window._v4TerritoryRows=rows;
+}
+window.v4ExportTerritorySummary=()=>csv((window._v4TerritoryRows||[]).map(x=>({
+ RTS:x.r.name,Email:x.r.email,StoresWithinRadius:x.count,UniqueStores:x.uniqueCount,
+ SharedStores:x.sharedCount,AverageDistanceMiles:x.avgDistance.toFixed(1),
+ FarthestDistanceMiles:x.farthest.toFixed(1),HealthScore:x.score.toFixed(0),Health:x.health
+})),'psp_territory_summary.csv');
+
+function v4ToggleGapHeat(enabled){
+ if(enabled){
+   if(heatLayer)map.removeLayer(heatLayer);
+   const gaps=v4Model(stores).gaps;
+   heatLayer=L.heatLayer(gaps.map(s=>[s.lat,s.lng,1]),{radius:24,blur:18,maxZoom:8}).addTo(map);
+ }else if(heatLayer){map.removeLayer(heatLayer);heatLayer=null;}
+}
+function v4ToggleRings(enabled){
+ ringLayer.clearLayers();
+ if(!enabled)return;
+ const rad=Number($('radius').value);
+ activeRTS().forEach(r=>L.circle([r.lat,r.lng],{radius:rad*1609.344,weight:1.2,fillOpacity:.035,color:'#2563eb'}).addTo(ringLayer));
+}
+function v4RtsProfiles(){
+ const rows=v4Health(stores);
+ openModal('RTS Profiles',`
+  <div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores</th><th>Unique</th><th>Shared</th><th>Avg Drive</th><th>Health</th><th></th></tr></thead><tbody>
+  ${rows.map(x=>`<tr><td>${esc(x.r.name)}</td><td>${x.count}</td><td>${x.uniqueCount}</td><td>${x.sharedCount}</td><td>${x.avgDistance.toFixed(1)} mi</td><td>${x.score.toFixed(0)} · ${esc(x.health)}</td><td><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open</button></td></tr>`).join('')}
+  </tbody></table></div>`);
+}
+window.v4OpenExecutive=v4OpenExecutive;
+window.v4ExecutiveBrief=v4ExecutiveBrief;
+window.v4CompareRts=v4CompareRts;
+window.v4CoverageTimeline=v4CoverageTimeline;
+window.v4TerritoryReport=v4TerritoryReport;
+window.v4RtsProfiles=v4RtsProfiles;
+
+
+const V41_SAVED_VIEWS_KEY='psp_v41_saved_views';
+
+function v41SetSelectValue(id,value){
+ const el=$(id);if(!el)return;
+ [...el.options].forEach(o=>o.selected=(value==='All'?o.value==='All':o.value===value));
+}
+function v41CurrentViewState(){
+ const selected=id=>[...($(id)?.selectedOptions||[])].map(o=>o.value);
+ const center=map.getCenter();
+ return {
+   program:ACTIVE_PROGRAM_ID,
+   filters:{
+     coverage:selected('fCoverage'),
+     retailer:selected('fRetailer'),
+     state:selected('fState'),
+     manager:selected('fManager'),
+     rts:selected('fRts')
+   },
+   radius:Number($('radius')?.value||75),
+   map:{lat:center.lat,lng:center.lng,zoom:map.getZoom()}
+ };
+}
+function v41ApplyViewState(state){
+ if(!state)return;
+ const apply=(id,values)=>{
+   const el=$(id);if(!el)return;
+   const set=new Set(values||[]);
+   [...el.options].forEach(o=>o.selected=set.has(o.value));
+ };
+ apply('fCoverage',state.filters?.coverage);
+ apply('fRetailer',state.filters?.retailer);
+ apply('fState',state.filters?.state);
+ apply('fManager',state.filters?.manager);
+ apply('fRts',state.filters?.rts);
+ if($('radius')&&state.radius){$('radius').value=state.radius;$('radiusLbl').textContent=state.radius}
+ applyFilters();
+ if(state.map)map.setView([state.map.lat,state.map.lng],state.map.zoom);
+}
+function v41CopyViewLink(){
+ const state=v41CurrentViewState();
+ const url=new URL(window.location.href);
+ url.searchParams.set('program',ACTIVE_PROGRAM_ID);
+ url.searchParams.set('view',btoa(unescape(encodeURIComponent(JSON.stringify(state)))));
+ navigator.clipboard.writeText(url.toString()).then(()=>alert('View link copied.'));
+}
+function v41LoadUrlView(){
+ const raw=new URLSearchParams(location.search).get('view');
+ if(!raw)return;
+ try{
+   const state=JSON.parse(decodeURIComponent(escape(atob(raw))));
+   setTimeout(()=>v41ApplyViewState(state),350);
+ }catch(e){console.warn('Could not load shared view',e)}
+}
+function v41SavedViews(){
+ const views=JSON.parse(localStorage.getItem(V41_SAVED_VIEWS_KEY)||'[]');
+ openModal('Saved Views',`
+  <div class="tools"><button class="btn primary" onclick="window.v41SaveCurrentView()">Save Current View</button><button class="btn" onclick="window.v41CopyViewLink()">Copy Current Link</button></div>
+  <div id="v41SavedViewList">${views.length?views.map((v,i)=>`<div class="v41-view-row"><span><b>${esc(v.name)}</b><br><small>${esc(v.programName)} · ${new Date(v.savedAt).toLocaleDateString()}</small></span><button class="btn" onclick="window.v41OpenSavedView(${i})">Open</button><button class="btn" onclick="window.v41DeleteSavedView(${i})">Delete</button></div>`).join(''):'<div class="callout">No saved views yet.</div>'}</div>
+ `);
+}
+window.v41SaveCurrentView=()=>{
+ const name=prompt('Name this view:');if(!name)return;
+ const views=JSON.parse(localStorage.getItem(V41_SAVED_VIEWS_KEY)||'[]');
+ views.push({name,programName:v4ProgramLabel(),savedAt:new Date().toISOString(),state:v41CurrentViewState()});
+ localStorage.setItem(V41_SAVED_VIEWS_KEY,JSON.stringify(views));
+ v41SavedViews();
+};
+window.v41OpenSavedView=i=>{
+ const views=JSON.parse(localStorage.getItem(V41_SAVED_VIEWS_KEY)||'[]'),v=views[i];if(!v)return;
+ if(v.state.program!==ACTIVE_PROGRAM_ID){
+   localStorage.setItem('psp_v41_pending_view',JSON.stringify(v.state));
+   const u=new URL(location.href);u.searchParams.set('program',v.state.program);u.searchParams.delete('view');location.href=u.toString();return;
+ }
+ $('modal').classList.remove('show');v41ApplyViewState(v.state);
+};
+window.v41DeleteSavedView=i=>{
+ const views=JSON.parse(localStorage.getItem(V41_SAVED_VIEWS_KEY)||'[]');views.splice(i,1);
+ localStorage.setItem(V41_SAVED_VIEWS_KEY,JSON.stringify(views));v41SavedViews();
+};
+window.v41CopyViewLink=v41CopyViewLink;
+
+function v41DedicatedAnalysis(){
+ if(ACTIVE_PROGRAM_ID!=='one-walmart'){
+   openModal('Dedicated Team Exposure','<div class="callout">Dedicated P&G, Tyson, and Unilever overlays apply to the One Walmart program. Switch the program selector to One Walmart to use this tool.</div>');return;
+ }
+ const radius=Number($('radius').value),allRts=activeRTS();
+ const teamKeys={'P&G':'PG_WALMART','Tyson':'TYSON_WALMART','Unilever':'UNILEVER_WALMART'};
+ const teams=Object.keys(teamKeys).map(team=>{
+   const teamStores=filtered.filter(s=>(s.dedicatedTeams||[]).includes(team));
+   const eligible=allRts.filter(r=>(r.eligibility||[]).includes(teamKeys[team]));
+   let covered=0,unique=0,shared=0;
+   const gaps=[];
+   teamStores.forEach(s=>{
+     const covering=eligible.filter(r=>hav(s.lat,s.lng,r.lat,r.lng)<=radius);
+     if(!covering.length)gaps.push(s);
+     else{covered++;if(covering.length===1)unique++;else shared++}
+   });
+   return {team,stores:teamStores.length,eligible:eligible.length,covered,gaps,unique,shared,pct:teamStores.length?covered/teamStores.length*100:0};
+ });
+ openModal('Dedicated Team Exposure',`
+  <div class="callout">P&G, Tyson, and Unilever are evaluated against the Acosta RTS eligibility pool using the same ${radius}-mile radius. These overlays do not duplicate physical stores in the core One Walmart total.</div>
+  <div class="v41-parity-grid">
+   ${teams.map(x=>`<div class="v41-parity-card"><small>${esc(x.team)}</small><b>${x.pct.toFixed(1)}%</b><span>${x.covered.toLocaleString()} covered · ${x.gaps.length.toLocaleString()} gaps</span></div>`).join('')}
+  </div>
+  ${teams.map(x=>`<div class="v41-ded-team"><h4>${esc(x.team)}</h4><p>${x.stores.toLocaleString()} overlay stores · ${x.eligible} eligible Acosta RTS · ${x.unique} unique · ${x.shared} shared · ${x.gaps.length} gaps.</p><div style="margin-top:6px"><button class="btn" onclick="window.v41ShowDedicatedTeam('${esc(x.team)}')">Show Gaps</button><button class="btn" onclick="window.v41ExportDedicated('${esc(x.team)}')">Export</button></div></div>`).join('')}
+ `);
+ window._v41Dedicated=teams;
+}
+window.v41ShowDedicatedTeam=team=>{
+ const row=(window._v41Dedicated||[]).find(x=>x.team===team);if(!row)return;
+ highlightLayer.clearLayers();row.gaps.forEach(s=>L.circleMarker([s.lat,s.lng],{radius:6,color:'#dc2626',weight:2,fillOpacity:.75}).addTo(highlightLayer));
+ $('modal').classList.remove('show');if(row.gaps.length)map.fitBounds(row.gaps.map(s=>[s.lat,s.lng]),{padding:[30,30]});
+};
+window.v41ExportDedicated=team=>{
+ const row=(window._v41Dedicated||[]).find(x=>x.team===team);if(!row)return;
+ csv(row.gaps.map(s=>({DedicatedTeam:team,SiteID:s.siteId,StoreNumber:s.storeNumber,Address:s.address,City:s.city,State:s.state,ZIP:s.zip,Manager:s.manager,Market:s.market})),'dedicated_'+team.replace(/\W+/g,'_')+'_gaps.csv');
+};
+
+function v41DedicatedGapsQuick(){
+ v41DedicatedAnalysis();
+}
+function v41OperationalFocus(){
+ const scope=filtered,model=v4Model(scope),health=v4Health(scope),plan=v4Plan(scope,3);
+ const states=Object.values(scope.reduce((o,s)=>{
+   const k=s.state||'Unknown';o[k]??={state:k,total:0,gaps:0};o[k].total++;
+   if(model.gaps.some(g=>g.siteId===s.siteId))o[k].gaps++;return o;
+ },{})).sort((a,b)=>b.gaps-a.gaps);
+ const workload=[...health].sort((a,b)=>b.count-a.count)[0];
+ $('v41FocusScope').textContent=scopeLabel();
+ $('v41FocusGap').textContent=states[0]?`${states[0].state} · ${states[0].gaps.toLocaleString()} gaps`:'No gaps';
+ $('v41FocusWorkload').textContent=workload?`${workload.r.name} · ${workload.count} stores`:'No RTS';
+ $('v41FocusHire').textContent=plan[0]?`${plan[0].city}, ${plan[0].state||''} · +${plan[0].gain}`:'No qualifying cluster';
+ $('v41FocusAction').textContent=model.gaps.length?`Review ${plan[0]?.city||states[0]?.state||'largest gap'}`:'Monitor workload and resiliency';
+}
+function v41OperationalFocusModal(){
+ v41OperationalFocus();
+ const model=v4Model(filtered),plan=v4Plan(filtered,5),health=v4Health(filtered);
+ openModal('Operational Focus Areas',`
+  <div class="callout">This restores the leadership workflow from the prior One Walmart command center: identify the strongest current risk signal, then move directly into gap, manager, RTS, or placement review.</div>
+  <div class="v41-parity-grid">
+   <div class="v41-parity-card"><small>Visible stores</small><b>${filtered.length.toLocaleString()}</b></div>
+   <div class="v41-parity-card"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b></div>
+   <div class="v41-parity-card"><small>RTS reviewed</small><b>${health.length}</b></div>
+  </div>
+  <div class="v4-two">
+   <div class="v4-panel"><h3>Highest-value placements</h3>${plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.manager||'')} · ${esc(x.retailer||'')}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}</div>
+   <div class="v4-panel"><h3>Service areas to review</h3>${health.slice(0,5).map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b><br>${x.count} stores · ${x.uniqueCount} unique · score ${x.score.toFixed(0)}</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open</button></div>`).join('')}</div>
+  </div>
+ `);
+}
+function v41Help(){
+ openModal('Platform Help / Workflow Guide',`
+  <div class="v41-help-grid">
+   <div class="v41-help-card primary"><h4>Recommended One Walmart workflow</h4><ol><li>Search or filter by store, city, state, manager, RTS, market, ZIP, MDM ID, or SiteID.</li><li>Use Operational Focus to identify the strongest visible risk.</li><li>Open Current Gap Finder for concentrated uncovered areas.</li><li>Use Manager Rollups to confirm ownership.</li><li>Use Dedicated Team Exposure for P&G, Tyson, and Unilever.</li><li>Model new RTS placement only after validating the gap story.</li></ol></div>
+   <div class="v41-help-card"><h4>Coverage rules</h4><ul><li>All RTS rows on the applicable roster count in planning.</li><li>Both programs use the selected radius, normally 75 miles.</li><li>One Walmart core stores use the combined One Walmart team.</li><li>Dedicated overlays use the Acosta RTS team.</li><li>Stores may be unique, shared, or gaps.</li></ul></div>
+   <div class="v41-help-card"><h4>Preserved planning tools</h4><ul><li>Current Gap Finder</li><li>Manager Rollups</li><li>Operational Focus Areas</li><li>Dedicated Team Exposure</li><li>Model New RTS Placement</li><li>RTS Territory Profiles</li><li>Resiliency Simulator</li><li>Leadership and printable reports</li></ul></div>
+   <div class="v41-help-card"><h4>Views and exports</h4><ul><li>Copy View Link preserves filters, program, radius, and map location.</li><li>Saved Views are stored in this browser.</li><li>Current gaps, visible stores, territory reports, dedicated gaps, and planning recommendations can be exported.</li></ul></div>
+  </div>
+ `);
+}
+window.v41OperationalFocusModal=v41OperationalFocusModal;
+window.v41DedicatedAnalysis=v41DedicatedAnalysis;
+window.v41Help=v41Help;
+
 function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
 ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
 $('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
-$('executiveModeBtn').onclick=executiveMode;$('networkOptimizerBtn').onclick=networkOptimizer;$('multiHireBtn').onclick=multiHirePlanner;$('healthBtn').onclick=territoryHealthScores;$('rtmDashboardBtn').onclick=rtmDashboard;$('executiveBtn').onclick=executiveDashboard;$('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;if($('railExecutive'))$('railExecutive').onclick=executiveMode;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
+$('executiveModeBtn').onclick=executiveMode;$('networkOptimizerBtn').onclick=networkOptimizer;$('multiHireBtn').onclick=multiHirePlanner;$('healthBtn').onclick=territoryHealthScores;$('rtmDashboardBtn').onclick=rtmDashboard;$('executiveBtn').onclick=executiveDashboard;
+if($('v4ExecutiveHomeBtn'))$('v4ExecutiveHomeBtn').onclick=v4OpenExecutive;
+if($('v4ExecutiveBtn'))$('v4ExecutiveBtn').onclick=v4OpenExecutive;
+if($('v4BriefBtn'))$('v4BriefBtn').onclick=v4ExecutiveBrief;
+if($('v4LeadershipBtn'))$('v4LeadershipBtn').onclick=leadershipReport;
+if($('v4RtmBtn'))$('v4RtmBtn').onclick=rtmDashboard;
+if($('v4GapHeatBtn'))$('v4GapHeatBtn').onclick=()=>{v4ToggleGapHeat(true);};
+if($('v4ProfilesBtn'))$('v4ProfilesBtn').onclick=v4RtsProfiles;
+if($('v4HealthBtn'))$('v4HealthBtn').onclick=territoryHealthScores;
+if($('v4CompareBtn'))$('v4CompareBtn').onclick=v4CompareRts;
+if($('v4HiringBtn'))$('v4HiringBtn').onclick=multiHirePlanner;
+if($('v4TimelineBtn'))$('v4TimelineBtn').onclick=v4CoverageTimeline;
+if($('v4OptimizerBtn'))$('v4OptimizerBtn').onclick=networkOptimizer;
+if($('v4BalancerBtn'))$('v4BalancerBtn').onclick=territoryBalancer;
+if($('v4TerritoryReportBtn'))$('v4TerritoryReportBtn').onclick=v4TerritoryReport;
+if($('v4ExportSummaryBtn'))$('v4ExportSummaryBtn').onclick=()=>csv([{
+ Program:v4ProgramLabel(),Scope:scopeLabel(),Stores:filtered.length,
+ CoveragePercent:(filtered.length?(filtered.length-v4Model(filtered).gaps.length)/filtered.length*100:0).toFixed(1),
+ NetworkGaps:v4Model(filtered).gaps.length,UniqueStores:v4Model(filtered).uniqueStores.length,
+ SharedStores:v4Model(filtered).sharedStores.length
+}],'psp_executive_summary.csv');
+if($('v4GapHeatToggle'))$('v4GapHeatToggle').onchange=e=>v4ToggleGapHeat(e.target.checked);
+if($('v41ShowGapsBtn'))$('v41ShowGapsBtn').onclick=()=>{$('gapsOnly').click();v41OperationalFocus()};
+if($('v41ShowCoveredBtn'))$('v41ShowCoveredBtn').onclick=()=>{$('coveredOnly').click();v41OperationalFocus()};
+if($('v41DedicatedGapsBtn'))$('v41DedicatedGapsBtn').onclick=v41DedicatedGapsQuick;
+if($('v41OperationalFocusBtn'))$('v41OperationalFocusBtn').onclick=v41OperationalFocusModal;
+if($('v41CopyViewBtn'))$('v41CopyViewBtn').onclick=v41CopyViewLink;
+if($('v41SavedViewsBtn'))$('v41SavedViewsBtn').onclick=v41SavedViews;
+if($('v41DedicatedExposureBtn'))$('v41DedicatedExposureBtn').onclick=v41DedicatedAnalysis;
+if($('v41ManagerRollupBtn'))$('v41ManagerRollupBtn').onclick=managerRollups;
+if($('v41GapFinderBtn'))$('v41GapFinderBtn').onclick=gapFinder;
+if($('v41PlacementBtn'))$('v41PlacementBtn').onclick=modelPlacement;
+if($('v41ResiliencyBtn'))$('v41ResiliencyBtn').onclick=resiliencySimulator;
+if($('v41HelpBtn'))$('v41HelpBtn').onclick=v41Help;
+if($('v41FocusRefresh'))$('v41FocusRefresh').onclick=v41OperationalFocus;
+if($('v41FocusGapCard'))$('v41FocusGapCard').onclick=gapFinder;
+if($('v41FocusWorkloadCard'))$('v41FocusWorkloadCard').onclick=territoryHealthScores;
+if($('v41FocusHireCard'))$('v41FocusHireCard').onclick=modelPlacement;
+if($('v41FocusActionCard'))$('v41FocusActionCard').onclick=v41OperationalFocusModal;
+setTimeout(()=>{v41OperationalFocus();v41LoadUrlView();const p=localStorage.getItem('psp_v41_pending_view');if(p){localStorage.removeItem('psp_v41_pending_view');v41ApplyViewState(JSON.parse(p));}},500);
+
+if($('v4CoverageRingsToggle'))$('v4CoverageRingsToggle').onchange=e=>v4ToggleRings(e.target.checked);
+$('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;if($('railExecutive'))$('railExecutive').onclick=executiveMode;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
 $('exportStores').onclick=()=>csv(storeRows(filtered),'visible_stores.csv');$('exportGaps').onclick=()=>csv(storeRows(stores.filter(s=>!s.covered)),'current_coverage_gaps.csv');
 $('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});initializeProgramSwitcher({
   programs: listPrograms(),
