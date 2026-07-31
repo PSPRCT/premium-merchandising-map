@@ -1,24 +1,41 @@
-# PSP Coverage Intelligence Platform v3
+# PSP Coverage Intelligence Platform v3.1
 
-This release converts the Premium Merchandising command center into the first
-active program on a shared PSP analytics platform.
+Both programs are now available from the header program selector.
 
-## Active program
+## Planning roster rule
 
-- Premium Merchandising — fully functional
+Every RTS row present on the applicable roster is included in coverage planning.
+The `ActiveForRouting` source value is retained as metadata but does not remove
+a person from the modeled network.
 
-## Scaffolded program
+## Premium Merchandising
 
-- One Walmart PSP — shared UI ready; routing adapter migration pending
+- Uses the complete Premium Merchandising RTS roster.
+- Every store uses the full Premium RTS pool.
+- Coverage radius: 75 miles.
 
-## Important
+## One Walmart
 
-Version 3 does not silently apply Premium's radius-only logic to One Walmart.
-The One Walmart adapter must preserve its dedicated-team and remote-routing
-business rules.
+- `WM - One Walmart` stores use the complete combined One Walmart roster from
+  `RCT_RTS (25).csv`.
+- P&G, Unilever, and Tyson stores use the complete Acosta roster from
+  `RCT_RTS (24).csv`.
+- Acosta RTS members present in both rosters can support both One Walmart and
+  dedicated-team calculations.
+- Coverage radius: 75 miles.
 
-See:
+## Active One Walmart data
 
-- `docs/ARCHITECTURE.md`
-- `docs/ONE_WALMART_MIGRATION.md`
-- `docs/DEPLOYMENT.md`
+- 4,598 unique physical Walmart stores
+- 7,092 source rows before deduplication
+- P&G and Tyson rows are retained as overlays on the matching SiteID
+- One Walmart core coverage uses the combined One Walmart RTS roster
+- Dedicated-team coverage uses the Acosta RTS roster
+- All roster rows are included in planning
+
+The current workbook includes 761 P&G overlay stores and 1,733 Tyson overlay
+stores. Some stores have both overlays. The workbook supplied for this release
+does not include an Unilever management-group row.
+
+Street address and state fields remain blank until the richer store-address
+master is connected.

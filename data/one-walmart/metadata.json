@@ -1,0 +1,35 @@
+{
+  "application": "PSP Coverage Intelligence Platform",
+  "program": "One Walmart PSP",
+  "release": "Version 3.2 \u2014 Deduplicated Store Universe",
+  "dataUpdated": "2026-07-31",
+  "storeCount": 4598,
+  "rtsCount": 51,
+  "combinedOneWalmartRosterRows": 51,
+  "acostaDedicatedRosterRows": 21,
+  "coverageRadiusMiles": 75,
+  "rosterRule": "Every RTS row on the applicable roster is included",
+  "routingRules": {
+    "ONE_WALMART": "Combined One Walmart RTS roster",
+    "PG_WALMART": "Acosta RTS roster",
+    "UNILEVER_WALMART": "Acosta RTS roster",
+    "TYSON_WALMART": "Acosta RTS roster"
+  },
+  "sourceFiles": [
+    "data (40).xlsx",
+    "RCT_RTS (25).csv",
+    "RCT_RTS (24).csv"
+  ],
+  "sourceRowCount": 7092,
+  "uniqueSiteCount": 4598,
+  "sourceManagementGroupRows": {
+    "WM - One Walmart": 4598,
+    "WM - DRT - P&G": 761,
+    "WM - DRT - Tyson": 1733
+  },
+  "dedicatedOverlayStoreCounts": {
+    "P&G": 761,
+    "Tyson": 1733
+  },
+  "storeModel": "One physical store per SiteID. P&G, Tyson, and Unilever are retained as dedicated-team overlays on the One Walmart store record."
+}

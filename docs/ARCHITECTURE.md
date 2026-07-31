@@ -24,7 +24,7 @@ Uses a radius-based coverage model:
 
 ### One Walmart
 
-The adapter is scaffolded but intentionally not implemented with Premium rules.
+The One Walmart adapter is active and applies team-specific RTS eligibility.
 It must preserve:
 
 - shared One Walmart PSP routing,

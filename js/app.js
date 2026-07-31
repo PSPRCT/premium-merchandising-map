@@ -8,13 +8,19 @@ import {
 } from "../core/coverage-engine.js";
 import { initializeProgramSwitcher } from "../modules/program-switcher.js";
 
-const ACTIVE_PROGRAM_ID = "premium-merchandising";
+const requestedProgramId =
+  new URLSearchParams(window.location.search).get("program") ||
+  localStorage.getItem("psp_active_program") ||
+  "premium-merchandising";
+const ACTIVE_PROGRAM_ID = requestedProgramId;
 const ACTIVE_PROGRAM = getProgram(ACTIVE_PROGRAM_ID);
 const {
   stores: RAW_STORES,
   rts: RTS,
   metadata: DATA_METADATA
 } = await loadProgramData(ACTIVE_PROGRAM);
+const PROGRAM_ELIGIBILITY =
+  ACTIVE_PROGRAM.adapter?.isRtsEligibleForStore || (() => true);
 const DATA_WARNINGS = [];
 const HOME = ACTIVE_PROGRAM.home;
 const $=x=>document.getElementById(x), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -403,7 +409,8 @@ function coverageModel(scope=stores){
  return buildCoverageModel({
    stores: scope,
    rts: RTS,
-   radiusMiles: Number($('radius').value)
+   radiusMiles: Number($('radius').value),
+   isRtsEligibleForStore: PROGRAM_ELIGIBILITY
  });
 }
 
@@ -411,7 +418,8 @@ function territoryHealthV2(scope=filtered){
  return buildTerritoryHealth({
    stores: scope,
    rts: RTS,
-   radiusMiles: Number($('radius').value)
+   radiusMiles: Number($('radius').value),
+   isRtsEligibleForStore: PROGRAM_ELIGIBILITY
  }).map(item=>({
    ...item,
    r:item.rts,
@@ -427,7 +435,8 @@ function gapClustersV2(scope=filtered,limit=25){
    stores: scope,
    rts: RTS,
    radiusMiles: Number($('radius').value),
-   limit
+   limit,
+   isRtsEligibleForStore: PROGRAM_ELIGIBILITY
  });
 }
 
@@ -754,8 +763,8 @@ function formatDataDate(value){
 }
 function initializeDataStatus(){
  const updated=formatDataDate(DATA_METADATA?.dataUpdated);
- const activeCount=RTS.filter(r=>r.active).length;
- const base=`Updated ${updated} · ${RAW_STORES.length.toLocaleString()} stores · ${activeCount.toLocaleString()} active RTS`;
+ const activeCount=RTS.length;
+ const base=`${ACTIVE_PROGRAM.name} · Updated ${updated} · ${RAW_STORES.length.toLocaleString()} stores · ${activeCount.toLocaleString()} roster RTS`;
  if(DATA_WARNINGS?.length){
    console.warn('Data validation warnings:',DATA_WARNINGS);
    setDataStatus('warning',`${base} · data count warning`);
@@ -773,25 +782,11 @@ $('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggl
   programs: listPrograms(),
   activeProgramId: ACTIVE_PROGRAM_ID,
   onProgramSelected(program) {
-    if (program.id === ACTIVE_PROGRAM_ID) return;
-
-    const message = program.available
-      ? `${program.name} is available but requires a page reload.`
-      : program.unavailableMessage;
-
-    openModal(program.name, `
-      <div class="platform-message">
-        <b>${esc(program.name)}</b><br><br>
-        ${esc(message)}
-        <br><br>
-        The shared Version 3 platform is active. Premium Merchandising is the
-        first migrated program. One Walmart will use the same dashboards,
-        reports, visual layers, and planning shell, but it requires its own
-        routing adapter for dedicated teams and remote-routing rules.
-      </div>
-    `);
-
-    document.getElementById("programSelect").value = ACTIVE_PROGRAM_ID;
+    if (!program || program.id === ACTIVE_PROGRAM_ID) return;
+    localStorage.setItem("psp_active_program", program.id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("program", program.id);
+    window.location.href = url.toString();
   }
 });
 

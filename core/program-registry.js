@@ -1,9 +1,11 @@
 import premiumProgram from "../programs/premium-merchandising/config.js";
 import oneWalmartProgram from "../programs/one-walmart/config.js";
+import { premiumAdapter } from "../programs/premium-merchandising/adapter.js";
+import { oneWalmartAdapter } from "../programs/one-walmart/adapter.js";
 
 const programs = new Map([
-  [premiumProgram.id, premiumProgram],
-  [oneWalmartProgram.id, oneWalmartProgram]
+  [premiumProgram.id, { ...premiumProgram, adapter: premiumAdapter }],
+  [oneWalmartProgram.id, { ...oneWalmartProgram, adapter: oneWalmartAdapter }]
 ]);
 
 export function getProgram(programId) {

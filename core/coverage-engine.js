@@ -1,7 +1,13 @@
 import { haversineMiles } from "./geo.js";
 
-export function buildCoverageModel({ stores, rts, radiusMiles }) {
-  const activeRts = rts.filter(rtsMember => rtsMember.active);
+export function buildCoverageModel({
+  stores,
+  rts,
+  radiusMiles,
+  isRtsEligibleForStore = () => true
+}) {
+  // Version 3.1 planning rule: every roster row counts.
+  const activeRts = [...rts];
 
   const storeCoverage = stores.map(store => {
     const coveringRts = activeRts
@@ -14,7 +20,11 @@ export function buildCoverageModel({ stores, rts, radiusMiles }) {
           rtsMember.lng
         )
       }))
-      .filter(rtsMember => rtsMember.distance <= radiusMiles)
+      .filter(
+        rtsMember =>
+          rtsMember.distance <= radiusMiles &&
+          isRtsEligibleForStore(store, rtsMember)
+      )
       .sort((a, b) => a.distance - b.distance);
 
     return {
@@ -74,8 +84,18 @@ export function buildCoverageModel({ stores, rts, radiusMiles }) {
   };
 }
 
-export function buildTerritoryHealth({ stores, rts, radiusMiles }) {
-  const model = buildCoverageModel({ stores, rts, radiusMiles });
+export function buildTerritoryHealth({
+  stores,
+  rts,
+  radiusMiles,
+  isRtsEligibleForStore = () => true
+}) {
+  const model = buildCoverageModel({
+    stores,
+    rts,
+    radiusMiles,
+    isRtsEligibleForStore
+  });
   const counts = model.byRts.map(item => item.count);
   const averageCount =
     counts.length > 0
@@ -133,9 +153,15 @@ export function buildGapPlacementPlan({
   rts,
   radiusMiles,
   limit = 20,
-  minimumGain = 3
+  minimumGain = 3,
+  isRtsEligibleForStore = () => true
 }) {
-  let remaining = buildCoverageModel({ stores, rts, radiusMiles }).gaps;
+  let remaining = buildCoverageModel({
+    stores,
+    rts,
+    radiusMiles,
+    isRtsEligibleForStore
+  }).gaps;
   const recommendations = [];
 
   for (
