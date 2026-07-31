@@ -1,6 +1,6 @@
 {
   "application": "Premium Merchandising Coverage Command Center",
-  "release": "Sprint 6 Radius Model Calibration",
+  "release": "Sprint 7 \u2014 Premium Merchandising Coverage Model v2",
   "storeCount": 9473,
   "rtsCount": 45,
   "coverageRadiusMiles": 75,
@@ -17,5 +17,13 @@
     "RTM Dashboard",
     "Executive Mode"
   ],
-  "territoryModel": "All stores within selected RTS radius; uncovered stores are network gaps"
+  "territoryModel": "Radius-based coverage only",
+  "coveragePrinciples": [
+    "RTS workload equals all stores within selected radius",
+    "Unique coverage means exactly one RTS is in range",
+    "Shared coverage means two or more RTS are in range",
+    "Network gaps have no active RTS in range",
+    "Out-of-radius stores are not assigned to the nearest RTS",
+    "Hiring recommendations are gap-driven"
+  ]
 }

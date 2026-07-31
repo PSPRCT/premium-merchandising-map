@@ -264,50 +264,69 @@ function scopeLabel(){
  return p.length?p.join(' · '):'All Premium Merchandising stores';
 }
 function territoryBalanceRows(scope=currentScope()){
- const serving=activeRTS().filter(r=>scope.some(s=>s.nearest[0]?.id===r.id));
- const avg=scope.length/Math.max(1,serving.length);
- return serving.map(r=>{
-   const owned=scope.filter(s=>s.nearest[0]?.id===r.id);
-   const covered=owned.filter(s=>s.covered).length,outside=owned.length-covered;
-   const avgDist=owned.length?owned.reduce((a,s)=>a+(s.nearest[0]?.distance||0),0)/owned.length:0;
-   const ratio=owned.length/Math.max(1,avg);
-   const backupRisk=owned.filter(s=>!s.nearest[1]||s.nearest[1].distance>Number($('radius').value)).length;
+ const rows=territoryHealthV2(scope);
+ const avg=rows.length?rows.reduce((a,x)=>a+x.count,0)/rows.length:0;
+
+ return rows.map(x=>{
    let level='good',action='Balanced — continue monitoring.';
-   if(ratio>=1.5||outside>=80||backupRisk>=70){level='high';action='Evaluate added RTS capacity, boundary adjustment, or a new placement near the largest uncovered concentration.'}
-   else if(ratio>=1.2||outside>=35||backupRisk>=30){level='watch';action='Review uncovered edge stores and neighboring RTS capacity before the next staffing decision.'}
-   else if(ratio<=.5){level='watch';action='Light territory: review whether this RTS can absorb nearby stores or support a neighboring high-load territory.'}
-   return {r,owned:owned.length,covered,outside,coverage:owned.length?covered/owned.length*100:0,avgDist,ratio,backupRisk,level,action};
- }).sort((a,b)=>({high:2,watch:1,good:0}[b.level]-{high:2,watch:1,good:0}[a.level])||b.outside-a.outside);
+   if(x.ratio>=1.55 || (x.uniqueCount>=150 && x.uniqueShare>=80)){
+     level='high';
+     action='High in-radius workload or unique dependency. Review capacity and consider placing an additional RTS near this service area.';
+   }else if(x.ratio>=1.25 || x.avgDistance>=42 || (x.uniqueCount>=100 && x.uniqueShare>=75)){
+     level='watch';
+     action='Review in-radius workload, drive distance, and unique dependency. Additional nearby coverage may improve resiliency.';
+   }else if(x.ratio<=.45){
+     level='watch';
+     action='Light in-radius workload. Review whether this RTS can support nearby shared coverage or adjacent future expansion.';
+   }
+
+   return {
+     r:x.r,
+     owned:x.count,
+     covered:x.count,
+     outside:0,
+     coverage:100,
+     avgDist:x.avgDistance,
+     ratio:x.ratio,
+     backupRisk:x.uniqueCount,
+     uniqueCount:x.uniqueCount,
+     sharedCount:x.sharedCount,
+     uniqueShare:x.uniqueShare,
+     level,
+     action
+   };
+ }).sort((a,b)=>({high:2,watch:1,good:0}[b.level]-{high:2,watch:1,good:0}[a.level])||b.owned-a.owned);
 }
 function territoryBalancer(){
- const rows=territoryBalanceRows(),high=rows.filter(x=>x.level==='high').length,watch=rows.filter(x=>x.level==='watch').length;
+ const scope=currentScope();
+ const rows=territoryBalanceRows(scope);
+ const high=rows.filter(x=>x.level==='high').length;
+ const watch=rows.filter(x=>x.level==='watch').length;
  const avg=rows.length?rows.reduce((a,x)=>a+x.owned,0)/rows.length:0;
+ const model=coverageModel(scope);
+
  openModal('Territory Balancer',`
- <div class="callout"><b>Scope:</b> ${esc(scopeLabel())}. Workload uses stores within radius in the filtered scope. Recommendations are planning guidance only.</div>
+ <div class="callout"><b>Scope:</b> ${esc(scopeLabel())}. This tool evaluates only stores inside each RTS service radius. Network gaps are shown separately and are not assigned to an existing RTS.</div>
  <div class="balance-grid">
-  <div class="balance-card"><small>Serving RTS</small><b>${rows.length}</b><span>RTS represented in scope</span></div>
-  <div class="balance-card"><small>Average territory</small><b>${Math.round(avg)}</b><span>Stores within radius</span></div>
-  <div class="balance-card"><small>High priority</small><b>${high}</b><span>Capacity or gap review</span></div>
-  <div class="balance-card"><small>Watch list</small><b>${watch}</b><span>Monitor or rebalance</span></div>
+  <div class="balance-card"><small>Active RTS</small><b>${rows.length}</b><span>Included in this scope</span></div>
+  <div class="balance-card"><small>Average in-radius workload</small><b>${Math.round(avg)}</b><span>Stores within ${model.rad} miles</span></div>
+  <div class="balance-card"><small>High priority</small><b>${high}</b><span>Capacity or resiliency review</span></div>
+  <div class="balance-card"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No active RTS within ${model.rad} miles</span></div>
  </div>
  <div class="tools"><button class="btn" onclick="window.exportBalance()">Export Balance Review</button></div>
- ${rows.map(x=>`<div class="balance-rec ${x.level}"><h4>${esc(x.r.name)} — ${x.owned} stores within radius</h4><p><b>${x.coverage.toFixed(1)}% radius coverage</b> · ${x.outside} outside radius · ${x.avgDist.toFixed(1)} mi average distance · ${x.backupRisk} without backup RTS inside radius.</p><p>${esc(x.action)}</p><div style="margin-top:6px"><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open Territory</button></div></div>`).join('')}`);
+ ${rows.map(x=>`<div class="balance-rec ${x.level}">
+   <h4>${esc(x.r.name)} — ${x.owned} stores within radius</h4>
+   <p><b>${x.uniqueCount} unique</b> · ${x.sharedCount} shared · ${x.avgDist.toFixed(1)} mi average drive · ${x.uniqueShare.toFixed(1)}% uniquely dependent.</p>
+   <p>${esc(x.action)}</p>
+   <div style="margin-top:6px"><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open Territory</button></div>
+ </div>`).join('')}
+ `);
  window._balanceRows=rows;
 }
-window.exportBalance=()=>csv((window._balanceRows||[]).map(x=>({RTS:x.r.name,Email:x.r.email,NearestOwned:x.owned,Covered:x.covered,OutsideRadius:x.outside,CoveragePercent:x.coverage.toFixed(1),AverageDistanceMiles:x.avgDist.toFixed(1),BackupRiskStores:x.backupRisk,Priority:x.level,Recommendation:x.action})),'premium_merchandising_territory_balance.csv');
+window.exportBalance=()=>csv((window._balanceRows||[]).map(x=>({RTS:x.r.name,Email:x.r.email,NearestOwned:x.owned,Covered:x.covered,UniqueStores:x.uniqueCount,SharedStores:x.sharedCount,UniqueSharePercent:x.uniqueShare.toFixed(1),AverageDistanceMiles:x.avgDist.toFixed(1),Priority:x.level,Recommendation:x.action})),'premium_merchandising_territory_balance.csv');
 
 function buildHiringPlan(scope=currentScope(),limit=20){
- let uncovered=scope.filter(s=>!s.covered),chosen=[];
- for(let i=0;i<limit&&uncovered.length;i++){
-   let best=null;
-   for(const c of uncovered){const gain=uncovered.filter(s=>hav(c.lat,c.lng,s.lat,s.lng)<=75);if(!best||gain.length>best.gain.length)best={c,gain}}
-   if(!best||best.gain.length<5)break;
-   const managers=Object.entries(best.gain.reduce((o,s)=>(o[s.manager||'Not listed']=(o[s.manager||'Not listed']||0)+1,o),{})).sort((a,b)=>b[1]-a[1]);
-   const retailers=Object.entries(best.gain.reduce((o,s)=>(o[s.retailer||'Unknown']=(o[s.retailer||'Unknown']||0)+1,o),{})).sort((a,b)=>b[1]-a[1]);
-   chosen.push({rank:i+1,lat:best.c.lat,lng:best.c.lng,city:best.c.city,state:best.c.state,gain:best.gain.length,topManager:managers[0]?.[0]||'',topRetailer:retailers[0]?.[0]||''});
-   const ids=new Set(best.gain.map(s=>s.siteId));uncovered=uncovered.filter(s=>!ids.has(s.siteId));
- }
- return chosen;
+ return gapClustersV2(scope,limit);
 }
 function hiringRecommendationPlan(){
  const scope=currentScope(),currentCovered=scope.filter(s=>s.covered).length,plan=buildHiringPlan(scope,20);let cumulative=0;
@@ -325,24 +344,157 @@ window.showHiringPlanOnMap=()=>{
 };
 
 function leadershipReport(){
- const scope=currentScope(),covered=scope.filter(s=>s.covered).length,gaps=scope.length-covered,pct=scope.length?covered/scope.length*100:0;
- const high=territoryBalanceRows(scope).filter(x=>x.level==='high').slice(0,8);
- const states=Object.values(scope.reduce((o,s)=>{const k=s.state||'Unknown';o[k]??={name:k,total:0,gaps:0};o[k].total++;if(!s.covered)o[k].gaps++;return o},{})).sort((a,b)=>b.gaps-a.gaps).slice(0,8);
- const plan=buildHiringPlan(scope,8),serving=new Set(scope.map(s=>s.nearest[0]?.id).filter(Boolean)).size;
+ const scope=currentScope();
+ const model=coverageModel(scope);
+ const covered=scope.length-model.gaps.length;
+ const pct=scope.length?covered/scope.length*100:0;
+ const health=territoryHealthV2(scope);
+ const high=health.filter(x=>x.score<68).slice(0,8);
+
+ const states=Object.values(scope.reduce((o,s)=>{
+   const k=s.state||'Unknown';o[k]??={name:k,total:0,gaps:0};o[k].total++;
+   if(model.gaps.some(g=>g.siteId===s.siteId))o[k].gaps++;
+   return o;
+ },{})).sort((a,b)=>b.gaps-a.gaps).slice(0,8);
+
+ const plan=gapClustersV2(scope,8);
+
  openModal('Printable Leadership Report',`
  <div class="report-actions"><button class="btn primary" onclick="window.print()">Print / Save as PDF</button><button class="btn" onclick="window.exportLeadershipSummary()">Export Summary CSV</button></div>
  <div class="report-shell">
-  <div class="report-header"><h1>Premium Merchandising RTS Coverage Summary</h1><p>Scope: ${esc(scopeLabel())} · Coverage radius: ${$('radius').value} miles</p></div>
-  <div class="exec-grid"><div class="exec-kpi"><small>Stores reviewed</small><b>${scope.length.toLocaleString()}</b><span>Current filtered scope</span></div><div class="exec-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered</span></div><div class="exec-kpi"><small>Current gaps</small><b>${gaps.toLocaleString()}</b><span>Outside selected radius</span></div><div class="exec-kpi"><small>Serving RTS</small><b>${serving}</b><span>Nearest RTS in scope</span></div></div>
-  <section class="report-section"><h2>Leadership interpretation</h2><div class="report-callout">${pct>=80?'Coverage is broadly stable. Focus on isolated edge gaps, backup coverage, and workload balance.':pct>=60?'Coverage is mixed. Target concentrated gaps and high-load territories.':'Coverage is materially constrained. Prioritize concentrated hiring opportunities and high-load RTS territories.'}</div></section>
+  <div class="report-header"><h1>Premium Merchandising RTS Coverage Summary</h1><p>Scope: ${esc(scopeLabel())} · Radius: ${model.rad} miles · Coverage Model v2</p></div>
+  <div class="exec-grid">
+   <div class="exec-kpi"><small>Stores reviewed</small><b>${scope.length.toLocaleString()}</b><span>Current filtered scope</span></div>
+   <div class="exec-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered</span></div>
+   <div class="exec-kpi"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No RTS in range</span></div>
+   <div class="exec-kpi"><small>Shared stores</small><b>${model.sharedStores.length.toLocaleString()}</b><span>Two or more RTS in range</span></div>
+  </div>
+  <section class="report-section"><h2>Leadership interpretation</h2><div class="report-callout">${pct>=80?'Coverage is broadly stable. Focus on workload balance, unique dependency, and isolated remaining gaps.':pct>=60?'Coverage is mixed. Target concentrated network gaps and high in-radius workloads.':'Coverage is materially constrained. Prioritize new RTS placement in the highest-value gap clusters.'}</div></section>
   <section class="report-section"><h2>Highest-gap states</h2><table><thead><tr><th>State</th><th>Stores</th><th>Gaps</th><th>Coverage</th></tr></thead><tbody>${states.map(x=>`<tr><td>${esc(x.name)}</td><td>${x.total}</td><td>${x.gaps}</td><td>${((x.total-x.gaps)/x.total*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table></section>
-  <section class="report-section"><h2>RTS territories requiring review</h2>${high.length?high.map(x=>`<div class="balance-rec ${x.level}"><h4>${esc(x.r.name)}</h4><p>${x.owned} stores within radius · ${x.coverage.toFixed(1)}% radius coverage · ${x.outside} outside radius. ${esc(x.action)}</p></div>`).join(''):'<p>No high-priority territories were identified in this scope.</p>'}</section>
-  <section class="report-section"><h2>Top hiring opportunities</h2><table><thead><tr><th>Rank</th><th>Suggested Area</th><th>Net-New Stores</th><th>Primary Manager</th><th>Primary Retailer</th></tr></thead><tbody>${plan.map(x=>`<tr><td>${x.rank}</td><td>${esc(x.city)}, ${esc(x.state)}</td><td>${x.gain}</td><td>${esc(x.topManager)}</td><td>${esc(x.topRetailer)}</td></tr>`).join('')}</tbody></table></section>
+  <section class="report-section"><h2>RTS service areas requiring review</h2>${high.length?high.map(x=>`<div class="balance-rec ${x.cls==='critical'?'high':'watch'}"><h4>${esc(x.r.name)}</h4><p>${x.count} stores within radius · ${x.uniqueCount} unique · ${x.sharedCount} shared · ${x.avgDistance.toFixed(1)} mi average drive.</p></div>`).join(''):'<p>No service areas were flagged under the current scope.</p>'}</section>
+  <section class="report-section"><h2>Top hiring opportunities</h2><table><thead><tr><th>Rank</th><th>Suggested Area</th><th>Net-New Stores</th><th>Primary Manager</th><th>Primary Retailer</th></tr></thead><tbody>${plan.map(x=>`<tr><td>${x.rank}</td><td>${esc(x.city)}, ${esc(x.state)}</td><td>${x.gain}</td><td>${esc(x.manager)}</td><td>${esc(x.retailer)}</td></tr>`).join('')}</tbody></table></section>
  </div>`);
- window._leadershipSummary=[{Scope:scopeLabel(),Stores:scope.length,Covered:covered,Gaps:gaps,CoveragePercent:pct.toFixed(1),ServingRTS:serving,HighPriorityTerritories:high.length,TopHiringArea:plan[0]?`${plan[0].city}, ${plan[0].state}`:'',TopHiringNetNew:plan[0]?.gain||0}];
+ window._leadershipSummary=[{
+   Scope:scopeLabel(),Stores:scope.length,Covered:covered,NetworkGaps:model.gaps.length,
+   CoveragePercent:pct.toFixed(1),UniqueStores:model.uniqueStores.length,SharedStores:model.sharedStores.length,
+   TopHiringArea:plan[0]?`${plan[0].city}, ${plan[0].state}`:'',TopHiringNetNew:plan[0]?.gain||0
+ }];
 }
 window.exportLeadershipSummary=()=>csv(window._leadershipSummary||[],'premium_merchandising_leadership_summary.csv');
 
+
+
+function coverageModel(scope=stores){
+ const rad=Number($('radius').value);
+ const active=activeRTS();
+
+ const storeCoverage=scope.map(s=>{
+   const covering=active
+     .map(r=>({...r,distance:hav(s.lat,s.lng,r.lat,r.lng)}))
+     .filter(r=>r.distance<=rad)
+     .sort((a,b)=>a.distance-b.distance);
+   return {
+     store:s,
+     covering,
+     coverageType:covering.length===0?'Gap':covering.length===1?'Unique':'Shared'
+   };
+ });
+
+ const byRts=active.map(r=>{
+   const entries=storeCoverage.filter(x=>x.covering.some(c=>c.id===r.id));
+   const unique=entries.filter(x=>x.coverageType==='Unique');
+   const shared=entries.filter(x=>x.coverageType==='Shared');
+   const distances=entries.map(x=>hav(x.store.lat,x.store.lng,r.lat,r.lng));
+   return {
+     r,
+     entries,
+     stores:entries.map(x=>x.store),
+     count:entries.length,
+     uniqueCount:unique.length,
+     sharedCount:shared.length,
+     avgDistance:distances.length?distances.reduce((a,b)=>a+b,0)/distances.length:0,
+     farthest:distances.length?Math.max(...distances):0
+   };
+ });
+
+ const gaps=storeCoverage.filter(x=>x.coverageType==='Gap').map(x=>x.store);
+ const uniqueStores=storeCoverage.filter(x=>x.coverageType==='Unique').map(x=>x.store);
+ const sharedStores=storeCoverage.filter(x=>x.coverageType==='Shared').map(x=>x.store);
+
+ return {rad,active,storeCoverage,byRts,gaps,uniqueStores,sharedStores};
+}
+
+function territoryHealthV2(scope=filtered){
+ const model=coverageModel(scope);
+ const counts=model.byRts.map(x=>x.count);
+ const avg=counts.length?counts.reduce((a,b)=>a+b,0)/counts.length:0;
+
+ return model.byRts.map(x=>{
+   const ratio=x.count/Math.max(1,avg);
+   const uniqueShare=x.count?x.uniqueCount/x.count*100:0;
+   let score=100;
+
+   // Workload and travel only; no penalty for external network gaps.
+   if(x.avgDistance>50)score-=20;
+   else if(x.avgDistance>40)score-=12;
+   else if(x.avgDistance>30)score-=6;
+
+   if(ratio>1.65)score-=20;
+   else if(ratio>1.35)score-=12;
+   else if(ratio<.40)score-=8;
+
+   if(uniqueShare>85 && x.uniqueCount>100)score-=12;
+   else if(uniqueShare>70 && x.uniqueCount>75)score-=6;
+
+   score=Math.max(0,Math.min(100,score));
+
+   let health='Excellent',cls='excellent';
+   if(score<50){health='Needs Attention';cls='critical'}
+   else if(score<68){health='Fair';cls='watch'}
+   else if(score<84){health='Good';cls='good'}
+
+   return {...x,ratio,uniqueShare,score,health,cls};
+ }).sort((a,b)=>a.score-b.score||b.count-a.count);
+}
+
+function gapClustersV2(scope=filtered,limit=25){
+ const model=coverageModel(scope);
+ let remaining=[...model.gaps];
+ const out=[];
+
+ for(let i=0;i<limit && remaining.length;i++){
+   let best=null;
+   for(const c of remaining){
+     const gain=remaining.filter(s=>hav(c.lat,c.lng,s.lat,s.lng)<=75);
+     if(!best||gain.length>best.gain.length)best={center:c,gain};
+   }
+   if(!best||best.gain.length<3)break;
+
+   const managers=Object.entries(best.gain.reduce((o,s)=>{
+     const k=s.manager||'Not listed';o[k]=(o[k]||0)+1;return o;
+   },{})).sort((a,b)=>b[1]-a[1]);
+
+   const retailers=Object.entries(best.gain.reduce((o,s)=>{
+     const k=s.retailer||'Unknown';o[k]=(o[k]||0)+1;return o;
+   },{})).sort((a,b)=>b[1]-a[1]);
+
+   out.push({
+     rank:i+1,
+     lat:best.center.lat,
+     lng:best.center.lng,
+     city:best.center.city,
+     state:best.center.state,
+     gain:best.gain.length,
+     stores:best.gain,
+     manager:managers[0]?.[0]||'',
+     retailer:retailers[0]?.[0]||''
+   });
+
+   const ids=new Set(best.gain.map(s=>s.siteId));
+   remaining=remaining.filter(s=>!ids.has(s.siteId));
+ }
+ return out;
+}
 
 function s6Scope(){return filtered}
 function s6ScopeName(){return scopeLabel ? scopeLabel() : 'Current filtered scope'}
@@ -355,27 +507,7 @@ function s6TerritoryData(scope=s6Scope()){
 }
 
 function s6CandidatePlan(scope=s6Scope(),maxHires=10){
- let uncovered=scope.filter(s=>!s.covered);
- const results=[];
- for(let i=0;i<maxHires && uncovered.length;i++){
-   let best=null;
-   // Candidate locations are uncovered store coordinates.
-   for(const c of uncovered){
-     const gain=uncovered.filter(s=>hav(c.lat,c.lng,s.lat,s.lng)<=75);
-     if(!best||gain.length>best.gain.length)best={c,gain};
-   }
-   if(!best||best.gain.length<3)break;
-   const managers=Object.entries(best.gain.reduce((o,s)=>(o[s.manager||'Not listed']=(o[s.manager||'Not listed']||0)+1,o),{})).sort((a,b)=>b[1]-a[1]);
-   const retailers=Object.entries(best.gain.reduce((o,s)=>(o[s.retailer||'Unknown']=(o[s.retailer||'Unknown']||0)+1,o),{})).sort((a,b)=>b[1]-a[1]);
-   results.push({
-     rank:i+1,lat:best.c.lat,lng:best.c.lng,city:best.c.city,state:best.c.state,
-     gain:best.gain.length,manager:managers[0]?.[0]||'',retailer:retailers[0]?.[0]||'',
-     stores:best.gain
-   });
-   const ids=new Set(best.gain.map(s=>s.siteId));
-   uncovered=uncovered.filter(s=>!ids.has(s.siteId));
- }
- return results;
+ return gapClustersV2(scope,maxHires);
 }
 
 function s6ProjectedCoverage(scope,plan,n){
@@ -386,42 +518,38 @@ function s6ProjectedCoverage(scope,plan,n){
 
 function executiveMode(){
  const scope=s6Scope();
- const covered=scope.filter(s=>s.covered).length,gaps=scope.length-covered,pct=scope.length?covered/scope.length*100:0;
- const health=s6TerritoryData(scope);
- const plan=s6CandidatePlan(scope,5);
- const worst=health[0],largest=[...health].sort((a,b)=>b.ownedCount-a.ownedCount)[0];
- const best=plan[0];
+ const model=coverageModel(scope);
+ const covered=scope.length-model.gaps.length;
+ const pct=scope.length?covered/scope.length*100:0;
+ const health=territoryHealthV2(scope);
+ const plan=gapClustersV2(scope,5);
+ const largest=[...health].sort((a,b)=>b.count-a.count)[0];
+ const worst=health[0];
  const p3=s6ProjectedCoverage(scope,plan,3);
 
  const states=Object.values(scope.reduce((o,s)=>{
-   const k=s.state||'Unknown';o[k]??={name:k,total:0,gaps:0};o[k].total++;if(!s.covered)o[k].gaps++;return o;
+   const k=s.state||'Unknown';o[k]??={name:k,total:0,gaps:0};o[k].total++;
+   if(model.gaps.some(g=>g.siteId===s.siteId))o[k].gaps++;
+   return o;
  },{})).sort((a,b)=>b.gaps-a.gaps);
 
  openModal('Executive Mode',`
-  <div class="s6-hero">
-    <h2>Premium Merchandising Network Overview</h2>
-    <p><b>Scope:</b> ${esc(s6ScopeName())}. Current production coverage is measured against active RTS and the selected ${$('radius').value}-mile radius.</p>
-  </div>
+  <div class="s6-hero"><h2>Premium Merchandising Network Overview</h2><p><b>Coverage Model v2:</b> Workload is all stores within ${model.rad} miles. Gaps are stores with no RTS in range.</p></div>
   <div class="s6-grid">
-    <div class="s6-card"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered of ${scope.length.toLocaleString()}</span></div>
-    <div class="s6-card"><small>Current gaps</small><b>${gaps.toLocaleString()}</b><span>Outside active RTS radius</span></div>
-    <div class="s6-card"><small>Best next hire</small><b>${best?`${esc(best.city)}, ${esc(best.state)}`:'—'}</b><span>${best?`+${best.gain} net-new stores`:'No qualifying cluster'}</span></div>
-    <div class="s6-card"><small>Coverage after 3 hires</small><b>${p3.pct.toFixed(1)}%</b><span>Estimated +${p3.gain.toLocaleString()} stores</span></div>
+   <div class="s6-card"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered of ${scope.length.toLocaleString()}</span></div>
+   <div class="s6-card"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No RTS within radius</span></div>
+   <div class="s6-card"><small>Best next hire</small><b>${plan[0]?`${esc(plan[0].city)}, ${esc(plan[0].state)}`:'—'}</b><span>${plan[0]?`+${plan[0].gain} net-new stores`:'No qualifying cluster'}</span></div>
+   <div class="s6-card"><small>Coverage after 3 hires</small><b>${p3.pct.toFixed(1)}%</b><span>Estimated +${p3.gain.toLocaleString()} stores</span></div>
   </div>
   <div class="s6-two">
-    <div class="s6-section"><h3>Priority signals</h3>
-      <div class="s6-row"><span class="s6-rank">1</span><span><b>Highest-gap state</b><br>${states[0]?`${esc(states[0].name)} · ${states[0].gaps.toLocaleString()} gaps`:'—'}</span><span class="s6-tag critical">Gap</span></div>
-      <div class="s6-row"><span class="s6-rank">2</span><span><b>Most overloaded territory</b><br>${largest?`${esc(largest.r.name)} · ${largest.ownedCount} stores`:'—'}</span><span class="s6-tag watch">Workload</span></div>
-      <div class="s6-row"><span class="s6-rank">3</span><span><b>Lowest territory health</b><br>${worst?`${esc(worst.r.name)} · ${worst.score.toFixed(0)}/100`:'—'}</span><span class="s6-tag ${worst?.cls||'good'}">${worst?.health||'—'}</span></div>
-    </div>
-    <div class="s6-section"><h3>Recommended next actions</h3>
-      ${plan.slice(0,4).map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
-    </div>
-  </div>
-  <div class="actions">
-    <button class="btn primary" onclick="window.networkOptimizer()">Optimize Network</button>
-    <button class="btn" onclick="window.multiHirePlanner()">Multi-Hire Planner</button>
-    <button class="btn" onclick="window.territoryHealthScores()">Territory Health</button>
+   <div class="s6-section"><h3>Priority signals</h3>
+    <div class="s6-row"><span class="s6-rank">1</span><span><b>Highest-gap state</b><br>${states[0]?`${esc(states[0].name)} · ${states[0].gaps.toLocaleString()} gaps`:'—'}</span><span class="s6-tag critical">Gap</span></div>
+    <div class="s6-row"><span class="s6-rank">2</span><span><b>Highest in-radius workload</b><br>${largest?`${esc(largest.r.name)} · ${largest.count} stores`:'—'}</span><span class="s6-tag watch">Workload</span></div>
+    <div class="s6-row"><span class="s6-rank">3</span><span><b>Lowest service-area health</b><br>${worst?`${esc(worst.r.name)} · ${worst.score.toFixed(0)}/100`:'—'}</span><span class="s6-tag ${worst?.cls||'good'}">${worst?.health||'—'}</span></div>
+   </div>
+   <div class="s6-section"><h3>Recommended next hires</h3>
+    ${plan.slice(0,4).map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+   </div>
   </div>
  `);
 }
@@ -429,11 +557,11 @@ function executiveMode(){
 function territoryHealthScores(){
  const rows=s6TerritoryData();
  openModal('Territory Health Scores',`
-  <div class="callout">Health scores evaluate only stores within the selected RTS radius, including in-radius workload, average drive distance, unique coverage burden, and shared coverage. Stores outside every RTS radius are network gaps and do not reduce an existing RTS score.</div>
+  <div class="callout">Health scores evaluate only the RTS service area: stores within the selected radius, average drive distance, in-radius workload, unique dependency, and shared coverage. Network gaps outside the service area do not reduce an RTS score.</div>
   <div class="tools"><button class="btn" onclick="window.exportHealthScores()">Export Health Scores</button></div>
   ${rows.map(x=>`<div class="s6-rec ${x.cls==='critical'?'high':x.cls==='watch'?'watch':'good'}">
     <h4>${esc(x.r.name)} <span class="s6-tag ${x.cls}">${x.health} · ${x.score.toFixed(0)}/100</span></h4>
-    <p>${x.ownedCount} stores within radius · ${x.uniqueCount} unique · ${x.sharedCount} shared · ${x.avgDistance.toFixed(1)} mi average distance.</p>
+    <p>${x.count} stores within radius · ${x.uniqueCount} unique · ${x.sharedCount} shared · ${x.avgDistance.toFixed(1)} mi average distance.</p>
     <div class="s6-health-bar"><span style="width:${x.score}%;background:${x.score>=82?'#16a34a':x.score>=65?'#2563eb':x.score>=45?'#f59e0b':'#dc2626'}"></span></div>
     <div style="margin-top:6px"><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open Territory</button></div>
   </div>`).join('')}
@@ -441,18 +569,18 @@ function territoryHealthScores(){
  window._healthRows=rows;
 }
 window.exportHealthScores=()=>csv((window._healthRows||[]).map(x=>({
- RTS:x.r.name,Health:x.health,Score:x.score.toFixed(0),NearestOwned:x.ownedCount,
- Covered:x.covered,Gaps:x.gaps,CoveragePercent:x.coverage.toFixed(1),
+ RTS:x.r.name,Health:x.health,Score:x.score.toFixed(0),StoresWithinRadius:x.count,
+ UniqueStores:x.uniqueCount,SharedStores:x.sharedCount,UniqueSharePercent:x.uniqueShare.toFixed(1),
  AverageDistanceMiles:x.avgDistance.toFixed(1),FarthestMiles:x.farthest.toFixed(1),
  BackupRiskStores:x.backupRisk
 })),'premium_merchandising_territory_health.csv');
 
 function multiHirePlanner(){
  const scope=s6Scope();
- const plan=s6CandidatePlan(scope,10);
+ const plan=gapClustersV2(scope,10);
  const current=scope.length?scope.filter(s=>s.covered).length/scope.length*100:0;
  openModal('Multi-Hire Coverage Planner',`
-  <div class="callout"><b>Scope:</b> ${esc(s6ScopeName())}. Choose how many RTS to add. Suggested locations are selected sequentially to cover the largest remaining gap cluster within 75 miles.</div>
+  <div class="callout"><b>Scope:</b> ${esc(s6ScopeName())}. Choose how many RTS to add. Suggested locations are selected sequentially from stores currently outside every active RTS radius.</div>
   <div class="s6-control">
     <label><b>RTS to add</b></label>
     <input id="s6HireSlider" type="range" min="1" max="${Math.max(1,plan.length)}" value="${Math.min(3,Math.max(1,plan.length))}">
@@ -518,25 +646,28 @@ window.renderRtmDashboard=()=>{
  const name=$('s6RtmSelect')?.value||uniq(activeRTS().map(r=>r.rtm||'Not listed'))[0];
  const rtsList=activeRTS().filter(r=>(r.rtm||'Not listed')===name);
  const ids=new Set(rtsList.map(r=>r.id));
- const scope=s6Scope().filter(s=>ids.has(s.nearest[0]?.id));
- const health=s6TerritoryData(scope).filter(x=>ids.has(x.r.id));
- const covered=scope.filter(s=>s.covered).length,gaps=scope.length-covered,pct=scope.length?covered/scope.length*100:0;
- const plan=s6CandidatePlan(scope,5);
+ const scope=s6Scope();
+ const model=coverageModel(scope);
+ const rtmRows=territoryHealthV2(scope).filter(x=>ids.has(x.r.id));
+ const coveredStores=model.storeCoverage.filter(x=>x.covering.some(r=>ids.has(r.id))).map(x=>x.store);
+ const uniqueStores=model.storeCoverage.filter(x=>x.coverageType==='Unique'&&x.covering.some(r=>ids.has(r.id))).map(x=>x.store);
+ const sharedStores=model.storeCoverage.filter(x=>x.coverageType==='Shared'&&x.covering.some(r=>ids.has(r.id))).map(x=>x.store);
+ const gapPlan=gapClustersV2(scope,5);
  const target=$('s6RtmResults');if(!target)return;
  target.innerHTML=`
   <div class="s6-grid">
-    <div class="s6-card"><small>RTS</small><b>${rtsList.length}</b><span>Assigned to ${esc(name)}</span></div>
-    <div class="s6-card"><small>Stores</small><b>${scope.length.toLocaleString()}</b><span>In-radius stores in current scope</span></div>
-    <div class="s6-card"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered</span></div>
-    <div class="s6-card"><small>Gaps</small><b>${gaps.toLocaleString()}</b><span>Outside selected radius</span></div>
+   <div class="s6-card"><small>RTS</small><b>${rtsList.length}</b><span>Assigned to ${esc(name)}</span></div>
+   <div class="s6-card"><small>Stores in service radii</small><b>${new Set(coveredStores.map(s=>s.siteId)).size.toLocaleString()}</b><span>Unique store count across RTM team</span></div>
+   <div class="s6-card"><small>Unique stores</small><b>${uniqueStores.length.toLocaleString()}</b><span>Only one RTS in range</span></div>
+   <div class="s6-card"><small>Shared stores</small><b>${sharedStores.length.toLocaleString()}</b><span>Multiple RTS in range</span></div>
   </div>
   <div class="s6-two">
-    <div class="s6-section"><h3>RTS health</h3>
-      ${health.map(x=>`<div class="s6-row"><span class="s6-rank">${x.score.toFixed(0)}</span><span><b>${esc(x.r.name)}</b><br>${x.ownedCount} stores · ${x.coverage.toFixed(1)}% coverage</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open</button></div>`).join('')}
-    </div>
-    <div class="s6-section"><h3>Top hiring needs</h3>
-      ${plan.map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
-    </div>
+   <div class="s6-section"><h3>RTS service-area health</h3>
+    ${rtmRows.map(x=>`<div class="s6-row"><span class="s6-rank">${x.score.toFixed(0)}</span><span><b>${esc(x.r.name)}</b><br>${x.count} in radius · ${x.uniqueCount} unique · ${x.sharedCount} shared</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open</button></div>`).join('')}
+   </div>
+   <div class="s6-section"><h3>National gap opportunities</h3>
+    ${gapPlan.map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+   </div>
   </div>`;
 };
 
@@ -548,61 +679,55 @@ window.rtmDashboard=rtmDashboard;
 
 
 function executiveDashboard(){
- const total=stores.length,covered=stores.filter(s=>s.covered).length,gaps=total-covered,pct=total?covered/total*100:0;
- const territories=activeRTS().map(r=>{
-   const owned=stores.filter(s=>s.nearest[0]?.id===r.id);
-   const inside=stores.filter(s=>hav(s.lat,s.lng,r.lat,r.lng)<=Number($('radius').value));
-   const ownedCovered=owned.filter(s=>s.covered).length;
-   const coverage=owned.length?ownedCovered/owned.length*100:0;
-   const avg=inside.length?inside.reduce((a,s)=>a+hav(s.lat,s.lng,r.lat,r.lng),0)/inside.length:0;
-   const farthest=inside.length?Math.max(...inside.map(s=>hav(s.lat,s.lng,r.lat,r.lng))):0;
-   const q=territoryQuality(owned,inside,avg,farthest,inside.filter(s=>s.coverCount>=2).length);
-   return {r,owned:owned.length,inside:inside.length,coverage,avg,farthest,q};
- }).sort((a,b)=>b.owned-a.owned);
-
- const states=Object.values(stores.reduce((o,s)=>{
+ const scope=currentScope();
+ const model=coverageModel(scope);
+ const covered=scope.length-model.gaps.length;
+ const pct=scope.length?covered/scope.length*100:0;
+ const health=territoryHealthV2(scope).sort((a,b)=>b.count-a.count);
+ const states=Object.values(scope.reduce((o,s)=>{
    const k=s.state||'Unknown';
    o[k]??={name:k,total:0,gaps:0};
-   o[k].total++;if(!s.covered)o[k].gaps++;
+   o[k].total++;
+   if(model.gaps.some(g=>g.siteId===s.siteId))o[k].gaps++;
    return o;
  },{})).sort((a,b)=>b.gaps-a.gaps);
 
- const retailers=Object.values(stores.reduce((o,s)=>{
+ const retailers=Object.values(scope.reduce((o,s)=>{
    const k=s.retailer||'Unknown';
    o[k]??={name:k,total:0,gaps:0};
-   o[k].total++;if(!s.covered)o[k].gaps++;
+   o[k].total++;
+   if(model.gaps.some(g=>g.siteId===s.siteId))o[k].gaps++;
    return o;
  },{})).sort((a,b)=>b.gaps-a.gaps);
 
- const model=gapClusters(stores.filter(s=>!s.covered),75,10).slice(0,5);
- const avgOwned=territories.length?territories.reduce((a,x)=>a+x.owned,0)/territories.length:0;
- const riskTerr=territories.filter(x=>x.q.cls==='weak'||x.q.cls==='fair').length;
+ const plan=gapClustersV2(scope,5);
+ const avg=health.length?health.reduce((a,x)=>a+x.count,0)/health.length:0;
 
  openModal('Executive Coverage Dashboard',`
-   <div class="callout"><b>Leadership view:</b> Current production coverage uses active Premium Merchandising RTS and the selected ${$('radius').value}-mile radius. Territory boundaries represent nearest-RTS ownership; they do not guarantee routeable coverage.</div>
-   <div class="exec-grid">
-     <div class="exec-kpi"><small>National coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} of ${total.toLocaleString()} stores</span></div>
-     <div class="exec-kpi"><small>Current gaps</small><b>${gaps.toLocaleString()}</b><span>Outside active RTS radius</span></div>
-     <div class="exec-kpi"><small>Average territory</small><b>${Math.round(avgOwned)}</b><span>Stores within radius per RTS</span></div>
-     <div class="exec-kpi"><small>Territories to review</small><b>${riskTerr}</b><span>Fair or weak quality score</span></div>
-   </div>
-   <div class="exec-two">
-     <div class="exec-section"><h3>Highest-gap states</h3>
-       ${states.slice(0,8).map((x,i)=>`<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.name)}</b><br>${x.total.toLocaleString()} stores</span><span class="exec-chip ${x.gaps/x.total>.65?'risk':x.gaps/x.total>.4?'watch':'good'}">${x.gaps.toLocaleString()} gaps</span></div>`).join('')}
-     </div>
-     <div class="exec-section"><h3>Highest-gap retailers</h3>
-       ${retailers.slice(0,8).map((x,i)=>`<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.name)}</b><br>${x.total.toLocaleString()} stores</span><span class="exec-chip ${x.gaps/x.total>.65?'risk':x.gaps/x.total>.4?'watch':'good'}">${x.gaps.toLocaleString()} gaps</span></div>`).join('')}
-     </div>
-     <div class="exec-section"><h3>Largest RTS workloads</h3>
-       ${territories.slice(0,8).map((x,i)=>{
-         const ratio=x.owned/Math.max(1,avgOwned);
-         return `<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.r.name)}</b><br>${x.coverage.toFixed(1)}% radius coverage<div class="workload-meter ${ratio>1.45?'high':ratio>1.15?'watch':''}"><span style="width:${Math.min(100,ratio/1.6*100)}%"></span></div></span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">${x.owned}</button></div>`;
-       }).join('')}
-     </div>
-     <div class="exec-section"><h3>Top placement opportunities</h3>
-       ${model.map((x,i)=>`<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>Planning-only gap cluster</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.count}</button></div>`).join('')}
-     </div>
-   </div>
+ <div class="callout"><b>Coverage Model v2:</b> RTS workload is based only on stores within the selected ${model.rad}-mile service radius. Stores outside all RTS radii are network gaps and are not assigned to the nearest RTS.</div>
+ <div class="exec-grid">
+  <div class="exec-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} of ${scope.length.toLocaleString()} stores</span></div>
+  <div class="exec-kpi"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No RTS within ${model.rad} miles</span></div>
+  <div class="exec-kpi"><small>Unique stores</small><b>${model.uniqueStores.length.toLocaleString()}</b><span>Exactly one RTS in range</span></div>
+  <div class="exec-kpi"><small>Shared stores</small><b>${model.sharedStores.length.toLocaleString()}</b><span>Two or more RTS in range</span></div>
+ </div>
+ <div class="exec-two">
+  <div class="exec-section"><h3>Highest-gap states</h3>
+   ${states.slice(0,8).map((x,i)=>`<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.name)}</b><br>${x.total.toLocaleString()} stores</span><span class="exec-chip ${x.gaps/x.total>.65?'risk':x.gaps/x.total>.4?'watch':'good'}">${x.gaps.toLocaleString()} gaps</span></div>`).join('')}
+  </div>
+  <div class="exec-section"><h3>Highest-gap retailers</h3>
+   ${retailers.slice(0,8).map((x,i)=>`<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.name)}</b><br>${x.total.toLocaleString()} stores</span><span class="exec-chip ${x.gaps/x.total>.65?'risk':x.gaps/x.total>.4?'watch':'good'}">${x.gaps.toLocaleString()} gaps</span></div>`).join('')}
+  </div>
+  <div class="exec-section"><h3>Highest active workloads</h3>
+   ${health.slice(0,8).map((x,i)=>{
+      const ratio=x.count/Math.max(1,avg);
+      return `<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.r.name)}</b><br>${x.count} in-radius stores · ${x.uniqueCount} unique<div class="workload-meter ${ratio>1.45?'high':ratio>1.15?'watch':''}"><span style="width:${Math.min(100,ratio/1.6*100)}%"></span></div></span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">${x.count}</button></div>`;
+   }).join('')}
+  </div>
+  <div class="exec-section"><h3>Top placement opportunities</h3>
+   ${plan.map((x,i)=>`<div class="exec-priority"><span class="exec-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>Uncovered gap cluster</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+  </div>
+ </div>
  `);
 }
 

@@ -59,3 +59,29 @@ The recommendations are geographic planning outputs based on the current data, f
 - Stores outside every RTS radius are network gaps.
 - Out-of-radius stores do not reduce an existing RTS health score.
 - Optimizer prioritizes new RTS placement for those gaps.
+
+
+## Sprint 7 — Premium Merchandising Coverage Model v2
+
+All tools now use the same operating model:
+
+- RTS workload = every store within the selected radius
+- Unique store = exactly one RTS is in range
+- Shared store = two or more RTS are in range
+- Network gap = no active RTS is in range
+- Out-of-radius stores are never assigned to the nearest RTS
+- Hiring recommendations are based only on uncovered gap clusters
+
+Updated tools include:
+
+- RTS territory drawer
+- Coverage snapshot and executive dashboard
+- Executive Mode
+- Territory Balancer
+- Territory Health Scores
+- RTM Dashboard
+- Printable Leadership Report
+- Network Optimizer
+- Multi-Hire Planner
+- Hiring Recommendation Plan
+- Territory and balance exports

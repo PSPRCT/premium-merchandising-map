@@ -647,3 +647,14 @@ body.territory-focus .leaflet-marker-pane .territory-focus-marker{
   .s6-grid{grid-template-columns:1fr 1fr}
   .s6-two{grid-template-columns:1fr}
 }
+
+/* Sprint 7 model marker */
+.coverage-model-v2{
+  border:1px solid #bfdbfe;
+  background:#eff6ff;
+  color:#1e3a8a;
+  border-radius:10px;
+  padding:8px;
+  font-size:10.5px;
+  line-height:1.4;
+}
