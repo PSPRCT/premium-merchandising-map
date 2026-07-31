@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7 \u2014 Organization Navigator",
+  "platformRelease": "Version 7.1 \u2014 Startup Architecture Fix",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",

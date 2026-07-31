@@ -1538,9 +1538,13 @@ window.v7ExportArea=area=>csv(v7StoresForArea(area).map(s=>({RegionalManager:s.r
 window.v7ExportNational=()=>csv((ORG_HIERARCHY.regionalManagers||[]).flatMap(r=>(r.areaManagers||[]).map(a=>({RegionalManager:r.name,AreaManager:a.name,SOExecuted:a.metrics?.soExecuted??'',Compliance:a.metrics?.compliance??'',ActionHoursUtilized:a.metrics?.actionHoursUtilized??'',EfficiencyGained:a.metrics?.efficiencyGained??''}))),'one_walmart_hierarchy.csv');
 
 function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
+
+function installApplicationBindings(){
+ try{
+
 ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
-$('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
-$('executiveModeBtn').onclick=executiveMode;$('networkOptimizerBtn').onclick=networkOptimizer;$('multiHireBtn').onclick=multiHirePlanner;$('healthBtn').onclick=territoryHealthScores;$('rtmDashboardBtn').onclick=rtmDashboard;$('executiveBtn').onclick=executiveDashboard;
+v5SafeBind('fit',fit,'Fit Results');v5SafeBind('home',()=>map.setView(HOME.center,HOME.zoom),'Home');$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
+v5SafeBind('executiveModeBtn',executiveMode,'Executive Mode');v5SafeBind('networkOptimizerBtn',networkOptimizer,'Network Optimizer');v5SafeBind('multiHireBtn',multiHirePlanner,'Multi-Hire Planner');v5SafeBind('healthBtn',territoryHealthScores,'Coverage Health');v5SafeBind('rtmDashboardBtn',rtmDashboard,'RTM Dashboard');v5SafeBind('executiveBtn',executiveDashboard,'Executive Dashboard');
 if($('v4ExecutiveHomeBtn'))$('v4ExecutiveHomeBtn').onclick=v4OpenExecutive;
 if($('v4ExecutiveBtn'))$('v4ExecutiveBtn').onclick=v4OpenExecutive;
 if($('v4BriefBtn'))$('v4BriefBtn').onclick=v4ExecutiveBrief;
@@ -1611,13 +1615,21 @@ v5SafeBind('v41FocusGapCard',gapFinder,'Largest Gap Signal');
 v5SafeBind('v41FocusWorkloadCard',territoryHealthScores,'Highest RTS Workload');
 v5SafeBind('v41FocusHireCard',modelPlacement,'Top Placement Opportunity');
 v5SafeBind('v41FocusActionCard',v41OperationalFocusModal,'Recommended Action');
-setTimeout(()=>{v41OperationalFocus();v41LoadUrlView();const p=localStorage.getItem('psp_v41_pending_view');if(p){localStorage.removeItem('psp_v41_pending_view');v41ApplyViewState(JSON.parse(p));}},500);
+
 
 if($('v4CoverageRingsToggle'))$('v4CoverageRingsToggle').onchange=e=>v4ToggleRings(e.target.checked);
 $('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;if($('railExecutive'))$('railExecutive').onclick=executiveMode;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
 v5StartupDiagnostics();
 $('exportStores').onclick=()=>csv(storeRows(filtered),'visible_stores.csv');$('exportGaps').onclick=()=>csv(storeRows(stores.filter(s=>!s.covered)),'current_coverage_gaps.csv');
-$('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});initializeProgramSwitcher({
+$('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});
+  console.info('[V7.1] Application bindings installed');
+ }catch(error){
+  console.error('[V7.1] Binding installation error',error);
+  setDataStatus('warning','Map loaded; one or more optional tools are unavailable');
+ }
+}
+
+initializeProgramSwitcher({
   programs: listPrograms(),
   activeProgramId: ACTIVE_PROGRAM_ID,
   onProgramSelected(program) {
@@ -1631,17 +1643,31 @@ $('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggl
 
 try {
   init();
+  installApplicationBindings();
+  setTimeout(()=>{
+    try{
+      v41OperationalFocus();
+      v41LoadUrlView();
+      const pending=localStorage.getItem('psp_v41_pending_view');
+      if(pending){
+        localStorage.removeItem('psp_v41_pending_view');
+        v41ApplyViewState(JSON.parse(pending));
+      }
+    }catch(error){
+      console.warn('[V7.1] Deferred startup task failed',error);
+    }
+  },500);
 } catch (error) {
-  console.error('[V5] Startup failed',error);
-  setDataStatus('error','Startup failed');
+  console.error('[V7.1] Core startup failed',error);
+  setDataStatus('error','Core startup failed');
   const status=document.getElementById('status');
   if(status){
     status.style.display='flex';
     status.innerHTML=`<div class="data-error-panel">
-      <b>Platform startup failed.</b><br><br>
+      <b>Core map startup failed.</b><br><br>
       ${String(error.message||error)}
       <br><br>
-      Open the browser console for the exact file and line. The most common causes are an incomplete upload or an older cached JavaScript file.
+      The browser console includes the exact file and line.
     </div>`;
   }
 }
