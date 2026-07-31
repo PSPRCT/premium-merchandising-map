@@ -1,7 +1,7 @@
 {
   "application": "PSP Coverage Intelligence Platform",
   "program": "One Walmart PSP",
-  "release": "Version 3.2 \u2014 Deduplicated Store Universe",
+  "release": "Version 3.3 \u2014 Walmart Address Enrichment",
   "dataUpdated": "2026-07-31",
   "storeCount": 4598,
   "rtsCount": 51,
@@ -31,5 +31,10 @@
     "P&G": 761,
     "Tyson": 1733
   },
-  "storeModel": "One physical store per SiteID. P&G, Tyson, and Unilever are retained as dedicated-team overlays on the One Walmart store record."
+  "storeModel": "One physical store per SiteID. P&G, Tyson, and Unilever are retained as dedicated-team overlays on the One Walmart store record.",
+  "addressMaster": "RCT_WM_Store_Master (9).csv",
+  "addressMatchedCount": 4582,
+  "addressUnmatchedCount": 16,
+  "duplicateStoreNumbersResolved": 3,
+  "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity"
 }

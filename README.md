@@ -39,3 +39,11 @@ does not include an Unilever management-group row.
 
 Street address and state fields remain blank until the richer store-address
 master is connected.
+
+
+## Version 3.3 — Walmart address enrichment
+
+- 4,582 of 4,598 stores enriched from `RCT_WM_Store_Master (9).csv`
+- 16 stores remain unmatched
+- Duplicate store numbers were resolved using the existing map coordinates
+- Full match details are in `docs/ONE_WALMART_ADDRESS_MATCH_REPORT.csv`
