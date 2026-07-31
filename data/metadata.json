@@ -1,6 +1,6 @@
 {
   "application": "Premium Merchandising Coverage Command Center",
-  "release": "Maintenance Baseline",
+  "release": "Sprint 6 \u2014 Network Optimization",
   "storeCount": 9473,
   "rtsCount": 45,
   "coverageRadiusMiles": 75,
@@ -9,5 +9,12 @@
   "rtsDataFile": "data/rts.json",
   "metadataFile": "data/metadata.json",
   "managementGroup": "Premium Merchandising",
-  "managementGroupID": 245
+  "managementGroupID": 245,
+  "featureSet": [
+    "Network Optimizer",
+    "Multi-Hire Coverage Planner",
+    "Territory Health Scores",
+    "RTM Dashboard",
+    "Executive Mode"
+  ]
 }

@@ -369,6 +369,271 @@ function leadershipReport(){
 }
 window.exportLeadershipSummary=()=>csv(window._leadershipSummary||[],'premium_merchandising_leadership_summary.csv');
 
+
+function s6Scope(){return filtered}
+function s6ScopeName(){return scopeLabel ? scopeLabel() : 'Current filtered scope'}
+
+function s6TerritoryData(scope=s6Scope()){
+ const serving=activeRTS().filter(r=>scope.some(s=>s.nearest[0]?.id===r.id));
+ const avgOwned=scope.length/Math.max(1,serving.length);
+ return serving.map(r=>{
+   const owned=scope.filter(s=>s.nearest[0]?.id===r.id);
+   const covered=owned.filter(s=>s.covered).length;
+   const gaps=owned.length-covered;
+   const distances=owned.map(s=>s.nearest[0]?.distance||0);
+   const avgDistance=distances.length?distances.reduce((a,b)=>a+b,0)/distances.length:0;
+   const farthest=distances.length?Math.max(...distances):0;
+   const backupRisk=owned.filter(s=>!s.nearest[1]||s.nearest[1].distance>Number($('radius').value)).length;
+   const overlap=owned.filter(s=>s.coverCount>=2).length;
+   const ratio=owned.length/Math.max(1,avgOwned);
+   const coverage=owned.length?covered/owned.length*100:0;
+
+   let score=100;
+   score-=Math.min(35,gaps/Math.max(1,owned.length)*45);
+   if(avgDistance>55)score-=22;else if(avgDistance>40)score-=14;else if(avgDistance>28)score-=7;
+   if(farthest>110)score-=15;else if(farthest>85)score-=9;
+   if(ratio>1.6)score-=18;else if(ratio>1.3)score-=10;
+   if(ratio<.45)score-=8;
+   if(backupRisk>owned.length*.6)score-=15;else if(backupRisk>owned.length*.35)score-=8;
+   score=Math.max(0,Math.min(100,score));
+
+   let health='Excellent',cls='excellent';
+   if(score<45){health='Critical';cls='critical'}
+   else if(score<65){health='Needs Attention';cls='watch'}
+   else if(score<82){health='Good';cls='good'}
+
+   return {r,owned,ownedCount:owned.length,covered,gaps,coverage,avgDistance,farthest,backupRisk,overlap,ratio,score,health,cls};
+ }).sort((a,b)=>a.score-b.score||b.gaps-a.gaps);
+}
+
+function s6CandidatePlan(scope=s6Scope(),maxHires=10){
+ let uncovered=scope.filter(s=>!s.covered);
+ const results=[];
+ for(let i=0;i<maxHires && uncovered.length;i++){
+   let best=null;
+   // Candidate locations are uncovered store coordinates.
+   for(const c of uncovered){
+     const gain=uncovered.filter(s=>hav(c.lat,c.lng,s.lat,s.lng)<=75);
+     if(!best||gain.length>best.gain.length)best={c,gain};
+   }
+   if(!best||best.gain.length<3)break;
+   const managers=Object.entries(best.gain.reduce((o,s)=>(o[s.manager||'Not listed']=(o[s.manager||'Not listed']||0)+1,o),{})).sort((a,b)=>b[1]-a[1]);
+   const retailers=Object.entries(best.gain.reduce((o,s)=>(o[s.retailer||'Unknown']=(o[s.retailer||'Unknown']||0)+1,o),{})).sort((a,b)=>b[1]-a[1]);
+   results.push({
+     rank:i+1,lat:best.c.lat,lng:best.c.lng,city:best.c.city,state:best.c.state,
+     gain:best.gain.length,manager:managers[0]?.[0]||'',retailer:retailers[0]?.[0]||'',
+     stores:best.gain
+   });
+   const ids=new Set(best.gain.map(s=>s.siteId));
+   uncovered=uncovered.filter(s=>!ids.has(s.siteId));
+ }
+ return results;
+}
+
+function s6ProjectedCoverage(scope,plan,n){
+ const covered=scope.filter(s=>s.covered).length;
+ const gain=plan.slice(0,n).reduce((a,x)=>a+x.gain,0);
+ return {covered:Math.min(scope.length,covered+gain),gain,pct:scope.length?Math.min(scope.length,covered+gain)/scope.length*100:0};
+}
+
+function executiveMode(){
+ const scope=s6Scope();
+ const covered=scope.filter(s=>s.covered).length,gaps=scope.length-covered,pct=scope.length?covered/scope.length*100:0;
+ const health=s6TerritoryData(scope);
+ const plan=s6CandidatePlan(scope,5);
+ const worst=health[0],largest=[...health].sort((a,b)=>b.ownedCount-a.ownedCount)[0];
+ const best=plan[0];
+ const p3=s6ProjectedCoverage(scope,plan,3);
+
+ const states=Object.values(scope.reduce((o,s)=>{
+   const k=s.state||'Unknown';o[k]??={name:k,total:0,gaps:0};o[k].total++;if(!s.covered)o[k].gaps++;return o;
+ },{})).sort((a,b)=>b.gaps-a.gaps);
+
+ openModal('Executive Mode',`
+  <div class="s6-hero">
+    <h2>Premium Merchandising Network Overview</h2>
+    <p><b>Scope:</b> ${esc(s6ScopeName())}. Current production coverage is measured against active RTS and the selected ${$('radius').value}-mile radius.</p>
+  </div>
+  <div class="s6-grid">
+    <div class="s6-card"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered of ${scope.length.toLocaleString()}</span></div>
+    <div class="s6-card"><small>Current gaps</small><b>${gaps.toLocaleString()}</b><span>Outside active RTS radius</span></div>
+    <div class="s6-card"><small>Best next hire</small><b>${best?`${esc(best.city)}, ${esc(best.state)}`:'—'}</b><span>${best?`+${best.gain} net-new stores`:'No qualifying cluster'}</span></div>
+    <div class="s6-card"><small>Coverage after 3 hires</small><b>${p3.pct.toFixed(1)}%</b><span>Estimated +${p3.gain.toLocaleString()} stores</span></div>
+  </div>
+  <div class="s6-two">
+    <div class="s6-section"><h3>Priority signals</h3>
+      <div class="s6-row"><span class="s6-rank">1</span><span><b>Highest-gap state</b><br>${states[0]?`${esc(states[0].name)} · ${states[0].gaps.toLocaleString()} gaps`:'—'}</span><span class="s6-tag critical">Gap</span></div>
+      <div class="s6-row"><span class="s6-rank">2</span><span><b>Most overloaded territory</b><br>${largest?`${esc(largest.r.name)} · ${largest.ownedCount} stores`:'—'}</span><span class="s6-tag watch">Workload</span></div>
+      <div class="s6-row"><span class="s6-rank">3</span><span><b>Lowest territory health</b><br>${worst?`${esc(worst.r.name)} · ${worst.score.toFixed(0)}/100`:'—'}</span><span class="s6-tag ${worst?.cls||'good'}">${worst?.health||'—'}</span></div>
+    </div>
+    <div class="s6-section"><h3>Recommended next actions</h3>
+      ${plan.slice(0,4).map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" onclick="window.networkOptimizer()">Optimize Network</button>
+    <button class="btn" onclick="window.multiHirePlanner()">Multi-Hire Planner</button>
+    <button class="btn" onclick="window.territoryHealthScores()">Territory Health</button>
+  </div>
+ `);
+}
+
+function territoryHealthScores(){
+ const rows=s6TerritoryData();
+ openModal('Territory Health Scores',`
+  <div class="callout">Health scores combine owned coverage, average and farthest distance, territory size versus the filtered team average, and backup RTS availability. Scores are planning indicators, not employee performance ratings.</div>
+  <div class="tools"><button class="btn" onclick="window.exportHealthScores()">Export Health Scores</button></div>
+  ${rows.map(x=>`<div class="s6-rec ${x.cls==='critical'?'high':x.cls==='watch'?'watch':'good'}">
+    <h4>${esc(x.r.name)} <span class="s6-tag ${x.cls}">${x.health} · ${x.score.toFixed(0)}/100</span></h4>
+    <p>${x.ownedCount} nearest-owned stores · ${x.coverage.toFixed(1)}% owned coverage · ${x.avgDistance.toFixed(1)} mi average distance · ${x.backupRisk} stores without backup RTS.</p>
+    <div class="s6-health-bar"><span style="width:${x.score}%;background:${x.score>=82?'#16a34a':x.score>=65?'#2563eb':x.score>=45?'#f59e0b':'#dc2626'}"></span></div>
+    <div style="margin-top:6px"><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open Territory</button></div>
+  </div>`).join('')}
+ `);
+ window._healthRows=rows;
+}
+window.exportHealthScores=()=>csv((window._healthRows||[]).map(x=>({
+ RTS:x.r.name,Health:x.health,Score:x.score.toFixed(0),NearestOwned:x.ownedCount,
+ Covered:x.covered,Gaps:x.gaps,CoveragePercent:x.coverage.toFixed(1),
+ AverageDistanceMiles:x.avgDistance.toFixed(1),FarthestMiles:x.farthest.toFixed(1),
+ BackupRiskStores:x.backupRisk
+})),'premium_merchandising_territory_health.csv');
+
+function multiHirePlanner(){
+ const scope=s6Scope();
+ const plan=s6CandidatePlan(scope,10);
+ const current=scope.length?scope.filter(s=>s.covered).length/scope.length*100:0;
+ openModal('Multi-Hire Coverage Planner',`
+  <div class="callout"><b>Scope:</b> ${esc(s6ScopeName())}. Choose how many RTS to add. Suggested locations are selected sequentially to cover the largest remaining gap cluster within 75 miles.</div>
+  <div class="s6-control">
+    <label><b>RTS to add</b></label>
+    <input id="s6HireSlider" type="range" min="1" max="${Math.max(1,plan.length)}" value="${Math.min(3,Math.max(1,plan.length))}">
+    <div id="s6HireCount" class="s6-big">${Math.min(3,Math.max(1,plan.length))}</div>
+  </div>
+  <div id="s6HireResults" style="margin-top:10px"></div>
+ `);
+ window._multiHirePlan=plan;
+ const slider=$('s6HireSlider');
+ const render=()=>{
+   const n=Number(slider.value),proj=s6ProjectedCoverage(scope,plan,n);
+   $('s6HireCount').textContent=n;
+   $('s6HireResults').innerHTML=`
+    <div class="s6-grid">
+      <div class="s6-card"><small>Current coverage</small><b>${current.toFixed(1)}%</b><span>Before added RTS</span></div>
+      <div class="s6-card"><small>Projected coverage</small><b>${proj.pct.toFixed(1)}%</b><span>After ${n} added RTS</span></div>
+      <div class="s6-card"><small>Net-new stores</small><b>${proj.gain.toLocaleString()}</b><span>Estimated newly covered</span></div>
+      <div class="s6-card"><small>Gaps remaining</small><b>${Math.max(0,scope.length-proj.covered).toLocaleString()}</b><span>After modeled hires</span></div>
+    </div>
+    <div class="s6-section"><h3>Recommended hiring sequence</h3>
+      ${plan.slice(0,n).map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+    </div>
+    <div class="actions"><button class="btn primary" onclick="window.showMultiHireOnMap(${n})">Show on Map</button><button class="btn" onclick="window.exportMultiHire(${n})">Export Plan</button></div>`;
+ };
+ slider.oninput=render;render();
+}
+window.showMultiHireOnMap=n=>{
+ simLayer.clearLayers();
+ (window._multiHirePlan||[]).slice(0,n).forEach(x=>{
+   const icon=L.divIcon({className:'',html:`<div class="sim-icon" style="display:flex;align-items:center;justify-content:center;color:#fff;font-weight:950;font-size:10px">${x.rank}</div>`,iconSize:[24,24],iconAnchor:[12,12]});
+   L.marker([x.lat,x.lng],{icon}).bindTooltip(`#${x.rank} ${x.city}, ${x.state}<br>+${x.gain} stores`).on('click',()=>simulateAt(x.lat,x.lng)).addTo(simLayer);
+ });
+ $('modal').classList.remove('show');
+ const pts=(window._multiHirePlan||[]).slice(0,n).map(x=>[x.lat,x.lng]);
+ if(pts.length)map.fitBounds(pts,{padding:[35,35],maxZoom:7});
+};
+window.exportMultiHire=n=>csv((window._multiHirePlan||[]).slice(0,n).map(x=>({
+ Rank:x.rank,City:x.city,State:x.state,Latitude:x.lat,Longitude:x.lng,
+ NetNewStores:x.gain,PrimaryManager:x.manager,PrimaryRetailer:x.retailer
+})),'premium_merchandising_multi_hire_plan.csv');
+
+function networkOptimizer(){
+ const scope=s6Scope(),health=s6TerritoryData(scope),plan=s6CandidatePlan(scope,8);
+ const overloaded=health.filter(x=>x.ratio>=1.25||x.gaps>=35).slice(0,8);
+ const underused=[...health].filter(x=>x.ratio<=.7).sort((a,b)=>a.ownedCount-b.ownedCount).slice(0,8);
+
+ const moves=[];
+ for(const from of overloaded){
+   for(const to of underused){
+     if(from.r.id===to.r.id)continue;
+     const transferable=from.owned.filter(s=>{
+       const dTo=hav(s.lat,s.lng,to.r.lat,to.r.lng);
+       const dFrom=hav(s.lat,s.lng,from.r.lat,from.r.lng);
+       return dTo<=75 && dTo<dFrom*1.25;
+     }).sort((a,b)=>hav(a.lat,a.lng,to.r.lat,to.r.lng)-hav(b.lat,b.lng,to.r.lat,to.r.lng));
+     if(transferable.length>=5){
+       moves.push({from,to,count:Math.min(30,transferable.length),stores:transferable.slice(0,30)});
+     }
+   }
+ }
+ moves.sort((a,b)=>b.count-a.count);
+
+ openModal('Network Optimizer',`
+  <div class="s6-hero">
+    <h2>Recommended Network Actions</h2>
+    <p><b>Scope:</b> ${esc(s6ScopeName())}. The optimizer combines new-hire opportunities, overloaded territories, underused territories, routeable store-transfer candidates, coverage gaps, and backup coverage.</p>
+  </div>
+  <div class="s6-two">
+    <div class="s6-section"><h3>Priority new-hire locations</h3>
+      ${plan.slice(0,6).map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+    </div>
+    <div class="s6-section"><h3>Potential store transfers</h3>
+      ${moves.length?moves.slice(0,8).map((m,i)=>`<div class="s6-row"><span class="s6-rank">${i+1}</span><span><b>${esc(m.from.r.name)} → ${esc(m.to.r.name)}</b><br>Up to ${m.count} stores already within 75 miles of receiving RTS</span><button class="btn" onclick="window.exportTransfer(${i})">Export</button></div>`).join(''):'<div class="callout">No strong transfer recommendations were identified under the current filters and 75-mile constraint.</div>'}
+    </div>
+  </div>
+  <div class="s6-section"><h3>Territories requiring intervention</h3>
+    ${overloaded.map(x=>`<div class="s6-rec ${x.cls==='critical'?'high':'watch'}"><h4>${esc(x.r.name)} — ${x.ownedCount} stores</h4><p>${x.gaps} outside radius · ${x.backupRisk} without backup RTS · health score ${x.score.toFixed(0)}/100.</p><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Review Territory</button></div>`).join('')}
+  </div>
+ `);
+ window._optimizerMoves=moves;
+ window._optimizerPlan=plan;
+}
+window.exportTransfer=i=>{
+ const m=(window._optimizerMoves||[])[i];if(!m)return;
+ csv(m.stores.map(s=>({FromRTS:m.from.r.name,ToRTS:m.to.r.name,SiteID:s.siteId,Retailer:s.retailer,StoreNumber:s.storeNumber,Address:s.address,City:s.city,State:s.state,ZIP:s.zip,DistanceToReceivingRTS:hav(s.lat,s.lng,m.to.r.lat,m.to.r.lng).toFixed(1)})),`transfer_${m.from.r.name.replace(/\W+/g,'_')}_to_${m.to.r.name.replace(/\W+/g,'_')}.csv`);
+};
+
+function rtmDashboard(){
+ const rtms=uniq(activeRTS().map(r=>r.rtm||'Not listed'));
+ const options=rtms.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+ openModal('RTM Dashboard',`
+  <div class="tools"><label><b>Select RTM</b> <select id="s6RtmSelect">${options}</select></label><button class="btn primary" onclick="window.renderRtmDashboard()">Open Dashboard</button></div>
+  <div id="s6RtmResults"></div>
+ `);
+ renderRtmDashboard();
+}
+window.renderRtmDashboard=()=>{
+ const name=$('s6RtmSelect')?.value||uniq(activeRTS().map(r=>r.rtm||'Not listed'))[0];
+ const rtsList=activeRTS().filter(r=>(r.rtm||'Not listed')===name);
+ const ids=new Set(rtsList.map(r=>r.id));
+ const scope=s6Scope().filter(s=>ids.has(s.nearest[0]?.id));
+ const health=s6TerritoryData(scope).filter(x=>ids.has(x.r.id));
+ const covered=scope.filter(s=>s.covered).length,gaps=scope.length-covered,pct=scope.length?covered/scope.length*100:0;
+ const plan=s6CandidatePlan(scope,5);
+ const target=$('s6RtmResults');if(!target)return;
+ target.innerHTML=`
+  <div class="s6-grid">
+    <div class="s6-card"><small>RTS</small><b>${rtsList.length}</b><span>Assigned to ${esc(name)}</span></div>
+    <div class="s6-card"><small>Stores</small><b>${scope.length.toLocaleString()}</b><span>Nearest-owned in current scope</span></div>
+    <div class="s6-card"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered</span></div>
+    <div class="s6-card"><small>Gaps</small><b>${gaps.toLocaleString()}</b><span>Outside selected radius</span></div>
+  </div>
+  <div class="s6-two">
+    <div class="s6-section"><h3>RTS health</h3>
+      ${health.map(x=>`<div class="s6-row"><span class="s6-rank">${x.score.toFixed(0)}</span><span><b>${esc(x.r.name)}</b><br>${x.ownedCount} stores · ${x.coverage.toFixed(1)}% coverage</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open</button></div>`).join('')}
+    </div>
+    <div class="s6-section"><h3>Top hiring needs</h3>
+      ${plan.map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}
+    </div>
+  </div>`;
+};
+
+window.executiveMode=executiveMode;
+window.networkOptimizer=networkOptimizer;
+window.multiHirePlanner=multiHirePlanner;
+window.territoryHealthScores=territoryHealthScores;
+window.rtmDashboard=rtmDashboard;
+
+
 function executiveDashboard(){
  const total=stores.length,covered=stores.filter(s=>s.covered).length,gaps=total-covered,pct=total?covered/total*100:0;
  const territories=activeRTS().map(r=>{
@@ -529,7 +794,7 @@ function initializeDataStatus(){
 function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
 ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
 $('fit').onclick=fit;$('home').onclick=()=>map.setView(HOME.center,HOME.zoom);$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
-$('executiveBtn').onclick=executiveDashboard;$('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
+$('executiveModeBtn').onclick=executiveMode;$('networkOptimizerBtn').onclick=networkOptimizer;$('multiHireBtn').onclick=multiHirePlanner;$('healthBtn').onclick=territoryHealthScores;$('rtmDashboardBtn').onclick=rtmDashboard;$('executiveBtn').onclick=executiveDashboard;$('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;if($('railExecutive'))$('railExecutive').onclick=executiveMode;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
 $('exportStores').onclick=()=>csv(storeRows(filtered),'visible_stores.csv');$('exportGaps').onclick=()=>csv(storeRows(stores.filter(s=>!s.covered)),'current_coverage_gaps.csv');
 $('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});try {
   init();
