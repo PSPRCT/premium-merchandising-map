@@ -51,17 +51,50 @@ function hav(a,b,c,d){return haversineMiles(a,b,c,d)}
 function activeRTS(){return RTS}
 function calculate(s){
  const eligible=activeRTS().filter(r=>PROGRAM_ELIGIBILITY(s,r));
- const near=eligible.map(r=>({...r,distance:hav(s.lat,s.lng,r.lat,r.lng)})).sort((a,b)=>a.distance-b.distance);
- s.nearest=near.slice(0,3);
- s.coverCount=near.filter(r=>r.distance<=Number($('radius')?.value||75)).length;
- s.covered=s.coverCount>0;
- s.coverageType=s.coverCount===0?'Gap':s.coverCount===1?'Unique':'Shared';
+ const distances=eligible
+   .map(r=>({id:r.id,name:r.name,email:r.email,lat:r.lat,lng:r.lng,distance:hav(s.lat,s.lng,r.lat,r.lng)}))
+   .sort((a,b)=>a.distance-b.distance);
+ s._eligibleDistances=distances;
+ s.nearest=distances.slice(0,3);
+ updateStoreCoverageForRadius(s,Number($('radius')?.value||75));
  s.eligibleRtsCount=eligible.length;
  return s
 }
-function recompute(){stores.forEach(calculate);applyFilters();drawRts();updateMetrics();drawTerritories()}
+function updateStoreCoverageForRadius(s,radius){
+ const distances=s._eligibleDistances||[];
+ let count=0;
+ for(const r of distances){
+   if(r.distance<=radius)count++;
+   else break;
+ }
+ s.coverCount=count;
+ s.covered=count>0;
+ s.coverageType=count===0?'Gap':count===1?'Unique':'Shared';
+ s.nearest=distances.slice(0,3);
+ return s
+}
+function recompute(){
+ const radius=Number($('radius')?.value||75);
+ stores.forEach(s=>updateStoreCoverageForRadius(s,radius));
+ refreshCascadingFilters({preserve:true});
+ applyFilters();
+ drawRts();
+ drawTerritories();
+}
 function uniq(a){return [...new Set(a.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)))}
-function options(id,vals){const e=$(id);vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;e.appendChild(o)})}
+function options(id,vals){
+ const e=$(id);if(!e)return;
+ const first=e.options[0];
+ const placeholder=first?first.textContent:'All';
+ e.innerHTML='';
+ const base=document.createElement('option');
+ base.value='';base.textContent=placeholder;
+ e.appendChild(base);
+ vals.forEach(v=>{
+   const o=document.createElement('option');
+   o.value=v;o.textContent=v;e.appendChild(o)
+ });
+}
 function storeMarker(s){const color=s.covered?'#16a34a':'#dc2626',icon=L.divIcon({className:'',html:`<div class="store-dot" style="background:${color}"></div>`,iconSize:[11,11],iconAnchor:[5,5]});const m=L.marker([s.lat,s.lng],{icon}).bindPopup(()=>storePopup(s),{maxWidth:440,autoPanPadding:[80,80]});m.on('click',()=>{map.flyTo([s.lat,s.lng],Math.max(11,map.getZoom()),{duration:.55})});return m}
 function storePopup(s){
  const addr=s.address?esc(s.address):'<span style="color:#94a3b8">Street address unavailable</span>';
@@ -105,7 +138,8 @@ function drawRts(){
  rtsLayer.clearLayers();
  ringLayer.clearLayers();
  if($('showRts').checked)activeRTS().forEach(r=>{
-   const inside=stores.filter(s=>PROGRAM_ELIGIBILITY(s,r)&&hav(s.lat,s.lng,r.lat,r.lng)<=Number($('radius').value));
+   const radius=Number($('radius').value);
+   const inside=stores.filter(s=>(s._eligibleDistances||[]).some(x=>String(x.id)===String(r.id)&&x.distance<=radius));
    const unique=inside.filter(s=>s.coverCount===1);
    const shared=inside.filter(s=>s.coverCount>=2);
    const coveragePct=inside.length?100:0;
@@ -181,24 +215,38 @@ function applyFilters(){
    (!st||s.state===st)&&
    (!regional||v7OrgForStore(s).regionalManager===regional)&&
    (!mgr||v7OrgForStore(s).areaManager===mgr)&&
-   (!rr||s.nearest[0]?.name===rr)&&
-   (!$('within').checked||s.nearest.some(r=>r.distance<=rad))
+   (!rr||(s._eligibleDistances||[]).some(r=>r.name===rr&&r.distance<=rad))&&
+   (!$('within').checked||(s._eligibleDistances||[]).some(r=>r.distance<=rad))
  );
  renderStores();updateMetrics();drawTerritories()
 }
 function renderStores(){clusterLayer.clearLayers();plainLayer.clearLayers();const ms=filtered.map(s=>markerById.get(s.siteId));if($('cluster').checked){clusterLayer.addLayers(ms);if(!map.hasLayer(clusterLayer))map.addLayer(clusterLayer);if(map.hasLayer(plainLayer))map.removeLayer(plainLayer)}else{ms.forEach(m=>plainLayer.addLayer(m));if(!map.hasLayer(plainLayer))map.addLayer(plainLayer);if(map.hasLayer(clusterLayer))map.removeLayer(clusterLayer)}drawHeat();drawOverlap()}
 function updateMetrics(){
  const scope=filtered;
- const covered=scope.filter(s=>s.covered).length;
+ let covered=0,totalNearestDistance=0;
+ const territoryCountsByRts=new Map();
+ const servingIds=new Set();
+ const radius=Number($('radius')?.value||75);
+
+ for(const s of scope){
+   if(s.covered)covered++;
+   if(Number.isFinite(s.nearest?.[0]?.distance))totalNearestDistance+=s.nearest[0].distance;
+   const nearestInRadius=(s._eligibleDistances||[]).find(r=>r.distance<=radius);
+   if(nearestInRadius){
+     const id=String(nearestInRadius.id);
+     servingIds.add(id);
+     territoryCountsByRts.set(id,(territoryCountsByRts.get(id)||0)+1);
+   }
+ }
  const gaps=scope.length-covered;
  const pct=scope.length?covered/scope.length*100:0;
- const avg=scope.length?scope.reduce((a,s)=>a+(s.nearest[0]?.distance||0),0)/scope.length:0;
- const servingRts=activeRTS().filter(r=>scope.some(s=>s.nearest[0]?.id===r.id));
- const territoryCounts=servingRts.map(r=>scope.filter(s=>s.nearest[0]?.id===r.id).length).filter(Boolean).sort((a,b)=>a-b);
+ const avg=scope.length?totalNearestDistance/scope.length:0;
+ const territoryCounts=[...territoryCountsByRts.values()].sort((a,b)=>a-b);
  const avgTerr=territoryCounts.length?territoryCounts.reduce((a,b)=>a+b,0)/territoryCounts.length:0;
  const medianTerr=territoryCounts.length?(territoryCounts.length%2?territoryCounts[(territoryCounts.length-1)/2]:(territoryCounts[territoryCounts.length/2-1]+territoryCounts[territoryCounts.length/2])/2):0;
+
  $('kStores').textContent=scope.length.toLocaleString();
- $('kRts').textContent=servingRts.length.toLocaleString();
+ $('kRts').textContent=servingIds.size.toLocaleString();
  $('kCovered').textContent=covered.toLocaleString();
  $('kGaps').textContent=gaps.toLocaleString();
  $('kPct').textContent=pct.toFixed(1)+'%';
@@ -1452,10 +1500,16 @@ function v7NormalizeName(value){
  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,' ').trim().toLowerCase().replace(/\s+/g,' ');
 }
 function v7OrgForStore(store){
- const area=ACTIVE_PROGRAM_ID==='premium-merchandising'
-   ? (store.districtManager||store.areaManager||store.manager||'Not listed')
-   : (store.areaManager||store.manager||'Not listed');
- const regional=store.regionalManager||ORG_HIERARCHY.rdmToRegionalManager?.[v7NormalizeName(area)]||'Unaligned';
+ let area;
+ if(ACTIVE_PROGRAM_ID==='premium-merchandising'){
+   area=store.districtManager||store.areaManager||'';
+ }else{
+   area=store.areaManager||store.manager||'';
+ }
+ const lookupArea=area||store.manager||'';
+ const regional=store.regionalManager||ORG_HIERARCHY.rdmToRegionalManager?.[v7NormalizeName(lookupArea)]||'Unaligned';
+ if(!area && regional && regional!=='Unaligned')area='Unassigned District';
+ if(!area)area=store.manager||'Not listed';
  return {regionalManager:regional,areaManager:area};
 }
 function v7StoresForRegional(rm){
@@ -1546,7 +1600,7 @@ window.v7AreaDashboard=v7AreaDashboard;
 window.v7ApplyRegionalFilter=rm=>{
  $('modal').classList.remove('show');
  if($('fRegional'))$('fRegional').value=rm;
- v72RefreshAreaManagers();
+ refreshCascadingFilters({preserve:true});
  applyFilters();
  if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
 };
@@ -1554,7 +1608,7 @@ window.v7ApplyAreaFilter=area=>{
  $('modal').classList.remove('show');
  const regional=stores.find(s=>s.areaManager===area)?.regionalManager||'';
  if($('fRegional'))$('fRegional').value=regional;
- v72RefreshAreaManagers();
+ refreshCascadingFilters({preserve:true});
  if($('fManager'))$('fManager').value=area;
  applyFilters();
  if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
@@ -1564,17 +1618,56 @@ window.v7ExportArea=area=>csv(v7StoresForArea(area).map(s=>({RegionalManager:s.r
 window.v7ExportNational=()=>csv((ORG_HIERARCHY.regionalManagers||[]).flatMap(r=>(r.areaManagers||[]).map(a=>({RegionalManager:r.name,AreaManager:a.name,SOExecuted:a.metrics?.soExecuted??'',Compliance:a.metrics?.compliance??'',ActionHoursUtilized:a.metrics?.actionHoursUtilized??'',EfficiencyGained:a.metrics?.efficiencyGained??''}))),`${ACTIVE_PROGRAM_ID.replace(/\W+/g,'_')}_hierarchy.csv`);
 
 
-function v72RefreshAreaManagers(){
- const regional=$('fRegional')?.value||'';
- const current=$('fManager')?.value||'';
- const names=uniq(stores.filter(s=>!regional||v7OrgForStore(s).regionalManager===regional).map(s=>v7OrgForStore(s).areaManager).filter(Boolean));
- options('fManager',names);
- if(names.includes(current))$('fManager').value=current;
- else $('fManager').value='';
+function cascadeBaseStores(){
+ const c=$('fCoverage')?.value||'',ret=$('fRetailer')?.value||'',st=$('fState')?.value||'';
+ return stores.filter(s=>
+   (!c||(c==='covered'?s.covered:!s.covered))&&
+   (!ret||s.retailer===ret)&&
+   (!st||s.state===st)
+ );
 }
+function v75RtsIdsForScope(scope){
+ const radius=Number($('radius')?.value||75);
+ const ids=new Set();
+ scope.forEach(s=>{
+   for(const r of (s._eligibleDistances||[])){
+     if(r.distance<=radius)ids.add(String(r.id));
+     else break;
+   }
+ });
+ return ids;
+}
+function refreshCascadingFilters({preserve=true}={}){
+ const regionalEl=$('fRegional'),managerEl=$('fManager'),rtsEl=$('fRts');
+ if(!regionalEl||!managerEl||!rtsEl)return;
+
+ const oldRegional=preserve?regionalEl.value:'';
+ const oldManager=preserve?managerEl.value:'';
+ const oldRts=preserve?rtsEl.value:'';
+
+ const base=cascadeBaseStores();
+
+ const regionalNames=uniq(base.map(s=>v7OrgForStore(s).regionalManager).filter(x=>x&&x!=='Unaligned'));
+ options('fRegional',regionalNames);
+ if(oldRegional&&regionalNames.includes(oldRegional))regionalEl.value=oldRegional;
+
+ const selectedRegional=regionalEl.value||'';
+ const districtScope=base.filter(s=>!selectedRegional||v7OrgForStore(s).regionalManager===selectedRegional);
+ const managerNames=uniq(districtScope.map(s=>v7OrgForStore(s).areaManager).filter(Boolean));
+ options('fManager',managerNames);
+ if(oldManager&&managerNames.includes(oldManager))managerEl.value=oldManager;
+
+ const selectedManager=managerEl.value||'';
+ const rtsScope=districtScope.filter(s=>!selectedManager||v7OrgForStore(s).areaManager===selectedManager);
+ const validIds=v75RtsIdsForScope(rtsScope);
+ const rtsNames=uniq(activeRTS().filter(r=>validIds.has(String(r.id))).map(r=>r.name));
+ options('fRts',rtsNames);
+ if(oldRts&&rtsNames.includes(oldRts))rtsEl.value=oldRts;
+}
+function v72RefreshAreaManagers(){refreshCascadingFilters({preserve:true})}
 function v72SetRegionalFilter(regional){
  if($('fRegional'))$('fRegional').value=regional||'';
- v72RefreshAreaManagers();
+ refreshCascadingFilters({preserve:true});
  applyFilters();
 }
 window.v72SetRegionalFilter=v72SetRegionalFilter;
@@ -1596,9 +1689,7 @@ function init(){
  stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));
  options('fRetailer',uniq(stores.map(s=>s.retailer)));
  options('fState',uniq(stores.map(s=>s.state)));
- options('fRegional',uniq(stores.map(s=>v7OrgForStore(s).regionalManager).filter(x=>x&&x!=='Unaligned')));
- v72RefreshAreaManagers();
- options('fRts',uniq(activeRTS().map(r=>r.name)));
+ refreshCascadingFilters({preserve:false});
  drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'
 }
 
@@ -1627,19 +1718,27 @@ function installApplicationBindings(){
   try{el.addEventListener(event,handler);return true}catch(error){console.error(`[V7.2] Could not bind ${label}`,error);unavailable++;return false}
  };
 
- ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>on(id,'change',applyFilters,id));
- on('fRegional','change',()=>{v72RefreshAreaManagers();applyFilters()},'Regional Manager filter');
+ ['cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>on(id,'change',applyFilters,id));
+ ['fCoverage','fRetailer','fState'].forEach(id=>on(id,'change',()=>{refreshCascadingFilters({preserve:true});applyFilters()},id));
+ on('fRegional','change',()=>{const keep=$('fRegional').value;refreshCascadingFilters({preserve:true});$('fRegional').value=keep;refreshCascadingFilters({preserve:true});applyFilters()},'Regional Manager filter');
+ on('fManager','change',()=>{const keep=$('fManager').value;refreshCascadingFilters({preserve:true});$('fManager').value=keep;refreshCascadingFilters({preserve:true});applyFilters()},'District/Area Manager filter');
+ on('fRts','change',applyFilters,'RTS filter');
  on('showRts','change',drawRts,'RTS visibility');
  on('territories','change',drawTerritories,'Territories');
  on('territoryLabels','change',drawTerritories,'Territory labels');
  on('showRings','change',drawRts,'Coverage rings');
- on('radius','input',()=>{$('radiusLbl').textContent=$('radius').value;recompute()},'Radius');
+ let radiusTimer=null;
+ on('radius','input',()=>{
+   $('radiusLbl').textContent=$('radius').value;
+   clearTimeout(radiusTimer);
+   radiusTimer=setTimeout(()=>recompute(),140);
+ },'Radius');
 
  safe('fit',fit,'Fit Results');
  safe('home',()=>map.setView(HOME.center,HOME.zoom),'Home');
  safe('reset',()=>{
   ['fCoverage','fRetailer','fState','fRegional','fManager','fRts'].forEach(x=>{if($(x))$(x).value=''});
-  v72RefreshAreaManagers();
+  refreshCascadingFilters({preserve:false});
   if($('cluster'))$('cluster').checked=true;
   ['heat','territories','territoryLabels','overlap','within','showRings'].forEach(x=>{if($(x))$(x).checked=false});
   if($('showRts'))$('showRts').checked=true;
@@ -1649,7 +1748,7 @@ function installApplicationBindings(){
  },'Reset');
  safe('clearFilters',()=>{
   ['fCoverage','fRetailer','fState','fRegional','fManager','fRts'].forEach(x=>{if($(x))$(x).value=''});
-  v72RefreshAreaManagers();applyFilters()
+  refreshCascadingFilters({preserve:false});applyFilters()
  },'Clear Filters');
  safe('gapsOnly',()=>{$('fCoverage').value='gap';applyFilters();fit()},'Current Gaps');
  safe('railGaps',()=>{$('fCoverage').value='gap';applyFilters();fit()},'Rail Gaps');
