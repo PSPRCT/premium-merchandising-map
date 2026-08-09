@@ -32,6 +32,12 @@
     "Hiring recommendations are gap-driven"
   ],
   "platformProgramId": "premium-merchandising",
-  "platformRelease": "Version 7.1 \u2014 Startup Architecture Fix",
-  "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius"
+  "platformRelease": "Version 7.3 \u2014 Premium Organization Hierarchy",
+  "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius",
+  "regionalManagerCount": 18,
+  "districtManagerCount": 133,
+  "organizationMatchedDistrictStoreCount": 9048,
+  "organizationMatchedRegionalDirectStoreCount": 351,
+  "organizationUnmatchedStoreCount": 74,
+  "organizationSource": "data (42).xlsx"
 }

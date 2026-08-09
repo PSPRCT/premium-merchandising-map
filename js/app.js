@@ -23,12 +23,13 @@ const PROGRAM_ELIGIBILITY =
   ACTIVE_PROGRAM.adapter?.isRtsEligibleForStore || (() => true);
 const DATA_WARNINGS = [];
 let ORG_HIERARCHY={regionalManagers:[],rdmToRegionalManager:{}};
-if(ACTIVE_PROGRAM_ID==='one-walmart'){
- try{
-  const response=await fetch('./data/one-walmart/organization.json',{cache:'no-store'});
-  if(response.ok)ORG_HIERARCHY=await response.json();
- }catch(error){console.warn('Organization hierarchy could not be loaded',error)}
-}
+try{
+ const orgPath=ACTIVE_PROGRAM_ID==='one-walmart'
+   ? './data/one-walmart/organization.json'
+   : './data/premium-merchandising/organization.json';
+ const response=await fetch(orgPath,{cache:'no-store'});
+ if(response.ok)ORG_HIERARCHY=await response.json();
+}catch(error){console.warn('Organization hierarchy could not be loaded',error)}
 
 function normalizeProgramRetailer(store){
  if(ACTIVE_PROGRAM_ID!=='one-walmart')return store;
@@ -170,7 +171,21 @@ function drawTerritories(){
  });
 }
 
-function applyFilters(){const c=$('fCoverage').value,ret=$('fRetailer').value,st=$('fState').value,mgr=$('fManager').value,rr=$('fRts').value,rad=Number($('radius').value);filtered=stores.filter(s=>(!c||(c==='covered'?s.covered:!s.covered))&&(!ret||s.retailer===ret)&&(!st||s.state===st)&&(!mgr||s.manager===mgr)&&(!rr||s.nearest[0]?.name===rr)&&(!$('within').checked||s.nearest.some(r=>r.distance<=rad)));renderStores();updateMetrics();drawTerritories()}
+function applyFilters(){
+ const c=$('fCoverage').value,ret=$('fRetailer').value,st=$('fState').value,
+ regional=$('fRegional')?.value||'',mgr=$('fManager').value,rr=$('fRts').value,
+ rad=Number($('radius').value);
+ filtered=stores.filter(s=>
+   (!c||(c==='covered'?s.covered:!s.covered))&&
+   (!ret||s.retailer===ret)&&
+   (!st||s.state===st)&&
+   (!regional||v7OrgForStore(s).regionalManager===regional)&&
+   (!mgr||v7OrgForStore(s).areaManager===mgr)&&
+   (!rr||s.nearest[0]?.name===rr)&&
+   (!$('within').checked||s.nearest.some(r=>r.distance<=rad))
+ );
+ renderStores();updateMetrics();drawTerritories()
+}
 function renderStores(){clusterLayer.clearLayers();plainLayer.clearLayers();const ms=filtered.map(s=>markerById.get(s.siteId));if($('cluster').checked){clusterLayer.addLayers(ms);if(!map.hasLayer(clusterLayer))map.addLayer(clusterLayer);if(map.hasLayer(plainLayer))map.removeLayer(plainLayer)}else{ms.forEach(m=>plainLayer.addLayer(m));if(!map.hasLayer(plainLayer))map.addLayer(plainLayer);if(map.hasLayer(clusterLayer))map.removeLayer(clusterLayer)}drawHeat();drawOverlap()}
 function updateMetrics(){
  const scope=filtered;
@@ -305,7 +320,7 @@ function scopeLabel(){
  if($('fCoverage').value)p.push($('fCoverage').value==='covered'?'Covered':'Gaps');
  if($('fRetailer').value)p.push($('fRetailer').value);
  if($('fState').value)p.push($('fState').value);
- if($('fManager').value)p.push($('fManager').value);
+ if($('fRegional')?.value)p.push($('fRegional').value);if($('fManager').value)p.push($('fManager').value);
  if($('fRts').value)p.push($('fRts').value);
  return p.length?p.join(' · '):'All Premium Merchandising stores';
 }
@@ -960,6 +975,7 @@ function v41CurrentViewState(){
      coverage:selected('fCoverage'),
      retailer:selected('fRetailer'),
      state:selected('fState'),
+     regional:selected('fRegional'),
      manager:selected('fManager'),
      rts:selected('fRts')
    },
@@ -977,6 +993,7 @@ function v41ApplyViewState(state){
  apply('fCoverage',state.filters?.coverage);
  apply('fRetailer',state.filters?.retailer);
  apply('fState',state.filters?.state);
+ apply('fRegional',state.filters?.regional);
  apply('fManager',state.filters?.manager);
  apply('fRts',state.filters?.rts);
  if($('radius')&&state.radius){$('radius').value=state.radius;$('radiusLbl').textContent=state.radius}
@@ -1435,7 +1452,9 @@ function v7NormalizeName(value){
  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,' ').trim().toLowerCase().replace(/\s+/g,' ');
 }
 function v7OrgForStore(store){
- const area=store.areaManager||store.manager||'Not listed';
+ const area=ACTIVE_PROGRAM_ID==='premium-merchandising'
+   ? (store.districtManager||store.areaManager||store.manager||'Not listed')
+   : (store.areaManager||store.manager||'Not listed');
  const regional=store.regionalManager||ORG_HIERARCHY.rdmToRegionalManager?.[v7NormalizeName(area)]||'Unaligned';
  return {regionalManager:regional,areaManager:area};
 }
@@ -1473,7 +1492,7 @@ function v7RegionalDashboard(rmName){
    ${v7MetricCard('Action Hours Utilized',metrics.actionHoursUtilized!=null?metrics.actionHoursUtilized.toFixed(2)+'%':'—')}
    ${v7MetricCard('Efficiency Gained',metrics.efficiencyGained!=null?metrics.efficiencyGained.toFixed(2)+'%':'—')}
   </div>
-  <div class="tablewrap"><table><thead><tr><th>Area Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
+  <div class="tablewrap"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
    ${rdmRows.map(r=>`<tr class="v62-click-row" onclick="window.v7AreaDashboard(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
   </tbody></table></div>
   <div class="actions"><button class="btn primary" onclick="window.v7ApplyRegionalFilter(${JSON.stringify(rmName)})">Show Region on Map</button><button class="btn" onclick="window.v7ExportRegional(${JSON.stringify(rmName)})">Export</button></div>`);
@@ -1508,17 +1527,14 @@ function v7AreaDashboard(areaName){
   <div class="actions"><button class="btn primary" onclick="window.v7ApplyAreaFilter(${JSON.stringify(areaName)})">Show Area on Map</button><button class="btn" onclick="window.v7ExportArea(${JSON.stringify(areaName)})">Export</button></div>`);
 }
 function v7OpenOrganizationNavigator(){
- if(ACTIVE_PROGRAM_ID!=='one-walmart'){
-  openModal('Organization Navigator','<div class="callout">The Regional Manager / Area Manager hierarchy supplied is for One Walmart. Switch to One Walmart to use this navigator.</div>');return;
- }
  const rows=(ORG_HIERARCHY.regionalManagers||[]).map(r=>{
    const scope=v7StoresForRegional(r.name),model=v7ModelForStores(scope),covered=scope.length-model.gaps.length;
    return {...r,stores:scope.length,gaps:model.gaps.length,coverage:scope.length?covered/scope.length*100:0};
  }).sort((a,b)=>b.gaps-a.gaps||b.stores-a.stores);
  openModal('Organization Navigator',`
   ${v7Breadcrumb([{label:'National',action:'void(0)'}])}
-  <div class="v7-hero"><h2>One Walmart Organization</h2><p>National → Regional Manager → Area Manager/RDM → RTS → Store</p></div>
-  <div class="tablewrap"><table><thead><tr><th>Regional Manager</th><th>Area Managers</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
+  <div class="v7-hero"><h2>${esc(v4ProgramLabel())} Organization</h2><p>National → Regional Manager → ${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager/RDM'} → RTS → Store</p></div>
+  <div class="tablewrap"><table><thead><tr><th>Regional Manager</th><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
    ${rows.map(r=>`<tr class="v62-click-row" onclick="window.v7RegionalDashboard(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.areaManagers.length}</td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
   </tbody></table></div>
   <div class="actions"><button class="btn" onclick="window.v7ExportNational()">Export Hierarchy</button></div>`);
@@ -1528,105 +1544,187 @@ window.v7RegionalDashboard=v7RegionalDashboard;
 window.v7AreaDashboard=v7AreaDashboard;
 
 window.v7ApplyRegionalFilter=rm=>{
- const subset=v7StoresForRegional(rm);filtered=[...subset];renderAll();$('modal').classList.remove('show');if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
+ $('modal').classList.remove('show');
+ if($('fRegional'))$('fRegional').value=rm;
+ v72RefreshAreaManagers();
+ applyFilters();
+ if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
 };
 window.v7ApplyAreaFilter=area=>{
- const subset=v7StoresForArea(area);filtered=[...subset];renderAll();$('modal').classList.remove('show');if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
+ $('modal').classList.remove('show');
+ const regional=stores.find(s=>s.areaManager===area)?.regionalManager||'';
+ if($('fRegional'))$('fRegional').value=regional;
+ v72RefreshAreaManagers();
+ if($('fManager'))$('fManager').value=area;
+ applyFilters();
+ if(filtered.length)map.fitBounds(filtered.map(s=>[s.lat,s.lng]),{padding:[30,30]});
 };
 window.v7ExportRegional=rm=>csv(v7StoresForRegional(rm).map(s=>({RegionalManager:rm,AreaManager:s.areaManager,SiteID:s.siteId,StoreNumber:s.storeNumber,Address:s.address,City:s.city,State:s.state,ZIP:s.zip,Coverage:s.coverageType})),'regional_'+rm.replace(/\W+/g,'_')+'.csv');
 window.v7ExportArea=area=>csv(v7StoresForArea(area).map(s=>({RegionalManager:s.regionalManager,AreaManager:area,SiteID:s.siteId,StoreNumber:s.storeNumber,Address:s.address,City:s.city,State:s.state,ZIP:s.zip,Coverage:s.coverageType})),'area_'+area.replace(/\W+/g,'_')+'.csv');
-window.v7ExportNational=()=>csv((ORG_HIERARCHY.regionalManagers||[]).flatMap(r=>(r.areaManagers||[]).map(a=>({RegionalManager:r.name,AreaManager:a.name,SOExecuted:a.metrics?.soExecuted??'',Compliance:a.metrics?.compliance??'',ActionHoursUtilized:a.metrics?.actionHoursUtilized??'',EfficiencyGained:a.metrics?.efficiencyGained??''}))),'one_walmart_hierarchy.csv');
+window.v7ExportNational=()=>csv((ORG_HIERARCHY.regionalManagers||[]).flatMap(r=>(r.areaManagers||[]).map(a=>({RegionalManager:r.name,AreaManager:a.name,SOExecuted:a.metrics?.soExecuted??'',Compliance:a.metrics?.compliance??'',ActionHoursUtilized:a.metrics?.actionHoursUtilized??'',EfficiencyGained:a.metrics?.efficiencyGained??''}))),`${ACTIVE_PROGRAM_ID.replace(/\W+/g,'_')}_hierarchy.csv`);
 
-function init(){initializeDataStatus();stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));options('fRetailer',uniq(stores.map(s=>s.retailer)));options('fState',uniq(stores.map(s=>s.state)));options('fManager',uniq(stores.map(s=>s.manager)));options('fRts',uniq(activeRTS().map(r=>r.name)));drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'}
+
+function v72RefreshAreaManagers(){
+ const regional=$('fRegional')?.value||'';
+ const current=$('fManager')?.value||'';
+ const names=uniq(stores.filter(s=>!regional||v7OrgForStore(s).regionalManager===regional).map(s=>v7OrgForStore(s).areaManager).filter(Boolean));
+ options('fManager',names);
+ if(names.includes(current))$('fManager').value=current;
+ else $('fManager').value='';
+}
+function v72SetRegionalFilter(regional){
+ if($('fRegional'))$('fRegional').value=regional||'';
+ v72RefreshAreaManagers();
+ applyFilters();
+}
+window.v72SetRegionalFilter=v72SetRegionalFilter;
+
+function init(){
+ initializeDataStatus();
+ const regionalSelect=$('fRegional');
+ const managerSelect=$('fManager');
+ if(regionalSelect){
+   const label=regionalSelect.closest('.field')?.querySelector('label');
+   if(label)label.textContent='Regional Manager';
+ }
+ if(managerSelect){
+   const label=managerSelect.closest('.field')?.querySelector('label');
+   if(label)label.textContent=ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM';
+ }
+
+ stores=RAW_STORES.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))).map(s=>calculate({...s,lat:Number(s.lat),lng:Number(s.lng)}));
+ stores.forEach(s=>markerById.set(s.siteId,storeMarker(s)));
+ options('fRetailer',uniq(stores.map(s=>s.retailer)));
+ options('fState',uniq(stores.map(s=>s.state)));
+ options('fRegional',uniq(stores.map(s=>v7OrgForStore(s).regionalManager).filter(x=>x&&x!=='Unaligned')));
+ v72RefreshAreaManagers();
+ options('fRts',uniq(activeRTS().map(r=>r.name)));
+ drawRts();applyFilters();drawTerritories();fit();$('status').style.display='none'
+}
 
 function installApplicationBindings(){
- try{
+ let unavailable=0;
+ const safe=(id,handler,label=id)=>{
+  const el=$(id);
+  if(!el){console.debug(`[V7.2] Optional control absent: ${label}`);return false}
+  if(typeof handler!=='function'){
+   console.warn(`[V7.2] Optional tool unavailable: ${label}`);
+   el.disabled=true;el.title=`${label} is unavailable`;unavailable++;return false
+  }
+  try{
+   el.onclick=(event)=>{
+    try{return handler(event)}
+    catch(error){
+     console.error(`[V7.2] ${label} failed`,error);
+     openModal('Tool Error',`<div class="data-error-panel"><b>${esc(label)} could not open.</b><br><br>${esc(String(error.message||error))}<br><br>The map remains available.</div>`)
+    }
+   };
+   return true
+  }catch(error){console.error(`[V7.2] Could not bind ${label}`,error);unavailable++;return false}
+ };
+ const on=(id,event,handler,label=id)=>{
+  const el=$(id);if(!el){console.debug(`[V7.2] Optional control absent: ${label}`);return false}
+  try{el.addEventListener(event,handler);return true}catch(error){console.error(`[V7.2] Could not bind ${label}`,error);unavailable++;return false}
+ };
 
-['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>$(id).addEventListener('change',applyFilters));$('showRts').onchange=drawRts;$('territories').onchange=drawTerritories;$('territoryLabels').onchange=drawTerritories;$('showRings').onchange=drawRts;$('radius').oninput=()=>{$('radiusLbl').textContent=$('radius').value;recompute()};
-v5SafeBind('fit',fit,'Fit Results');v5SafeBind('home',()=>map.setView(HOME.center,HOME.zoom),'Home');$('reset').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');$('cluster').checked=true;$('heat').checked=$('territories').checked=$('territoryLabels').checked=$('overlap').checked=$('within').checked=$('showRings').checked=false;$('showRts').checked=true;$('radius').value=75;$('radiusLbl').textContent=75;window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)};$('clearFilters').onclick=()=>{['fCoverage','fRetailer','fState','fManager','fRts'].forEach(x=>$(x).value='');applyFilters()};$('gapsOnly').onclick=$('railGaps').onclick=()=>{$('fCoverage').value='gap';applyFilters();fit()};$('coveredOnly').onclick=()=>{$('fCoverage').value='covered';applyFilters();fit()};
-v5SafeBind('executiveModeBtn',executiveMode,'Executive Mode');v5SafeBind('networkOptimizerBtn',networkOptimizer,'Network Optimizer');v5SafeBind('multiHireBtn',multiHirePlanner,'Multi-Hire Planner');v5SafeBind('healthBtn',territoryHealthScores,'Coverage Health');v5SafeBind('rtmDashboardBtn',rtmDashboard,'RTM Dashboard');v5SafeBind('executiveBtn',executiveDashboard,'Executive Dashboard');
-if($('v4ExecutiveHomeBtn'))$('v4ExecutiveHomeBtn').onclick=v4OpenExecutive;
-if($('v4ExecutiveBtn'))$('v4ExecutiveBtn').onclick=v4OpenExecutive;
-if($('v4BriefBtn'))$('v4BriefBtn').onclick=v4ExecutiveBrief;
-if($('v4LeadershipBtn'))$('v4LeadershipBtn').onclick=leadershipReport;
-if($('v4RtmBtn'))$('v4RtmBtn').onclick=rtmDashboard;
-if($('v4GapHeatBtn'))$('v4GapHeatBtn').onclick=()=>{v4ToggleGapHeat(true);};
-if($('v4ProfilesBtn'))$('v4ProfilesBtn').onclick=v4RtsProfiles;
-if($('v4HealthBtn'))$('v4HealthBtn').onclick=territoryHealthScores;
-if($('v4CompareBtn'))$('v4CompareBtn').onclick=v4CompareRts;
-if($('v4HiringBtn'))$('v4HiringBtn').onclick=multiHirePlanner;
-if($('v4TimelineBtn'))$('v4TimelineBtn').onclick=v4CoverageTimeline;
-if($('v4OptimizerBtn'))$('v4OptimizerBtn').onclick=networkOptimizer;
-if($('v4BalancerBtn'))$('v4BalancerBtn').onclick=territoryBalancer;
-if($('v4TerritoryReportBtn'))$('v4TerritoryReportBtn').onclick=v4TerritoryReport;
-if($('v4ExportSummaryBtn'))$('v4ExportSummaryBtn').onclick=()=>csv([{
- Program:v4ProgramLabel(),Scope:scopeLabel(),Stores:filtered.length,
- CoveragePercent:(filtered.length?(filtered.length-v4Model(filtered).gaps.length)/filtered.length*100:0).toFixed(1),
- NetworkGaps:v4Model(filtered).gaps.length,UniqueStores:v4Model(filtered).uniqueStores.length,
- SharedStores:v4Model(filtered).sharedStores.length
-}],'psp_executive_summary.csv');
-if($('v4GapHeatToggle'))$('v4GapHeatToggle').onchange=e=>v4ToggleGapHeat(e.target.checked);
+ ['fCoverage','fRetailer','fState','fManager','fRts','cluster','heat','overlap','within','territories','territoryLabels'].forEach(id=>on(id,'change',applyFilters,id));
+ on('fRegional','change',()=>{v72RefreshAreaManagers();applyFilters()},'Regional Manager filter');
+ on('showRts','change',drawRts,'RTS visibility');
+ on('territories','change',drawTerritories,'Territories');
+ on('territoryLabels','change',drawTerritories,'Territory labels');
+ on('showRings','change',drawRts,'Coverage rings');
+ on('radius','input',()=>{$('radiusLbl').textContent=$('radius').value;recompute()},'Radius');
 
-v5SafeBind('v7OrganizationBtn',v7OpenOrganizationNavigator,'Organization Navigator');
-v5SafeBind('v62ExecutiveBtn',v6OpenExecutiveIntelligence,'Executive Overview');
-v5SafeBind('v62ShowGapsBtn',()=>{$('gapsOnly').click();v41OperationalFocus()},'Show Uncovered');
-v5SafeBind('v62OperationalBtn',v41OperationalFocusModal,'Operational Focus');
-v5SafeBind('v62GapSummaryBtn',v62GapSummary,'Gap Summary');
-v5SafeBind('v62StateBtn',v6OpenStateIntelligence,'State / Territory Intelligence');
-v5SafeBind('v62ManagerBtn',v6OpenManagerIntelligence,'Manager Intelligence');
-v5SafeBind('v62RtsBtn',v4RtsProfiles,'RTS Profiles');
-v5SafeBind('v62StoreBtn',()=>{$('search').focus();openModal('Store Intelligence','<div class="callout">Search for a store, open its popup, and choose Store Intelligence.</div>')},'Store Intelligence');
-v5SafeBind('v62DedicatedBtn',v41DedicatedAnalysis,'Dedicated Teams');
-v5SafeBind('v62ResiliencyBtn',resiliencySimulator,'Resiliency');
-v5SafeBind('v62SimulateBtn',simulate,'Simulate New RTS');
-v5SafeBind('v62OptimizerBtn',networkOptimizer,'Optimize Network');
-v5SafeBind('v62MultiHireBtn',multiHirePlanner,'Multi-Hire Plan');
-v5SafeBind('v62CompareBtn',v4CompareRts,'Compare RTS');
-v5SafeBind('v62TimelineBtn',v4CoverageTimeline,'Coverage Timeline');
-v5SafeBind('v62SavedPlansBtn',v62SavedScenarios,'Saved Scenarios');
-v5SafeBind('v62BriefBtn',v4ExecutiveBrief,'Executive Brief');
-v5SafeBind('v62LeadershipBtn',leadershipReport,'Leadership Report');
-v5SafeBind('v62TerritoryReportBtn',v4TerritoryReport,'Territory Report');
-v5SafeBind('v62HealthBtn',territoryHealthScores,'Coverage Health');
-v5SafeBind('v62BalancerBtn',territoryBalancer,'Territory Balancer');
-v5SafeBind('v62RetailerBtn',retailerRollups,'Retailer Rollups');
-v5SafeBind('v62SavedViewsBtn',v41SavedViews,'Saved Views');
-v5SafeBind('v62HelpBtn',v41Help,'Help / Guide');
-v62InstallClickableDrilldowns();
-v5SafeBind('v6ExecutiveIntelligenceBtn',v6OpenExecutiveIntelligence,'Executive Intelligence');
-v5SafeBind('v6StateIntelligenceBtn',v6OpenStateIntelligence,'State / Territory Intelligence');
-v5SafeBind('v6ManagerIntelligenceBtn',v6OpenManagerIntelligence,'Manager Intelligence');
-v5SafeBind('v6StoreFinderBtn',()=>{$('search').focus();openModal('Store Intelligence',`<div class="callout">Search by store number, address, city, ZIP, SiteID, or MDM ID. Select a store result, then choose <b>Store Intelligence</b> from its popup.</div>`)},'Store Intelligence');
-v5SafeBind('v6HistoricalBtn',v6HistoricalReadiness,'Historical Trends');
-v5SafeBind('v41ShowGapsBtn',()=>{$('gapsOnly').click();v41OperationalFocus()},'Show Uncovered');
-v5SafeBind('v41ShowCoveredBtn',()=>{$('coveredOnly').click();v41OperationalFocus()},'Show Covered');
-v5SafeBind('v41DedicatedGapsBtn',v41DedicatedGapsQuick,'Dedicated Gaps');
-v5SafeBind('v41OperationalFocusBtn',v41OperationalFocusModal,'Operational Focus');
-v5SafeBind('v41CopyViewBtn',v41CopyViewLink,'Copy View Link');
-v5SafeBind('v41SavedViewsBtn',v41SavedViews,'Saved Views');
-v5SafeBind('v41DedicatedExposureBtn',v41DedicatedAnalysis,'Dedicated Team Exposure');
-v5SafeBind('v41ManagerRollupBtn',managerRollups,'Manager Rollups');
-v5SafeBind('v41GapFinderBtn',gapFinder,'Current Gap Finder');
-v5SafeBind('v41PlacementBtn',modelPlacement,'Model New RTS Placement');
-v5SafeBind('v41ResiliencyBtn',resiliencySimulator,'RTS Resiliency');
-v5SafeBind('v41HelpBtn',v41Help,'Help / Workflow Guide');
-v5SafeBind('v41FocusRefresh',v41OperationalFocus,'Refresh Operational Focus');
-v5SafeBind('v41FocusGapCard',gapFinder,'Largest Gap Signal');
-v5SafeBind('v41FocusWorkloadCard',territoryHealthScores,'Highest RTS Workload');
-v5SafeBind('v41FocusHireCard',modelPlacement,'Top Placement Opportunity');
-v5SafeBind('v41FocusActionCard',v41OperationalFocusModal,'Recommended Action');
+ safe('fit',fit,'Fit Results');
+ safe('home',()=>map.setView(HOME.center,HOME.zoom),'Home');
+ safe('reset',()=>{
+  ['fCoverage','fRetailer','fState','fRegional','fManager','fRts'].forEach(x=>{if($(x))$(x).value=''});
+  v72RefreshAreaManagers();
+  if($('cluster'))$('cluster').checked=true;
+  ['heat','territories','territoryLabels','overlap','within','showRings'].forEach(x=>{if($(x))$(x).checked=false});
+  if($('showRts'))$('showRts').checked=true;
+  if($('radius'))$('radius').value=75;
+  if($('radiusLbl'))$('radiusLbl').textContent=75;
+  window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)
+ },'Reset');
+ safe('clearFilters',()=>{
+  ['fCoverage','fRetailer','fState','fRegional','fManager','fRts'].forEach(x=>{if($(x))$(x).value=''});
+  v72RefreshAreaManagers();applyFilters()
+ },'Clear Filters');
+ safe('gapsOnly',()=>{$('fCoverage').value='gap';applyFilters();fit()},'Current Gaps');
+ safe('railGaps',()=>{$('fCoverage').value='gap';applyFilters();fit()},'Rail Gaps');
+ safe('coveredOnly',()=>{$('fCoverage').value='covered';applyFilters();fit()},'Covered Stores');
 
+ const bindings=[
+  ['v7OrganizationBtn',v7OpenOrganizationNavigator,'Organization Navigator'],
+  ['v62ExecutiveBtn',v6OpenExecutiveIntelligence,'Executive Overview'],
+  ['v62ShowGapsBtn',()=>{$('gapsOnly').click();v41OperationalFocus()},'Show Uncovered'],
+  ['v62OperationalBtn',v41OperationalFocusModal,'Operational Focus'],
+  ['v62GapSummaryBtn',v62GapSummary,'Gap Summary'],
+  ['v62StateBtn',v6OpenStateIntelligence,'State / Territory Intelligence'],
+  ['v62ManagerBtn',v6OpenManagerIntelligence,'Manager Intelligence'],
+  ['v62RtsBtn',v4RtsProfiles,'RTS Profiles'],
+  ['v62StoreBtn',()=>{$('search').focus();openModal('Store Intelligence','<div class="callout">Search for a store, open its popup, and choose Store Intelligence.</div>')},'Store Intelligence'],
+  ['v62DedicatedBtn',v41DedicatedAnalysis,'Dedicated Teams'],
+  ['v62ResiliencyBtn',resiliencySimulator,'Resiliency'],
+  ['v62SimulateBtn',simulate,'Simulate New RTS'],
+  ['v62OptimizerBtn',networkOptimizer,'Optimize Network'],
+  ['v62MultiHireBtn',multiHirePlanner,'Multi-Hire Plan'],
+  ['v62CompareBtn',v4CompareRts,'Compare RTS'],
+  ['v62TimelineBtn',v4CoverageTimeline,'Coverage Timeline'],
+  ['v62SavedPlansBtn',v62SavedScenarios,'Saved Scenarios'],
+  ['v62BriefBtn',v4ExecutiveBrief,'Executive Brief'],
+  ['v62LeadershipBtn',leadershipReport,'Leadership Report'],
+  ['v62TerritoryReportBtn',v4TerritoryReport,'Territory Report'],
+  ['v62HealthBtn',territoryHealthScores,'Coverage Health'],
+  ['v62BalancerBtn',territoryBalancer,'Territory Balancer'],
+  ['v62RetailerBtn',retailerRollups,'Retailer Rollups'],
+  ['v62SavedViewsBtn',v41SavedViews,'Saved Views'],
+  ['v62HelpBtn',v41Help,'Help / Guide'],
+  ['v4ExecutiveHomeBtn',v4OpenExecutive,'Executive Home'],
+  ['executiveModeBtn',executiveMode,'Executive Mode'],
+  ['networkOptimizerBtn',networkOptimizer,'Network Optimizer'],
+  ['multiHireBtn',multiHirePlanner,'Multi-Hire Planner'],
+  ['healthBtn',territoryHealthScores,'Coverage Health'],
+  ['rtmDashboardBtn',rtmDashboard,'RTM Dashboard'],
+  ['executiveBtn',executiveDashboard,'Executive Dashboard'],
+  ['leadershipReportBtn',leadershipReport,'Leadership Report'],
+  ['balanceBtn',territoryBalancer,'Territory Balancer'],
+  ['hiringPlanBtn',hiringRecommendationPlan,'Hiring Recommendation Plan'],
+  ['simulateBtn',startSimulation,'Simulate'],
+  ['railSim',startSimulation,'Rail Simulate'],
+  ['modelBtn',modelPlacement,'Model Placement'],
+  ['railModel',modelPlacement,'Rail Model'],
+  ['railExecutive',executiveMode,'Rail Executive'],
+  ['gapFinderBtn',openGapFinder,'Gap Finder'],
+  ['territoryBtn',territoryProfiles,'Territory Profiles'],
+  ['railTerritory',territoryProfiles,'Rail Territory'],
+  ['compareBtn',compareTerritories,'Compare Territories'],
+  ['resiliencyBtn',resiliency,'Resiliency'],
+  ['managerBtn',()=>rollup('manager','Manager Rollups'),'Manager Rollups'],
+  ['retailerBtn',()=>rollup('retailer','Retailer Rollups'),'Retailer Rollups'],
+  ['exportStores',()=>csv(storeRows(filtered),'visible_stores.csv'),'Export Visible Stores'],
+  ['exportGaps',()=>csv(storeRows(stores.filter(s=>!s.covered)),'current_coverage_gaps.csv'),'Export Gaps'],
+  ['panelBtn',()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)},'Controls'],
+  ['hidePanel',()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)},'Hide Panel'],
+  ['drawerClose',()=>{$('drawer').classList.remove('show');window.clearHighlight()},'Close Drawer'],
+  ['modalClose',()=>{$('modal').classList.remove('show')},'Close Modal'],
+  ['clearSearch',()=>{$('search').value='';$('results').classList.remove('show')},'Clear Search']
+ ];
+ bindings.forEach(([id,handler,label])=>safe(id,handler,label));
+ on('search','input',search,'Search');
+ on('search','keydown',e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}},'Search Enter');
+ document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});
+ v62InstallClickableDrilldowns();
+ v5StartupDiagnostics();
 
-if($('v4CoverageRingsToggle'))$('v4CoverageRingsToggle').onchange=e=>v4ToggleRings(e.target.checked);
-$('leadershipReportBtn').onclick=leadershipReport;$('balanceBtn').onclick=territoryBalancer;$('hiringPlanBtn').onclick=hiringRecommendationPlan;$('simulateBtn').onclick=$('railSim').onclick=startSimulation;$('modelBtn').onclick=$('railModel').onclick=modelPlacement;if($('railExecutive'))$('railExecutive').onclick=executiveMode;$('gapFinderBtn').onclick=openGapFinder;$('territoryBtn').onclick=$('railTerritory').onclick=territoryProfiles;$('compareBtn').onclick=compareTerritories;$('resiliencyBtn').onclick=resiliency;$('managerBtn').onclick=()=>rollup('manager','Manager Rollups');$('retailerBtn').onclick=()=>rollup('retailer','Retailer Rollups');
-v5StartupDiagnostics();
-$('exportStores').onclick=()=>csv(storeRows(filtered),'visible_stores.csv');$('exportGaps').onclick=()=>csv(storeRows(stores.filter(s=>!s.covered)),'current_coverage_gaps.csv');
-$('panelBtn').onclick=$('hidePanel').onclick=()=>{$('workspace').classList.toggle('closed');setTimeout(()=>map.invalidateSize(),220)};$('drawerClose').onclick=()=>{$('drawer').classList.remove('show');window.clearHighlight()};$('modalClose').onclick=()=>$('modal').classList.remove('show');$('search').oninput=search;$('clearSearch').onclick=()=>{$('search').value='';$('results').classList.remove('show')};$('search').onkeydown=e=>{if(e.key==='Enter'&&($('search')._hits||[]).length){e.preventDefault();selectHit(($('search')._hits||[])[0])}};document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('results').classList.remove('show')});
-  console.info('[V7.1] Application bindings installed');
- }catch(error){
-  console.error('[V7.1] Binding installation error',error);
-  setDataStatus('warning','Map loaded; one or more optional tools are unavailable');
+ if(unavailable===0){
+  setDataStatus('ready',`${ACTIVE_PROGRAM.name} · all tools loaded`);
+  setTimeout(()=>{if($('dataStatus'))$('dataStatus').textContent=`${ACTIVE_PROGRAM.name} · ${stores.length.toLocaleString()} stores · ${RTS.length.toLocaleString()} roster RTS`},100);
+ }else{
+  setDataStatus('warning',`Map loaded; ${unavailable} optional tool${unavailable===1?'':'s'} unavailable`);
  }
+ console.info(`[V7.2] Bindings installed; unavailable tools: ${unavailable}`);
 }
 
 initializeProgramSwitcher({

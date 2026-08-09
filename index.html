@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PSP Coverage Intelligence Platform</title>
-<link rel="stylesheet" href="./css/app.css?v=platform-v7-1">
+<link rel="stylesheet" href="./css/app.css?v=platform-v7-3">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -25,7 +25,7 @@
 <div class="panel-head"><span>Map Controls</span><button id="hidePanel" class="btn">Hide</button></div>
 <section class="section"><h3>Coverage Snapshot</h3><div class="body grid2"><div class="metric"><small>Stores</small><b id="kStores">0</b></div><div class="metric"><small>Active RTS</small><b id="kRts">0</b></div><div class="metric"><small>Covered</small><b id="kCovered">0</b></div><div class="metric"><small>Gaps</small><b id="kGaps">0</b></div><div class="metric"><small>Coverage</small><b id="kPct">0%</b></div><div class="metric"><small>Avg nearest</small><b id="kAvg">0</b></div><div class="metric"><small>Avg territory</small><b id="kAvgTerritory">0</b></div><div class="metric"><small>Largest territory</small><b id="kLargestTerritory">0</b></div><div class="metric"><small>Smallest territory</small><b id="kSmallestTerritory">0</b></div><div class="metric"><small>Median territory</small><b id="kMedianTerritory">0</b></div></div><div class="filter-scope-note"><b>Live scope:</b> All snapshot metrics update with the current Coverage, Retailer, State, Manager, and Nearest RTS filters.</div></section>
 <section class="section"><h3>View</h3><div class="body"><div class="actions"><button id="fit" class="btn">Fit Results</button><button id="home" class="btn">Home</button><button id="reset" class="btn">Reset</button></div><div class="actions"><button id="gapsOnly" class="btn">Current Gaps</button><button id="coveredOnly" class="btn">Covered Stores</button></div></div></section>
-<section class="section"><h3>Filters</h3><div class="body"><div class="field"><label>Coverage</label><select id="fCoverage"><option value="">All</option><option value="covered">Covered</option><option value="gap">Gap / Uncovered</option></select></div><div class="field"><label>Retailer</label><select id="fRetailer"><option value="">All retailers</option></select></div><div class="field"><label>State</label><select id="fState"><option value="">All states</option></select></div><div class="field"><label>Manager</label><select id="fManager"><option value="">All managers</option></select></div><div class="field"><label>Nearest RTS</label><select id="fRts"><option value="">All RTS</option></select></div><button id="clearFilters" class="btn">Clear Filters</button></div></section>
+<section class="section"><h3>Filters</h3><div class="body"><div class="field"><label>Coverage</label><select id="fCoverage"><option value="">All</option><option value="covered">Covered</option><option value="gap">Gap / Uncovered</option></select></div><div class="field"><label>Retailer</label><select id="fRetailer"><option value="">All retailers</option></select></div><div class="field"><label>State</label><select id="fState"><option value="">All states</option></select></div><div class="field v72-regional-field"><label>Regional Manager</label><select id="fRegional"><option value="">All regional managers</option></select></div><div class="field"><label>Area Manager / RDM</label><select id="fManager"><option value="">All area managers</option></select></div><div class="field"><label>Nearest RTS</label><select id="fRts"><option value="">All RTS</option></select></div><button id="clearFilters" class="btn">Clear Filters</button></div></section>
 <section class="section"><h3>RTS Visibility & Radius</h3><div class="body"><label class="toggle"><input id="showRts" type="checkbox" checked>Active RTS hubs</label><label class="toggle"><input id="showRings" type="checkbox">Coverage rings</label><div class="field"><label>Radius: <b id="radiusLbl">75</b> miles</label><input id="radius" type="range" min="25" max="150" step="5" value="75"></div></div></section>
 <section class="section"><h3>Map Layers</h3>
 <div class="body">
@@ -140,6 +140,6 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
-<script type="module" src="./js/app.js?v=platform-v7-1"></script>
+<script type="module" src="./js/app.js?v=platform-v7-3"></script>
 </body>
 </html>

@@ -1264,3 +1264,10 @@ button:disabled{
 
 /* Version 7.1 startup stabilization */
 .data-error-panel{max-width:620px;line-height:1.5}
+
+/* Version 7.2 hierarchy filters */
+.v72-regional-field{
+  border-left:3px solid #2563eb;
+  padding-left:7px;
+}
+.v72-regional-field label{color:#1e3a8a}

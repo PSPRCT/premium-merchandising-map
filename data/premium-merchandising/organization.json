@@ -1,0 +1,1200 @@
+{
+  "source": "data (42).xlsx",
+  "program": "premium-merchandising",
+  "regionalManagers": [
+    {
+      "name": "Alicia Wheeler",
+      "normalizedName": "alicia wheeler",
+      "areaManagers": [
+        {
+          "name": "Alicia Demartino",
+          "normalizedName": "alicia demartino",
+          "market": "PREMERCH|117209|01-0144|CT Waterbury",
+          "metrics": null
+        },
+        {
+          "name": "Cathy Mussig",
+          "normalizedName": "cathy mussig",
+          "market": "PREMERCH|117205|01-0148|MA Boston (North)",
+          "metrics": null
+        },
+        {
+          "name": "Edward Schroeder",
+          "normalizedName": "edward schroeder",
+          "market": "PREMERCH|117211|01-0091|NY Rochester",
+          "metrics": null
+        },
+        {
+          "name": "Kathleen Kirk",
+          "normalizedName": "kathleen kirk",
+          "market": "PREMERCH|117204|01-0145|MA Springfield",
+          "metrics": null
+        },
+        {
+          "name": "Mark Pomakoy",
+          "normalizedName": "mark pomakoy",
+          "market": "PREMERCH|117210|01-0090|NY Albany",
+          "metrics": null
+        },
+        {
+          "name": "Stephanie Levins",
+          "normalizedName": "levins stephanie",
+          "market": "PREMERCH|117207|01-0146|RI Providence",
+          "metrics": null
+        },
+        {
+          "name": "Tracy Stowers",
+          "normalizedName": "stowers tracy",
+          "market": "PREMERCH|117206|01-0147|MA Boston (South)",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Brandon Lee",
+      "normalizedName": "brandon lee",
+      "areaManagers": [
+        {
+          "name": "Ashley Williams",
+          "normalizedName": "ashley williams",
+          "market": "PREMERCH|117311|14-0037|TX El Paso",
+          "metrics": null
+        },
+        {
+          "name": "Billi Lackie",
+          "normalizedName": "billi lackie",
+          "market": "PREMERCH|117297|12-0063|OK Oklahoma City",
+          "metrics": null
+        },
+        {
+          "name": "Edward Karanian",
+          "normalizedName": "edward karanian",
+          "market": "PREMERCH|117299|12-0061|TX Lewisville (Metro DFW)",
+          "metrics": null
+        },
+        {
+          "name": "Kevin Fisher",
+          "normalizedName": "fisher kevin",
+          "market": "PREMERCH|117301|12-0059|TX Ft Worth",
+          "metrics": null
+        },
+        {
+          "name": "Lori Funsch-Ellsworth",
+          "normalizedName": "ellsworth funsch lori",
+          "market": "PREMERCH|117312|14-0009|CO Denver",
+          "metrics": null
+        },
+        {
+          "name": "Maureen Papp",
+          "normalizedName": "maureen papp",
+          "market": "PREMERCH|117314|14-0010|CO Colorado Springs",
+          "metrics": null
+        },
+        {
+          "name": "Priscilla Baldwin",
+          "normalizedName": "baldwin priscilla",
+          "market": "PREMERCH|117300|12-0060|TX Dallas",
+          "metrics": null
+        },
+        {
+          "name": "Tommy Biles",
+          "normalizedName": "biles tommy",
+          "market": "PREMERCH|117317|14-0011|NM Albuquerque",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Carlianne Eckert",
+      "normalizedName": "carlianne eckert",
+      "areaManagers": [
+        {
+          "name": "Jesse Perez",
+          "normalizedName": "jesse perez",
+          "market": "PREMERCH|117329|16-0021|CA San Rafael",
+          "metrics": null
+        },
+        {
+          "name": "Paula Canale",
+          "normalizedName": "canale paula",
+          "market": "PREMERCH|117327|16-0022|CA San Francisco",
+          "metrics": null
+        },
+        {
+          "name": "Penny Tracy",
+          "normalizedName": "penny tracy",
+          "market": "PREMERCH|117325|16-0014|NV Las Vegas",
+          "metrics": null
+        },
+        {
+          "name": "Ronna Cowles",
+          "normalizedName": "cowles ronna",
+          "market": "PREMERCH|117331|16-0020|CA Sacramento",
+          "metrics": null
+        },
+        {
+          "name": "Rose Kundert",
+          "normalizedName": "kundert rose",
+          "market": "PREMERCH|117330|16-0023|CA Stockton",
+          "metrics": null
+        },
+        {
+          "name": "Stephanie Smith",
+          "normalizedName": "smith stephanie",
+          "market": "PREMERCH|117328|16-0024|CA Oakland",
+          "metrics": null
+        },
+        {
+          "name": "Tonya King",
+          "normalizedName": "king tonya",
+          "market": "PREMERCH|117326|16-0013|NV Reno",
+          "metrics": null
+        },
+        {
+          "name": "William Dineen",
+          "normalizedName": "dineen william",
+          "market": "PREMERCH|117322|15-0012|UT Salt Lake City",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Christine Allen",
+      "normalizedName": "allen christine",
+      "areaManagers": [
+        {
+          "name": "Carolyne Stokes",
+          "normalizedName": "carolyne stokes",
+          "market": "PREMERCH|117349|19-0001|WA Everett (Metro Seattle)",
+          "metrics": null
+        },
+        {
+          "name": "Charles Tibbits",
+          "normalizedName": "charles tibbits",
+          "market": "PREMERCH|117346|19-0004|OR Portland",
+          "metrics": null
+        },
+        {
+          "name": "Hansel Davis",
+          "normalizedName": "davis hansel",
+          "market": "PREMERCH|117321|15-0007|ID Boise",
+          "metrics": null
+        },
+        {
+          "name": "Michele Coronado",
+          "normalizedName": "coronado michele",
+          "market": "PREMERCH|117348|19-0002|WA Seattle",
+          "metrics": null
+        },
+        {
+          "name": "Suzette Judd",
+          "normalizedName": "judd suzette",
+          "market": "PREMERCH|117347|19-0005|OR Eugene",
+          "metrics": null
+        },
+        {
+          "name": "Tammy Hoch",
+          "normalizedName": "hoch tammy",
+          "market": "PREMERCH|117350|19-0003|WA Tacoma (Metro Seattle)",
+          "metrics": null
+        },
+        {
+          "name": "Terry Putnam",
+          "normalizedName": "putnam terry",
+          "market": "PREMERCH|117351|19-0006|WA Spokane",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Christopher Gulas",
+      "normalizedName": "christopher gulas",
+      "areaManagers": [
+        {
+          "name": "Aileen Croft",
+          "normalizedName": "aileen croft",
+          "market": "PREMERCH|117252|06-0120|KY Lexington",
+          "metrics": null
+        },
+        {
+          "name": "Bobbi Reams",
+          "normalizedName": "bobbi reams",
+          "market": "PREMERCH|117248|06-0113|NC Fayetteville",
+          "metrics": null
+        },
+        {
+          "name": "Jeffrey Blakeslee",
+          "normalizedName": "blakeslee jeffrey",
+          "market": "PREMERCH|117245|06-0115|NC Greensboro",
+          "metrics": null
+        },
+        {
+          "name": "Jennifer Richey",
+          "normalizedName": "jennifer richey",
+          "market": "PREMERCH|117246|06-0116|NC Raleigh",
+          "metrics": null
+        },
+        {
+          "name": "Karie Burke-Ellison",
+          "normalizedName": "burke ellison karie",
+          "market": "PREMERCH|117249|06-0110|SC Greenville",
+          "metrics": null
+        },
+        {
+          "name": "Lisa Blair",
+          "normalizedName": "blair lisa",
+          "market": "PREMERCH|117247|06-0114|NC Charlotte",
+          "metrics": null
+        },
+        {
+          "name": "Steve Carroll",
+          "normalizedName": "carroll steve",
+          "market": "PREMERCH|117250|06-0106|TN Knoxville",
+          "metrics": null
+        },
+        {
+          "name": "Tonya Carter",
+          "normalizedName": "carter tonya",
+          "market": "PREMERCH|117228|03-0119|VA Roanoke",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Edward Maher",
+      "normalizedName": "edward maher",
+      "areaManagers": [
+        {
+          "name": "Cynthia Mouzon",
+          "normalizedName": "cynthia mouzon",
+          "market": "PREMERCH|117233|04-0122|OH Columbus",
+          "metrics": null
+        },
+        {
+          "name": "David Hawes",
+          "normalizedName": "david hawes",
+          "market": "PREMERCH|117230|04-0127|PA Harrisburg",
+          "metrics": null
+        },
+        {
+          "name": "Donna Pierson",
+          "normalizedName": "donna pierson",
+          "market": "PREMERCH|117231|04-0128|PA Allentown",
+          "metrics": null
+        },
+        {
+          "name": "Joni Caraballo",
+          "normalizedName": "caraballo joni",
+          "market": "PREMERCH|117234|04-0123|OH Toledo",
+          "metrics": null
+        },
+        {
+          "name": "Michael Quartarano",
+          "normalizedName": "michael quartarano",
+          "market": "PREMERCH|117235|04-0124|OH Cleveland",
+          "metrics": null
+        },
+        {
+          "name": "Scott Hommel",
+          "normalizedName": "hommel scott",
+          "market": "PREMERCH|117229|04-0126|PA Pittsburgh",
+          "metrics": null
+        },
+        {
+          "name": "Theresa Lynn",
+          "normalizedName": "lynn theresa",
+          "market": "PREMERCH|117236|04-0125|OH Canton",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Edwin Lantigua",
+      "normalizedName": "edwin lantigua",
+      "areaManagers": [
+        {
+          "name": "David Douglas",
+          "normalizedName": "david douglas",
+          "market": "PREMERCH|117212|02-0138|NJ Elizabeth",
+          "metrics": null
+        },
+        {
+          "name": "David Still",
+          "normalizedName": "david still",
+          "market": "PREMERCH|117220|02-0135|PA Philadelphia (South)",
+          "metrics": null
+        },
+        {
+          "name": "Eleanor McNamara",
+          "normalizedName": "eleanor mcnamara",
+          "market": "PREMERCH|117216|02-0139|NY White Plains",
+          "metrics": null
+        },
+        {
+          "name": "Ilene Sofferman",
+          "normalizedName": "ilene sofferman",
+          "market": "PREMERCH|117215|02-0141|NY NYC (Metro NYC)",
+          "metrics": null
+        },
+        {
+          "name": "Kim Francione",
+          "normalizedName": "francione kim",
+          "market": "PREMERCH|117214|02-0137|NJ Trenton",
+          "metrics": null
+        },
+        {
+          "name": "Nicole Pittman",
+          "normalizedName": "nicole pittman",
+          "market": "PREMERCH|117219|02-0136|PA Philadelphia (North)",
+          "metrics": null
+        },
+        {
+          "name": "Patricia Gadsden",
+          "normalizedName": "gadsden patricia",
+          "market": "PREMERCH|117218|02-0143|NY Long Island (Metro NYC)",
+          "metrics": null
+        },
+        {
+          "name": "Peggy Hecker",
+          "normalizedName": "hecker peggy",
+          "market": "PREMERCH|117213|02-0140|NJ Paterson",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Henry Brotzman",
+      "normalizedName": "brotzman henry",
+      "areaManagers": [
+        {
+          "name": "Brian Fautsch",
+          "normalizedName": "brian fautsch",
+          "market": "PREMERCH|117320|15-0070|ND Fargo",
+          "metrics": null
+        },
+        {
+          "name": "Joni White",
+          "normalizedName": "joni white",
+          "market": "PREMERCH|117281|10-0074|WI Eau Claire",
+          "metrics": null
+        },
+        {
+          "name": "Lorrie Poss",
+          "normalizedName": "lorrie poss",
+          "market": "PREMERCH|117313|14-0008|CO Ft Collins",
+          "metrics": null
+        },
+        {
+          "name": "Nichols Kastl",
+          "normalizedName": "kastl nichols",
+          "market": "PREMERCH|117319|15-0073|MN Minneapolis",
+          "metrics": null
+        },
+        {
+          "name": "Saadiya Koehler",
+          "normalizedName": "koehler saadiya",
+          "market": "PREMERCH|117310|14-0069|NE Omaha",
+          "metrics": null
+        },
+        {
+          "name": "Sheryl Harding",
+          "normalizedName": "harding sheryl",
+          "market": "PREMERCH|117318|15-0072|MN Eden Prairie (Metro Minneapolis)",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "James Greene",
+      "normalizedName": "greene james",
+      "areaManagers": [
+        {
+          "name": "David Cleaver",
+          "normalizedName": "cleaver david",
+          "market": "PREMERCH|117296|12-0062|AR Little Rock",
+          "metrics": null
+        },
+        {
+          "name": "Elizabeth Ford",
+          "normalizedName": "elizabeth ford",
+          "market": "PREMERCH|117305|13-0055|TX Conroe (Metro Houston)",
+          "metrics": null
+        },
+        {
+          "name": "Heather Houston",
+          "normalizedName": "heather houston",
+          "market": "PREMERCH|117308|13-0054|TX Round Rock (Metro Austin)",
+          "metrics": null
+        },
+        {
+          "name": "Kathy Crago",
+          "normalizedName": "crago kathy",
+          "market": "PREMERCH|117304|13-0057|TX Houston",
+          "metrics": null
+        },
+        {
+          "name": "Melinda Zuniga",
+          "normalizedName": "melinda zuniga",
+          "market": "PREMERCH|117307|13-0150|TX Corpus Christi",
+          "metrics": null
+        },
+        {
+          "name": "Michelle Oatman",
+          "normalizedName": "michelle oatman",
+          "market": "PREMERCH|117303|13-0056|TX Houston (North)",
+          "metrics": null
+        },
+        {
+          "name": "Pamela Clark",
+          "normalizedName": "clark pamela",
+          "market": "PREMERCH|117302|13-0058|TX Houston (South)",
+          "metrics": null
+        },
+        {
+          "name": "Rudy Ramirez",
+          "normalizedName": "ramirez rudy",
+          "market": "PREMERCH|117306|13-0039|TX San Antonio",
+          "metrics": null
+        },
+        {
+          "name": "Viola Robertson",
+          "normalizedName": "robertson viola",
+          "market": "PREMERCH|117309|13-0038|TX Austin",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Jeffrey Ralston",
+      "normalizedName": "jeffrey ralston",
+      "areaManagers": [
+        {
+          "name": "Anthony Mitchell",
+          "normalizedName": "anthony mitchell",
+          "market": "PREMERCH|117291|11-0092|IL Peoria",
+          "metrics": null
+        },
+        {
+          "name": "Christopher Billington",
+          "normalizedName": "billington christopher",
+          "market": "PREMERCH|117279|10-0076|WI Milwaukee",
+          "metrics": null
+        },
+        {
+          "name": "Kathleen Martinez",
+          "normalizedName": "kathleen martinez",
+          "market": "PREMERCH|117284|10-0078|IL Elgin (Metro Chicago)",
+          "metrics": null
+        },
+        {
+          "name": "Lidia Jaszka",
+          "normalizedName": "jaszka lidia",
+          "market": "PREMERCH|117283|10-0079|IL Des Plaines (Metro Chicago)",
+          "metrics": null
+        },
+        {
+          "name": "Mark Loris",
+          "normalizedName": "loris mark",
+          "market": "PREMERCH|117286|10-0081|IL Chicago",
+          "metrics": null
+        },
+        {
+          "name": "Shirley Jung",
+          "normalizedName": "jung shirley",
+          "market": "PREMERCH|117282|10-0075|WI Appleton",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Marcus Rodriguez",
+      "normalizedName": "marcus rodriguez",
+      "areaManagers": [
+        {
+          "name": "Andres Cervantes",
+          "normalizedName": "andres cervantes",
+          "market": "PREMERCH|117344|18-0151|CA San Bernardino (Metro LA)",
+          "metrics": null
+        },
+        {
+          "name": "Angela Geslak",
+          "normalizedName": "angela geslak",
+          "market": "PREMERCH|117340|18-0033|CA West Covina (Metro LA)",
+          "metrics": null
+        },
+        {
+          "name": "Angela Smith",
+          "normalizedName": "angela smith",
+          "market": "PREMERCH|117338|17-0026|CA San Jose",
+          "metrics": null
+        },
+        {
+          "name": "Cristina Lopez",
+          "normalizedName": "cristina lopez",
+          "market": "PREMERCH|117332|17-0029|CA Los Angeles",
+          "metrics": null
+        },
+        {
+          "name": "Donnavin Harris",
+          "normalizedName": "donnavin harris",
+          "market": "PREMERCH|117333|17-0030|CA Torrance (Metro LA)",
+          "metrics": null
+        },
+        {
+          "name": "Kathleane OLeary",
+          "normalizedName": "kathleane oleary",
+          "market": "PREMERCH|117334|17-0027|CA Thousand Oaks (Metro LA)",
+          "metrics": null
+        },
+        {
+          "name": "Katrina Rodriguez",
+          "normalizedName": "katrina rodriguez",
+          "market": "PREMERCH|117339|18-0035|CA Norwalk (Metro LA)",
+          "metrics": null
+        },
+        {
+          "name": "Lisa Velez",
+          "normalizedName": "lisa velez",
+          "market": "PREMERCH|117335|17-0034|CA Van Nuys (Metro LA)",
+          "metrics": null
+        },
+        {
+          "name": "Ryan McCarthy",
+          "normalizedName": "mccarthy ryan",
+          "market": "PREMERCH|117336|17-0028|CA Lancaster",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Melissa Carter",
+      "normalizedName": "carter melissa",
+      "areaManagers": [
+        {
+          "name": "Anthony Valenzuela",
+          "normalizedName": "anthony valenzuela",
+          "market": "PREMERCH|117315|14-0017|AZ Gilbert (Metro PHX)",
+          "metrics": null
+        },
+        {
+          "name": "Christi Bogle",
+          "normalizedName": "bogle christi",
+          "market": "PREMERCH|117342|18-0019|CA San Diego",
+          "metrics": null
+        },
+        {
+          "name": "Leonard Pimentel",
+          "normalizedName": "leonard pimentel",
+          "market": "PREMERCH|117345|18-0036|CA Irvine (Metro LA)",
+          "metrics": null
+        },
+        {
+          "name": "Melissa Fleishman",
+          "normalizedName": "fleishman melissa",
+          "market": "PREMERCH|117316|14-0018|AZ Tucson",
+          "metrics": null
+        },
+        {
+          "name": "Pete Pershall",
+          "normalizedName": "pershall pete",
+          "market": "PREMERCH|117324|15-0015|AZ Peoria (Metro PHX)",
+          "metrics": null
+        },
+        {
+          "name": "Seana Meador",
+          "normalizedName": "meador seana",
+          "market": "PREMERCH|117341|18-0031|CA Carlsbad",
+          "metrics": null
+        },
+        {
+          "name": "Shannon Scroggins",
+          "normalizedName": "scroggins shannon",
+          "market": "PREMERCH|117337|17-0025|CA Fresno",
+          "metrics": null
+        },
+        {
+          "name": "Therese Santa Cruz",
+          "normalizedName": "cruz santa therese",
+          "market": "PREMERCH|117323|15-0016|AZ Phoenix",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Mitchell McSwane",
+      "normalizedName": "mcswane mitchell",
+      "areaManagers": [
+        {
+          "name": "Buck Lambert",
+          "normalizedName": "buck lambert",
+          "market": "PREMERCH|117288|11-0098|OH Dayton",
+          "metrics": null
+        },
+        {
+          "name": "David Bogdajewicz",
+          "normalizedName": "bogdajewicz david",
+          "market": "PREMERCH|117290|11-0096|IN Terre Haute",
+          "metrics": null
+        },
+        {
+          "name": "Kathleen Basler",
+          "normalizedName": "basler kathleen",
+          "market": "PREMERCH|117292|11-0094|MO St Louis",
+          "metrics": null
+        },
+        {
+          "name": "Kristy Leeper",
+          "normalizedName": "kristy leeper",
+          "market": "PREMERCH|117298|12-0065|OK Tulsa",
+          "metrics": null
+        },
+        {
+          "name": "Lisa Wiese",
+          "normalizedName": "lisa wiese",
+          "market": "PREMERCH|117289|11-0097|IN Indianapolis",
+          "metrics": null
+        },
+        {
+          "name": "Renee Sadler",
+          "normalizedName": "renee sadler",
+          "market": "PREMERCH|117294|11-0067|MO Columbia",
+          "metrics": null
+        },
+        {
+          "name": "Scott Deschner",
+          "normalizedName": "deschner scott",
+          "market": "PREMERCH|117293|11-0068|MO Kansas City",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Paula Eichermuller",
+      "normalizedName": "eichermuller paula",
+      "areaManagers": [
+        {
+          "name": "Jessica OLaughlin",
+          "normalizedName": "jessica olaughlin",
+          "market": "PREMERCH|117267|08-0050|FL Jacksonville",
+          "metrics": null
+        },
+        {
+          "name": "Joseph Haas",
+          "normalizedName": "haas joseph",
+          "market": "PREMERCH|117263|08-0111|SC Charleston",
+          "metrics": null
+        },
+        {
+          "name": "Mace Brown",
+          "normalizedName": "brown mace",
+          "market": "PREMERCH|117265|08-0107|GA Marietta (Metro ATL)",
+          "metrics": null
+        },
+        {
+          "name": "Mark Pokora",
+          "normalizedName": "mark pokora",
+          "market": "PREMERCH|117264|08-0109|GA Suwanee (Metro ATL)",
+          "metrics": null
+        },
+        {
+          "name": "Paula Eichermuller RMM",
+          "normalizedName": "eichermuller paula",
+          "market": "PREMERCH|117262|08-0112|GA Savannah",
+          "metrics": null
+        },
+        {
+          "name": "Tammy Dannenberg",
+          "normalizedName": "dannenberg tammy",
+          "market": "PREMERCH|117266|08-0108|GA Atlanta",
+          "metrics": null
+        },
+        {
+          "name": "Tracy Six",
+          "normalizedName": "six tracy",
+          "market": "PREMERCH|117270|08-0049|FL Gainesville",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Paula Fellona",
+      "normalizedName": "fellona paula",
+      "areaManagers": [
+        {
+          "name": "Annie Finley",
+          "normalizedName": "annie finley",
+          "market": "PREMERCH|117222|03-0131|D.C. Washington",
+          "metrics": null
+        },
+        {
+          "name": "Charlene McDonald",
+          "normalizedName": "charlene mcdonald",
+          "market": "PREMERCH|117223|03-0133|MD Baltimore",
+          "metrics": null
+        },
+        {
+          "name": "Dominique DAnna",
+          "normalizedName": "danna dominique",
+          "market": "PREMERCH|117232|04-0132|MD Frederick",
+          "metrics": null
+        },
+        {
+          "name": "Frances Hall",
+          "normalizedName": "frances hall",
+          "market": "PREMERCH|117224|03-0118|VA Richmond",
+          "metrics": null
+        },
+        {
+          "name": "Joseph Gallagher",
+          "normalizedName": "gallagher joseph",
+          "market": "PREMERCH|117361|03-0129|VA Fairfax",
+          "metrics": null
+        },
+        {
+          "name": "Lisa Flanagan",
+          "normalizedName": "flanagan lisa",
+          "market": "PREMERCH|117221|03-0134|DE Wilmington",
+          "metrics": null
+        },
+        {
+          "name": "Rachell Mugele",
+          "normalizedName": "mugele rachell",
+          "market": "PREMERCH|117225|03-0130|VA Alexandria",
+          "metrics": null
+        },
+        {
+          "name": "Stephanie Earls",
+          "normalizedName": "earls stephanie",
+          "market": "PREMERCH|117227|03-0117|VA Norfolk",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Randell Ross",
+      "normalizedName": "randell ross",
+      "areaManagers": [
+        {
+          "name": "Bryan Wekwert",
+          "normalizedName": "bryan wekwert",
+          "market": "PREMERCH|117240|05-0088|MI Sterling Heights (Metro Detroit)",
+          "metrics": null
+        },
+        {
+          "name": "Dawn Lawrence",
+          "normalizedName": "dawn lawrence",
+          "market": "PREMERCH|117242|05-0083|MI Saginaw",
+          "metrics": null
+        },
+        {
+          "name": "Erin Duym",
+          "normalizedName": "duym erin",
+          "market": "PREMERCH|117241|05-0085|MI Flint",
+          "metrics": null
+        },
+        {
+          "name": "Lisa Wirtz",
+          "normalizedName": "lisa wirtz",
+          "market": "PREMERCH|117244|05-0082|IL Dolton (Metro Chicago)",
+          "metrics": null
+        },
+        {
+          "name": "Michael Meyer",
+          "normalizedName": "meyer michael",
+          "market": "PREMERCH|117237|05-0095|IN Fort Wayne",
+          "metrics": null
+        },
+        {
+          "name": "Tracy Phillips-Goch",
+          "normalizedName": "goch phillips tracy",
+          "market": "PREMERCH|117285|10-0080|IL Naperville (Metro Chicago)",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "Sharon Harden",
+      "normalizedName": "harden sharon",
+      "areaManagers": [
+        {
+          "name": "Beth Vardaman",
+          "normalizedName": "beth vardaman",
+          "market": "PREMERCH|117273|09-0042|FL Fort Lauderdale",
+          "metrics": null
+        },
+        {
+          "name": "Kat Miller",
+          "normalizedName": "kat miller",
+          "market": "PREMERCH|117274|09-0043|FL West Palm Beach",
+          "metrics": null
+        },
+        {
+          "name": "Marina Babushkin",
+          "normalizedName": "babushkin marina",
+          "market": "PREMERCH|117275|09-0046|FL Tampa",
+          "metrics": null
+        },
+        {
+          "name": "Miffiany St Clair",
+          "normalizedName": "clair miffiany st",
+          "market": "PREMERCH|117277|09-0044|FL Fort Myers",
+          "metrics": null
+        },
+        {
+          "name": "Thomas Jablonski",
+          "normalizedName": "jablonski thomas",
+          "market": "PREMERCH|117276|09-0045|FL St Petersburg",
+          "metrics": null
+        },
+        {
+          "name": "William Beamesderfer",
+          "normalizedName": "beamesderfer william",
+          "market": "PREMERCH|117272|09-0041|FL Miami",
+          "metrics": null
+        },
+        {
+          "name": "Ysabel Baez",
+          "normalizedName": "baez ysabel",
+          "market": "PREMERCH|117271|09-0040|FL Miami (South)",
+          "metrics": null
+        },
+        {
+          "name": "Zinia Rodriguez",
+          "normalizedName": "rodriguez zinia",
+          "market": "PREMERCH|117269|09-0047|FL Orlando",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    },
+    {
+      "name": "William Murtey",
+      "normalizedName": "murtey william",
+      "areaManagers": [
+        {
+          "name": "Amanda Martinez",
+          "normalizedName": "amanda martinez",
+          "market": "PREMERCH|117257|07-0104|TN Chattanooga",
+          "metrics": null
+        },
+        {
+          "name": "Catherine Weber",
+          "normalizedName": "catherine weber",
+          "market": "PREMERCH|117255|07-0103|AL Birmingham",
+          "metrics": null
+        },
+        {
+          "name": "Cynthia Robinson",
+          "normalizedName": "cynthia robinson",
+          "market": "PREMERCH|117256|07-0101|TN Nashville",
+          "metrics": null
+        },
+        {
+          "name": "Darla Overstreet",
+          "normalizedName": "darla overstreet",
+          "market": "PREMERCH|117261|07-0053|LA Baton Rouge",
+          "metrics": null
+        },
+        {
+          "name": "JoAnn Legano",
+          "normalizedName": "joann legano",
+          "market": "PREMERCH|117260|07-0052|LA New Orleans",
+          "metrics": null
+        },
+        {
+          "name": "Sherry Derouen",
+          "normalizedName": "derouen sherry",
+          "market": "PREMERCH|117258|07-0066|TN Memphis",
+          "metrics": null
+        }
+      ],
+      "metrics": null
+    }
+  ],
+  "rdmToRegionalManager": {
+    "renee sadler": "Mitchell McSwane",
+    "eleanor mcnamara": "Edwin Lantigua",
+    "levins stephanie": "Alicia Wheeler",
+    "david still": "Edwin Lantigua",
+    "gadsden patricia": "Edwin Lantigua",
+    "koehler saadiya": "Henry Brotzman",
+    "cruz santa therese": "Melissa Carter",
+    "ashley williams": "Brandon Lee",
+    "lorrie poss": "Henry Brotzman",
+    "harding sheryl": "Henry Brotzman",
+    "biles tommy": "Brandon Lee",
+    "beamesderfer william": "Sharon Harden",
+    "elizabeth ford": "James Greene",
+    "katrina rodriguez": "Marcus Rodriguez",
+    "aileen croft": "Christopher Gulas",
+    "crago kathy": "James Greene",
+    "melinda zuniga": "James Greene",
+    "cynthia mouzon": "Edward Maher",
+    "frances hall": "Paula Fellona",
+    "leonard pimentel": "Melissa Carter",
+    "bogle christi": "Melissa Carter",
+    "clair miffiany st": "Sharon Harden",
+    "rodriguez zinia": "Sharon Harden",
+    "kat miller": "Sharon Harden",
+    "charlene mcdonald": "Paula Fellona",
+    "annie finley": "Paula Fellona",
+    "carter tonya": "Christopher Gulas",
+    "lynn theresa": "Edward Maher",
+    "haas joseph": "Paula Eichermuller",
+    "kristy leeper": "Mitchell McSwane",
+    "bogdajewicz david": "Mitchell McSwane",
+    "fisher kevin": "Brandon Lee",
+    "billi lackie": "Brandon Lee",
+    "darla overstreet": "William Murtey",
+    "edward karanian": "Brandon Lee",
+    "cleaver david": "James Greene",
+    "baldwin priscilla": "Brandon Lee",
+    "judd suzette": "Christine Allen",
+    "gallagher joseph": "Paula Fellona",
+    "kathleen kirk": "Alicia Wheeler",
+    "alicia demartino": "Alicia Wheeler",
+    "cathy mussig": "Alicia Wheeler",
+    "david douglas": "Edwin Lantigua",
+    "basler kathleen": "Mitchell McSwane",
+    "carolyne stokes": "Christine Allen",
+    "catherine weber": "William Murtey",
+    "amanda martinez": "William Murtey",
+    "derouen sherry": "William Murtey",
+    "joann legano": "William Murtey",
+    "fleishman melissa": "Melissa Carter",
+    "anthony valenzuela": "Melissa Carter",
+    "pershall pete": "Melissa Carter",
+    "smith stephanie": "Carlianne Eckert",
+    "cristina lopez": "Marcus Rodriguez",
+    "jesse perez": "Carlianne Eckert",
+    "angela geslak": "Marcus Rodriguez",
+    "cowles ronna": "Carlianne Eckert",
+    "mccarthy ryan": "Marcus Rodriguez",
+    "scroggins shannon": "Melissa Carter",
+    "kundert rose": "Carlianne Eckert",
+    "andres cervantes": "Marcus Rodriguez",
+    "lisa velez": "Marcus Rodriguez",
+    "kathleane oleary": "Marcus Rodriguez",
+    "canale paula": "Carlianne Eckert",
+    "king tonya": "Carlianne Eckert",
+    "angela smith": "Marcus Rodriguez",
+    "meador seana": "Melissa Carter",
+    "donnavin harris": "Marcus Rodriguez",
+    "ellsworth funsch lori": "Brandon Lee",
+    "maureen papp": "Brandon Lee",
+    "flanagan lisa": "Paula Fellona",
+    "jessica olaughlin": "Paula Eichermuller",
+    "babushkin marina": "Sharon Harden",
+    "beth vardaman": "Sharon Harden",
+    "baez ysabel": "Sharon Harden",
+    "jablonski thomas": "Sharon Harden",
+    "six tracy": "Paula Eichermuller",
+    "brown mace": "Paula Eichermuller",
+    "eichermuller paula": "Paula Eichermuller",
+    "mark pokora": "Paula Eichermuller",
+    "dannenberg tammy": "Paula Eichermuller",
+    "burke ellison karie": "Christopher Gulas",
+    "penny tracy": "Carlianne Eckert",
+    "joni white": "Henry Brotzman",
+    "davis hansel": "Christine Allen",
+    "putnam terry": "Christine Allen",
+    "dineen william": "Carlianne Eckert",
+    "kathleen martinez": "Jeffrey Ralston",
+    "jaszka lidia": "Jeffrey Ralston",
+    "goch phillips tracy": "Randell Ross",
+    "loris mark": "Jeffrey Ralston",
+    "anthony mitchell": "Jeffrey Ralston",
+    "lisa wirtz": "Randell Ross",
+    "billington christopher": "Jeffrey Ralston",
+    "lisa wiese": "Mitchell McSwane",
+    "meyer michael": "Randell Ross",
+    "buck lambert": "Mitchell McSwane",
+    "deschner scott": "Mitchell McSwane",
+    "cynthia robinson": "William Murtey",
+    "carroll steve": "Christopher Gulas",
+    "stowers tracy": "Alicia Wheeler",
+    "mark pomakoy": "Alicia Wheeler",
+    "danna dominique": "Paula Fellona",
+    "mugele rachell": "Paula Fellona",
+    "earls stephanie": "Paula Fellona",
+    "duym erin": "Randell Ross",
+    "bryan wekwert": "Randell Ross",
+    "dawn lawrence": "Randell Ross",
+    "jung shirley": "Jeffrey Ralston",
+    "michael quartarano": "Edward Maher",
+    "brian fautsch": "Henry Brotzman",
+    "kastl nichols": "Henry Brotzman",
+    "blakeslee jeffrey": "Christopher Gulas",
+    "jennifer richey": "Christopher Gulas",
+    "blair lisa": "Christopher Gulas",
+    "bobbi reams": "Christopher Gulas",
+    "francione kim": "Edwin Lantigua",
+    "hecker peggy": "Edwin Lantigua",
+    "donna pierson": "Edward Maher",
+    "nicole pittman": "Edwin Lantigua",
+    "ilene sofferman": "Edwin Lantigua",
+    "edward schroeder": "Alicia Wheeler",
+    "david hawes": "Edward Maher",
+    "caraballo joni": "Edward Maher",
+    "charles tibbits": "Christine Allen",
+    "hoch tammy": "Christine Allen",
+    "hommel scott": "Edward Maher",
+    "clark pamela": "James Greene",
+    "robertson viola": "James Greene",
+    "heather houston": "James Greene",
+    "michelle oatman": "James Greene",
+    "ramirez rudy": "James Greene",
+    "coronado michele": "Christine Allen"
+  },
+  "districtManagerToRegionalManager": {
+    "renee sadler": "Mitchell McSwane",
+    "eleanor mcnamara": "Edwin Lantigua",
+    "levins stephanie": "Alicia Wheeler",
+    "david still": "Edwin Lantigua",
+    "gadsden patricia": "Edwin Lantigua",
+    "koehler saadiya": "Henry Brotzman",
+    "cruz santa therese": "Melissa Carter",
+    "ashley williams": "Brandon Lee",
+    "lorrie poss": "Henry Brotzman",
+    "harding sheryl": "Henry Brotzman",
+    "biles tommy": "Brandon Lee",
+    "beamesderfer william": "Sharon Harden",
+    "elizabeth ford": "James Greene",
+    "katrina rodriguez": "Marcus Rodriguez",
+    "aileen croft": "Christopher Gulas",
+    "crago kathy": "James Greene",
+    "melinda zuniga": "James Greene",
+    "cynthia mouzon": "Edward Maher",
+    "frances hall": "Paula Fellona",
+    "leonard pimentel": "Melissa Carter",
+    "bogle christi": "Melissa Carter",
+    "clair miffiany st": "Sharon Harden",
+    "rodriguez zinia": "Sharon Harden",
+    "kat miller": "Sharon Harden",
+    "charlene mcdonald": "Paula Fellona",
+    "annie finley": "Paula Fellona",
+    "carter tonya": "Christopher Gulas",
+    "lynn theresa": "Edward Maher",
+    "haas joseph": "Paula Eichermuller",
+    "kristy leeper": "Mitchell McSwane",
+    "bogdajewicz david": "Mitchell McSwane",
+    "fisher kevin": "Brandon Lee",
+    "billi lackie": "Brandon Lee",
+    "darla overstreet": "William Murtey",
+    "edward karanian": "Brandon Lee",
+    "cleaver david": "James Greene",
+    "baldwin priscilla": "Brandon Lee",
+    "judd suzette": "Christine Allen",
+    "gallagher joseph": "Paula Fellona",
+    "kathleen kirk": "Alicia Wheeler",
+    "alicia demartino": "Alicia Wheeler",
+    "cathy mussig": "Alicia Wheeler",
+    "david douglas": "Edwin Lantigua",
+    "basler kathleen": "Mitchell McSwane",
+    "carolyne stokes": "Christine Allen",
+    "catherine weber": "William Murtey",
+    "amanda martinez": "William Murtey",
+    "derouen sherry": "William Murtey",
+    "joann legano": "William Murtey",
+    "fleishman melissa": "Melissa Carter",
+    "anthony valenzuela": "Melissa Carter",
+    "pershall pete": "Melissa Carter",
+    "smith stephanie": "Carlianne Eckert",
+    "cristina lopez": "Marcus Rodriguez",
+    "jesse perez": "Carlianne Eckert",
+    "angela geslak": "Marcus Rodriguez",
+    "cowles ronna": "Carlianne Eckert",
+    "mccarthy ryan": "Marcus Rodriguez",
+    "scroggins shannon": "Melissa Carter",
+    "kundert rose": "Carlianne Eckert",
+    "andres cervantes": "Marcus Rodriguez",
+    "lisa velez": "Marcus Rodriguez",
+    "kathleane oleary": "Marcus Rodriguez",
+    "canale paula": "Carlianne Eckert",
+    "king tonya": "Carlianne Eckert",
+    "angela smith": "Marcus Rodriguez",
+    "meador seana": "Melissa Carter",
+    "donnavin harris": "Marcus Rodriguez",
+    "ellsworth funsch lori": "Brandon Lee",
+    "maureen papp": "Brandon Lee",
+    "flanagan lisa": "Paula Fellona",
+    "jessica olaughlin": "Paula Eichermuller",
+    "babushkin marina": "Sharon Harden",
+    "beth vardaman": "Sharon Harden",
+    "baez ysabel": "Sharon Harden",
+    "jablonski thomas": "Sharon Harden",
+    "six tracy": "Paula Eichermuller",
+    "brown mace": "Paula Eichermuller",
+    "eichermuller paula": "Paula Eichermuller",
+    "mark pokora": "Paula Eichermuller",
+    "dannenberg tammy": "Paula Eichermuller",
+    "burke ellison karie": "Christopher Gulas",
+    "penny tracy": "Carlianne Eckert",
+    "joni white": "Henry Brotzman",
+    "davis hansel": "Christine Allen",
+    "putnam terry": "Christine Allen",
+    "dineen william": "Carlianne Eckert",
+    "kathleen martinez": "Jeffrey Ralston",
+    "jaszka lidia": "Jeffrey Ralston",
+    "goch phillips tracy": "Randell Ross",
+    "loris mark": "Jeffrey Ralston",
+    "anthony mitchell": "Jeffrey Ralston",
+    "lisa wirtz": "Randell Ross",
+    "billington christopher": "Jeffrey Ralston",
+    "lisa wiese": "Mitchell McSwane",
+    "meyer michael": "Randell Ross",
+    "buck lambert": "Mitchell McSwane",
+    "deschner scott": "Mitchell McSwane",
+    "cynthia robinson": "William Murtey",
+    "carroll steve": "Christopher Gulas",
+    "stowers tracy": "Alicia Wheeler",
+    "mark pomakoy": "Alicia Wheeler",
+    "danna dominique": "Paula Fellona",
+    "mugele rachell": "Paula Fellona",
+    "earls stephanie": "Paula Fellona",
+    "duym erin": "Randell Ross",
+    "bryan wekwert": "Randell Ross",
+    "dawn lawrence": "Randell Ross",
+    "jung shirley": "Jeffrey Ralston",
+    "michael quartarano": "Edward Maher",
+    "brian fautsch": "Henry Brotzman",
+    "kastl nichols": "Henry Brotzman",
+    "blakeslee jeffrey": "Christopher Gulas",
+    "jennifer richey": "Christopher Gulas",
+    "blair lisa": "Christopher Gulas",
+    "bobbi reams": "Christopher Gulas",
+    "francione kim": "Edwin Lantigua",
+    "hecker peggy": "Edwin Lantigua",
+    "donna pierson": "Edward Maher",
+    "nicole pittman": "Edwin Lantigua",
+    "ilene sofferman": "Edwin Lantigua",
+    "edward schroeder": "Alicia Wheeler",
+    "david hawes": "Edward Maher",
+    "caraballo joni": "Edward Maher",
+    "charles tibbits": "Christine Allen",
+    "hoch tammy": "Christine Allen",
+    "hommel scott": "Edward Maher",
+    "clark pamela": "James Greene",
+    "robertson viola": "James Greene",
+    "heather houston": "James Greene",
+    "michelle oatman": "James Greene",
+    "ramirez rudy": "James Greene",
+    "coronado michele": "Christine Allen"
+  }
+}
