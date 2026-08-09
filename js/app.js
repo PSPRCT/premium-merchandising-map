@@ -1737,10 +1737,29 @@ function v6ManagerRows(){
 function v6OpenManagerIntelligence(){
  const rows=v6ManagerRows();
  openModal('Manager Intelligence',`
-  <div class="v6-hero"><h2>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} Coverage Overview</h2><p>Every row is clickable. Coverage, gap exposure, unique dependency, retailer complexity, and geographic breadth for the selected scope.</p></div>
+  <div class="v6-hero"><h2>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} Coverage Overview</h2><p>Click a manager name to open the full Manager Coverage & Placement Intelligence profile. Use Map to apply that manager directly to the live map.</p></div>
   <div class="tablewrap"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody>
    ${rows.map(r=>`<tr class="v78-drill-row" data-drill-type="manager" data-drill-value="${esc(r.name)}"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
   </tbody></table></div>`);
+
+ setTimeout(()=>{
+   document.querySelectorAll('.v79-manager-name-link,[data-manager-token].v79-manager-profile-row').forEach(el=>{
+     el.addEventListener('click',event=>{
+       if(event.target.closest('.v79-map-manager-btn'))return;
+       const token=el.dataset.managerToken||event.target.closest('[data-manager-token]')?.dataset.managerToken;
+       if(!token)return;
+       window.v79OpenManagerWorkspace(decodeURIComponent(token));
+     });
+   });
+   document.querySelectorAll('.v79-map-manager-btn').forEach(btn=>{
+     btn.addEventListener('click',event=>{
+       event.stopPropagation();
+       const token=btn.dataset.managerToken;
+       if(!token)return;
+       window.v79ApplyManagerScope(decodeURIComponent(token));
+     });
+   });
+ },0);
 }
 window.v6FocusManager=name=>{
  const el=$('fManager');if(el){[...el.options].forEach(o=>o.selected=o.value===name);applyFilters()}
@@ -1814,7 +1833,7 @@ window.v79OpenManagerWorkspace=function(name){
  const plan=v79ManagerPlacementPlan(scope,6);
  const placementHtml=plan.length?plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.tier)} · +${x.gain} net-new stores · +${x.pctGain.toFixed(1)} pts of manager footprint<br><small>${esc(x.reason)}</small></span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">Simulate</button></div>`).join(''):`<div class="callout"><b>No meaningful additional RTS placement identified.</b><br>The current gap pattern does not meet the manager-level impact threshold for a placement recommendation. Isolated or low-return gaps remain visible for operational review, but are not being presented as headcount opportunities.</div>`;
  openModal('Manager Coverage & Placement Intelligence',`
-  <div class="v6-hero"><h2>${esc(name)}</h2><p>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} · Regional Manager: <b>${esc(regional)}</b> · ${states.join(', ')}</p></div>
+  <div class="v6-hero"><h2>${esc(name)}</h2><p>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} · Regional Manager: <button class="v79-inline-hierarchy-link" onclick="window.v7RegionalDashboard(decodeURIComponent('${encodeURIComponent(regional)}'))">${esc(regional)}</button> · ${states.join(', ')}</p></div>
   <div class="v6-kpi-grid">
    <div class="v6-kpi"><small>Stores</small><b>${scope.length}</b><span>${retailers.length} retailer${retailers.length===1?'':'s'}</span></div>
    <div class="v6-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered} covered</span></div>
@@ -1822,7 +1841,7 @@ window.v79OpenManagerWorkspace=function(name){
    <div class="v6-kpi"><small>RTS Supporting Area</small><b>${rtsStats.length}</b><span>At least one store in radius</span></div>
   </div>
   <div class="v4-two">
-   <div class="v4-panel"><h3>RTS dependency</h3>${rtsStats.slice(0,10).map((x,i)=>`<div class="v78-drill-row v4-list-row" data-drill-type="rts" data-drill-value="${esc(x.r.id||x.r.name)}"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b></span><span>${x.count} stores ↗</span></div>`).join('')||'<div class="callout">No active RTS currently reaches this manager footprint.</div>'}</div>
+   <div class="v4-panel"><h3>RTS dependency</h3>${rtsStats.slice(0,10).map((x,i)=>`<div class="v78-drill-row v4-list-row" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b></span><span>${x.count} stores ↗</span></div>`).join('')||'<div class="callout">No active RTS currently reaches this manager footprint.</div>'}</div>
    <div class="v4-panel"><h3>Placement opportunities</h3>${placementHtml}</div>
   </div>
   <div class="callout"><b>Placement rule:</b> recommendations are surfaced only when the modeled location produces a reasonable, concentrated manager-level impact. Low-value placements are intentionally suppressed. Use the simulator to validate any surfaced opportunity before treating it as a staffing decision.</div>

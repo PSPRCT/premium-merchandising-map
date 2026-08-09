@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.9.1 \u2014 Manager Drilldown and RTS Roster Correction",
+  "platformRelease": "Version 7.9.2 \u2014 Manager Intelligence Profiles",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",

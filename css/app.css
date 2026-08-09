@@ -1322,3 +1322,21 @@ button:disabled{
 .v78-drill-row:hover,.v78-highlight-row:hover{background:#eff6ff!important;box-shadow:inset 3px 0 0 #2563eb}
 .v78-decision-callout{border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:12px;padding:10px 12px;margin:10px 0;line-height:1.4}
 .v78-leader-hero{border:1px solid #dbeafe;background:linear-gradient(180deg,#eff6ff,#f8fbff);border-radius:14px;padding:12px;margin-bottom:10px}.v78-leader-hero h2{margin:0;color:#0f172a}.v78-leader-hero p{margin:4px 0 0;color:#475569}
+
+/* Version 7.9.2 Manager Intelligence profiles */
+.v79-manager-profile-row{
+  cursor:pointer;
+  transition:background .12s ease;
+}
+.v79-manager-profile-row:hover{background:#eff6ff!important}
+.v79-manager-name-link{
+  appearance:none;border:0;background:transparent;padding:0;
+  color:#0f172a;font:inherit;font-weight:900;cursor:pointer;text-align:left;
+}
+.v79-manager-name-link:hover{color:#1d4ed8;text-decoration:underline}
+.v79-map-manager-btn{min-width:54px}
+.v79-inline-hierarchy-link{
+  appearance:none;border:0;background:transparent;padding:0;
+  color:#1d4ed8;font:inherit;font-weight:900;cursor:pointer;
+}
+.v79-inline-hierarchy-link:hover{text-decoration:underline}
