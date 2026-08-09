@@ -1340,3 +1340,11 @@ button:disabled{
   color:#1d4ed8;font:inherit;font-weight:900;cursor:pointer;
 }
 .v79-inline-hierarchy-link:hover{text-decoration:underline}
+
+/* Version 7.9.3 manager hierarchy browser */
+.v793-tabs{display:flex;gap:7px;margin:8px 0}
+.v793-click-row{cursor:pointer;transition:background .12s ease}
+.v793-click-row:hover{background:#eff6ff!important}
+.v793-manager-row{display:grid;grid-template-columns:28px 1fr;gap:7px;align-items:start;padding:7px 0;border-bottom:1px solid #e2e8f0}
+.v793-text-link{appearance:none;border:0;background:transparent;text-align:left;padding:0;color:#0f172a;cursor:pointer;font:inherit}
+.v793-text-link:hover{color:#1d4ed8;text-decoration:underline}
