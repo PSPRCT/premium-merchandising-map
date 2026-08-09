@@ -1862,6 +1862,37 @@ function v72SetRegionalFilter(regional){
 }
 window.v72SetRegionalFilter=v72SetRegionalFilter;
 
+
+/* ===== Version 7.6.1 restored planning/territory handlers ===== */
+function modelPlacement(){
+ const chosen=gapClustersV2(filtered,25);
+ openModal('Model New RTS Placement',`
+  <div class="callout">Fast radius-based planning model for the current filtered scope. Click a recommendation to simulate that placement.</div>
+  <div class="tools"><button class="btn" onclick="window.exportModel()">Export Model</button></div>
+  <div class="tablewrap"><table><thead><tr><th>Rank</th><th>Suggested Area</th><th>New Stores Covered</th><th></th></tr></thead><tbody>
+   ${chosen.map(c=>`<tr class="v76-drill-row" onclick="window.simulateAt(${c.lat},${c.lng});document.getElementById('modal').classList.remove('show')"><td>${c.rank}</td><td><b>${esc(c.city)}, ${esc(c.state||'')}</b></td><td>${c.gain}</td><td>Simulate ↗</td></tr>`).join('')}
+  </tbody></table></div>`);
+ window._model=chosen;
+}
+function territoryProfiles(){
+ const rows=territoryHealthV2(filtered).filter(x=>x.count>0).sort((a,b)=>b.count-a.count);
+ openModal('RTS Territory Profiles',`
+  <div class="callout">Current filtered scope. Click any row to open the full RTS service-area profile.</div>
+  <div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores in Radius</th><th>Unique</th><th>Shared</th><th>Avg Distance</th><th></th></tr></thead><tbody>
+   ${rows.map(x=>`<tr class="v76-drill-row" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')"><td><b>${esc(x.r.name)}</b></td><td>${x.count}</td><td>${x.uniqueCount}</td><td>${x.sharedCount}</td><td>${x.avgDistance.toFixed(1)} mi</td><td>↗</td></tr>`).join('')}
+  </tbody></table></div>`);
+}
+function compareTerritories(){ return v4CompareRts(); }
+function resiliency(){
+ const model=coverageModel(filtered);
+ const rows=model.byRts.filter(x=>x.count>0).map(x=>({r:x.rts,count:x.count,backup:x.sharedCount,lost:x.uniqueCount})).sort((a,b)=>b.lost-a.lost||b.count-a.count);
+ openModal('RTS Resiliency Simulator',`
+  <div class="callout">If an RTS becomes unavailable, <b>At Risk</b> stores are those for which that RTS is the only eligible RTS inside the selected radius. Shared stores remain backup-covered. Click a row to open its RTS profile.</div>
+  <div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores in Radius</th><th>Backup-Covered</th><th>At Risk</th><th></th></tr></thead><tbody>
+   ${rows.map(x=>`<tr class="v76-drill-row" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')"><td><b>${esc(x.r.name)}</b></td><td>${x.count}</td><td>${x.backup}</td><td>${x.lost}</td><td>↗</td></tr>`).join('')}
+  </tbody></table></div>`);
+}
+
 function init(){
  initializeDataStatus();
  const regionalSelect=$('fRegional');
