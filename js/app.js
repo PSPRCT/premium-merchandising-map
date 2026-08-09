@@ -761,41 +761,21 @@ window.showHiringPlanOnMap=()=>{
 };
 
 function leadershipReport(){
- const scope=currentScope();
- const model=coverageModel(scope);
- const covered=scope.length-model.gaps.length;
- const pct=scope.length?covered/scope.length*100:0;
- const health=territoryHealthV2(scope);
- const high=health.filter(x=>x.score<68).slice(0,8);
-
- const states=Object.values(scope.reduce((o,s)=>{
-   const k=s.state||'Unknown';o[k]??={name:k,total:0,gaps:0};o[k].total++;
-   if(model.gaps.some(g=>g.siteId===s.siteId))o[k].gaps++;
-   return o;
- },{})).sort((a,b)=>b.gaps-a.gaps).slice(0,8);
-
- const plan=gapClustersV2(scope,8);
-
- openModal('Printable Leadership Report',`
- <div class="report-actions"><button class="btn primary" onclick="window.print()">Print / Save as PDF</button><button class="btn" onclick="window.exportLeadershipSummary()">Export Summary CSV</button></div>
- <div class="report-shell">
-  <div class="report-header"><h1>Premium Merchandising RTS Coverage Summary</h1><p>Scope: ${esc(scopeLabel())} · Radius: ${model.rad} miles · Coverage Model v2</p></div>
-  <div class="exec-grid">
-   <div class="exec-kpi"><small>Stores reviewed</small><b>${scope.length.toLocaleString()}</b><span>Current filtered scope</span></div>
-   <div class="exec-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered</span></div>
-   <div class="exec-kpi"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No RTS in range</span></div>
-   <div class="exec-kpi"><small>Shared stores</small><b>${model.sharedStores.length.toLocaleString()}</b><span>Two or more RTS in range</span></div>
-  </div>
-  <section class="report-section"><h2>Leadership interpretation</h2><div class="report-callout">${pct>=80?'Coverage is broadly stable. Focus on workload balance, unique dependency, and isolated remaining gaps.':pct>=60?'Coverage is mixed. Target concentrated network gaps and high in-radius workloads.':'Coverage is materially constrained. Prioritize new RTS placement in the highest-value gap clusters.'}</div></section>
-  <section class="report-section"><h2>Highest-gap states</h2><table><thead><tr><th>State</th><th>Stores</th><th>Gaps</th><th>Coverage</th></tr></thead><tbody>${states.map(x=>`<tr><td>${esc(x.name)}</td><td>${x.total}</td><td>${x.gaps}</td><td>${((x.total-x.gaps)/x.total*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table></section>
-  <section class="report-section"><h2>RTS service areas requiring review</h2>${high.length?high.map(x=>`<div class="balance-rec ${x.cls==='critical'?'high':'watch'}"><h4>${esc(x.r.name)}</h4><p>${x.count} stores within radius · ${x.uniqueCount} unique · ${x.sharedCount} shared · ${x.avgDistance.toFixed(1)} mi average drive.</p></div>`).join(''):'<p>No service areas were flagged under the current scope.</p>'}</section>
-  <section class="report-section"><h2>Top hiring opportunities</h2><table><thead><tr><th>Rank</th><th>Suggested Area</th><th>Net-New Stores</th><th>Primary Manager</th><th>Primary Retailer</th></tr></thead><tbody>${plan.map(x=>`<tr><td>${x.rank}</td><td>${esc(x.city)}, ${esc(x.state)}</td><td>${x.gain}</td><td>${esc(x.manager)}</td><td>${esc(x.retailer)}</td></tr>`).join('')}</tbody></table></section>
- </div>`);
- window._leadershipSummary=[{
-   Scope:scopeLabel(),Stores:scope.length,Covered:covered,NetworkGaps:model.gaps.length,
-   CoveragePercent:pct.toFixed(1),UniqueStores:model.uniqueStores.length,SharedStores:model.sharedStores.length,
-   TopHiringArea:plan[0]?`${plan[0].city}, ${plan[0].state}`:'',TopHiringNetNew:plan[0]?.gain||0
- }];
+ const scope=currentScope(),model=coverageModel(scope),covered=scope.length-model.gaps.length,pct=scope.length?covered/scope.length*100:0;
+ const health=territoryHealthV2(scope),plan=gapClustersV2(scope,8),gapIds=new Set(model.gaps.map(s=>String(s.siteId)));
+ const states=Object.values(scope.reduce((o,s)=>{const k=s.state||'Unknown';o[k]??={name:k,total:0,gaps:0};o[k].total++;if(gapIds.has(String(s.siteId)))o[k].gaps++;return o},{})).sort((a,b)=>b.gaps-a.gaps).slice(0,8);
+ const managers=Object.values(scope.reduce((o,s)=>{const k=v7OrgForStore(s).areaManager||'Not listed';o[k]??={name:k,total:0,gaps:0};o[k].total++;if(gapIds.has(String(s.siteId)))o[k].gaps++;return o},{})).sort((a,b)=>b.gaps-a.gaps).slice(0,8);
+ const risk=[...health].sort((a,b)=>a.score-b.score).slice(0,6),work=[...health].sort((a,b)=>b.count-a.count).slice(0,6);
+ openModal('Leadership Summary',`<div class="v78-leader-hero"><h2>${esc(v4ProgramLabel())} Leadership Summary</h2><p>${esc(scopeLabel())} · ${model.radiusMiles||Number($('radius').value)}-mile service radius</p></div>
+ <div class="v6-kpi-grid"><div class="v6-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered.toLocaleString()} covered</span></div><div class="v6-kpi"><small>Network gaps</small><b>${model.gaps.length.toLocaleString()}</b><span>No eligible RTS in radius</span></div><div class="v6-kpi"><small>Unique dependency</small><b>${model.uniqueStores.length.toLocaleString()}</b><span>Exactly one RTS in range</span></div><div class="v6-kpi"><small>Shared coverage</small><b>${model.sharedStores.length.toLocaleString()}</b><span>2+ RTS in range</span></div></div>
+ <div class="v78-decision-callout"><b>Leadership interpretation:</b> ${pct>=80?'Coverage is broadly stable; prioritize isolated gaps, unique-dependency risk, and workload balancing.':pct>=60?'Coverage is mixed; prioritize concentrated gaps and high-dependency RTS service areas.':'Coverage remains materially constrained; validate new RTS placement opportunities before workload balancing.'}</div>
+ <div class="v4-two"><div class="v4-panel"><h3>Highest-gap states</h3>${states.map(x=>`<div class="v78-drill-row v4-list-row" data-drill-type="state" data-drill-value="${esc(x.name)}"><span><b>${esc(x.name)}</b><br>${x.total} stores</span><span>${x.gaps} gaps ↗</span></div>`).join('')}</div>
+ <div class="v4-panel"><h3>Highest manager exposure</h3>${managers.map(x=>`<div class="v78-drill-row v4-list-row" data-drill-type="manager" data-drill-value="${esc(x.name)}"><span><b>${esc(x.name)}</b><br>${x.total} stores</span><span>${x.gaps} gaps ↗</span></div>`).join('')}</div></div>
+ <div class="v4-two"><div class="v4-panel"><h3>Service-area risk</h3>${risk.map(x=>`<div class="v78-drill-row v4-list-row" data-drill-type="rts" data-drill-value="${esc(x.r.id)}"><span><b>${esc(x.r.name)}</b><br>${x.uniqueCount} unique · ${x.sharedCount} shared</span><span>${x.score.toFixed(0)}/100 ↗</span></div>`).join('')}</div>
+ <div class="v4-panel"><h3>Workload leaders</h3>${work.map(x=>`<div class="v78-drill-row v4-list-row" data-drill-type="rts" data-drill-value="${esc(x.r.id)}"><span><b>${esc(x.r.name)}</b><br>${x.avgDistance.toFixed(1)} mi avg</span><span>${x.count} stores ↗</span></div>`).join('')}</div></div>
+ <div class="v4-panel"><h3>Top placement opportunities</h3>${plan.map(x=>`<div class="v78-drill-row v4-list-row" data-drill-type="simulate" data-drill-value="${esc(x.city)}" data-lat="${x.lat}" data-lng="${x.lng}"><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.manager||'')} · ${esc(x.retailer||'')}</span><span>+${x.gain} ↗</span></div>`).join('')}</div>
+ <div class="actions"><button class="btn primary" onclick="window.print()">Print / Save PDF</button><button class="btn" onclick="window.exportLeadershipSummary()">Export Summary</button><button class="btn" onclick="window.v62SaveScenario()">Save Placement Scenario</button></div>`);
+ window._leadershipSummary=[{Program:v4ProgramLabel(),Scope:scopeLabel(),Stores:scope.length,Covered:covered,CoveragePercent:pct.toFixed(1),NetworkGaps:model.gaps.length,UniqueStores:model.uniqueStores.length,SharedStores:model.sharedStores.length,TopGapState:states[0]?.name||'',TopGapStateGaps:states[0]?.gaps||0,TopManager:managers[0]?.name||'',TopManagerGaps:managers[0]?.gaps||0,TopPlacement:plan[0]?`${plan[0].city}, ${plan[0].state}`:'',TopPlacementGain:plan[0]?.gain||0}];
 }
 window.exportLeadershipSummary=()=>csv(window._leadershipSummary||[],'premium_merchandising_leadership_summary.csv');
 
@@ -1293,6 +1273,42 @@ function v4Plan(scope=filtered,limit=10){
 function v4ProgramLabel(){
  return ACTIVE_PROGRAM?.name || 'Current Program';
 }
+function currentScope(){ return (Array.isArray(filtered)&&filtered.length>=0)?filtered:stores; }
+function scopeLabel(){
+ const parts=[];
+ const add=(label,id)=>{const v=$(id)?.value||'';if(v)parts.push(`${label}: ${v}`)};
+ add('Coverage','fCoverage');add('Retailer','fRetailer');add('State','fState');
+ add('Regional','fRegional');add(ACTIVE_PROGRAM_ID==='premium-merchandising'?'District':'Area/RDM','fManager');add('RTS','fRts');
+ return parts.length?parts.join(' · '):'All stores';
+}
+function v78FocusRetailer(retailer){
+ $('modal')?.classList.remove('show');
+ if($('fRetailer'))$('fRetailer').value=retailer||'';
+ refreshCascadingFilters({preserve:false});applyFilters();fitResults();
+}
+window.v78FocusRetailer=v78FocusRetailer;
+function rollup(field,title){
+ const scope=currentScope(),model=coverageModel(scope),gapIds=new Set(model.gaps.map(s=>String(s.siteId)));
+ const rows=Object.values(scope.reduce((o,s)=>{
+   let key='Not listed';
+   if(field==='retailer')key=s.retailer||'Not listed';
+   else if(field==='manager')key=v7OrgForStore(s).areaManager||'Not listed';
+   else if(field==='regional')key=v7OrgForStore(s).regionalManager||'Unaligned';
+   o[key]??={key,total:0,gaps:0,covered:0,states:new Set(),managers:new Set(),retailers:new Set()};
+   const r=o[key];r.total++;
+   if(gapIds.has(String(s.siteId)))r.gaps++;else r.covered++;
+   if(s.state)r.states.add(s.state);if(s.retailer)r.retailers.add(s.retailer);
+   const org=v7OrgForStore(s);if(org.areaManager)r.managers.add(org.areaManager);
+   return o;
+ },{})).map(r=>({...r,coverage:r.total?r.covered/r.total*100:0})).sort((a,b)=>b.gaps-a.gaps||b.total-a.total);
+ const drill=field==='retailer'?'retailer':field==='regional'?'regional':'manager';
+ openModal(title,`<div class="callout">Current scope: <b>${esc(scopeLabel())}</b>. Every row is clickable and continues into the matching map scope.</div>
+ <div class="tablewrap"><table><thead><tr><th>${field==='retailer'?'Retailer':field==='regional'?'Regional Manager':'Manager'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>States</th><th>${field==='retailer'?'Managers':'Retailers'}</th><th></th></tr></thead><tbody>
+ ${rows.map(r=>`<tr class="v78-drill-row" data-drill-type="${drill}" data-drill-value="${esc(r.key)}"><td><b>${esc(r.key)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.states.size}</td><td>${field==='retailer'?r.managers.size:r.retailers.size}</td><td>↗</td></tr>`).join('')}
+ </tbody></table></div>`);
+ window._v78Rollup=rows;
+ return rows;
+}
 function v4OpenExecutive(){
  const scope=filtered;
  const model=v4Model(scope);
@@ -1695,7 +1711,7 @@ function v6OpenStateIntelligence(){
  openModal('State / Territory Intelligence',`
   <div class="callout">This view treats gaps as a network condition, not an RTS-owned problem. Select a state to move directly into its stores, gaps, managers, and placement opportunities.</div>
   <div class="tablewrap"><table><thead><tr><th>State</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>Managers</th><th>Retailers</th><th></th></tr></thead><tbody>
-   ${rows.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusState(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.managerCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
+   ${rows.map(r=>`<tr class="v78-drill-row" data-drill-type="state" data-drill-value="${esc(r.name)}"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.managerCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
   </tbody></table></div>`);
 }
 window.v6FocusState=state=>{
@@ -1723,7 +1739,7 @@ function v6OpenManagerIntelligence(){
  openModal('Manager Intelligence',`
   <div class="v6-hero"><h2>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} Coverage Overview</h2><p>Every row is clickable. Coverage, gap exposure, unique dependency, retailer complexity, and geographic breadth for the selected scope.</p></div>
   <div class="tablewrap"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody>
-   ${rows.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusManager(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
+   ${rows.map(r=>`<tr class="v78-drill-row" data-drill-type="manager" data-drill-value="${esc(r.name)}"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
   </tbody></table></div>`);
 }
 window.v6FocusManager=name=>{
@@ -1829,7 +1845,7 @@ function v62GapSummary(){
  const byState=Object.values(filtered.reduce((o,s)=>{
    const k=s.state||'Unknown';o[k]??={key:k,total:0,gaps:0,managers:new Set(),retailers:new Set()};
    const r=o[k];r.total++;if(gapIds.has(s.siteId))r.gaps++;
-   if(s.manager)r.managers.add(s.manager);if(s.retailer)r.retailers.add(s.retailer);return o;
+   const org=v7OrgForStore(s);if(org.areaManager)r.managers.add(org.areaManager);if(s.retailer)r.retailers.add(s.retailer);return o;
  },{})).map(r=>({...r,coverage:r.total?(r.total-r.gaps)/r.total*100:0})).sort((a,b)=>b.gaps-a.gaps);
 
  const byManager=Object.values(filtered.reduce((o,s)=>{
@@ -1846,12 +1862,12 @@ function v62GapSummary(){
   </div>
   <div id="v62GapStatePane" class="v62-gap-pane">
    <div class="tablewrap"><table><thead><tr><th>State</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Managers</th><th>Retailers</th></tr></thead><tbody>
-    ${byState.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusState(${JSON.stringify(r.key)})"><td><b>${esc(r.key)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.managers.size}</td><td>${r.retailers.size}</td></tr>`).join('')}
+    ${byState.map(r=>`<tr class="v78-drill-row" data-drill-type="state" data-drill-value="${esc(r.key)}"><td><b>${esc(r.key)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.managers.size}</td><td>${r.retailers.size}</td></tr>`).join('')}
    </tbody></table></div>
   </div>
   <div id="v62GapManagerPane" class="v62-gap-pane" hidden>
    <div class="tablewrap"><table><thead><tr><th>Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>States</th><th>Retailers</th></tr></thead><tbody>
-    ${byManager.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusManager(${JSON.stringify(r.key)})"><td><b>${esc(r.key)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.states.size}</td><td>${r.retailers.size}</td></tr>`).join('')}
+    ${byManager.map(r=>`<tr class="v78-drill-row" data-drill-type="manager" data-drill-value="${esc(r.key)}"><td><b>${esc(r.key)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.states.size}</td><td>${r.retailers.size}</td></tr>`).join('')}
    </tbody></table></div>
   </div>
   <div class="actions"><button class="btn" onclick="window.v62ExportGapSummary()">Export Summary</button></div>`);
@@ -1888,10 +1904,10 @@ function v62SaveScenario(){
 function v62SavedScenarios(){
  const scenarios=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]');
  openModal('Saved Placement Scenarios',`
-  <div class="tools"><button class="btn primary" onclick="window.v62SaveScenario()">Save Current Top-10 Plan</button></div>
+  <div class="tools"><button class="btn primary" onclick="window.v62SaveScenario()">Save Current Top-10 Plan</button><button class="btn" onclick="window.v78CompareScenarios()">Compare Saved Plans</button></div>
   ${scenarios.length?scenarios.map((s,i)=>`<div class="v62-scenario-card">
    <h4>${esc(s.name)}</h4><p>${esc(s.scope)} · ${s.radius} miles · ${s.currentCoverage.toFixed(1)}% starting coverage · ${s.placements.length} placements</p>
-   <div class="actions"><button class="btn" onclick="window.v62OpenScenario(${i})">Open on Map</button><button class="btn" onclick="window.v62ExportScenario(${i})">Export</button><button class="btn" onclick="window.v62DeleteScenario(${i})">Delete</button></div>
+   <div class="actions"><button class="btn" onclick="window.v62OpenScenario(${i})">Open on Map</button><button class="btn" onclick="window.v78ReviewScenario(${i})">Final Review</button><button class="btn" onclick="window.v62ExportScenario(${i})">Export</button><button class="btn" onclick="window.v62DeleteScenario(${i})">Delete</button></div>
   </div>`).join(''):'<div class="callout">No saved scenarios yet.</div>'}`);
 }
 window.v62SaveScenario=v62SaveScenario;
@@ -1910,15 +1926,38 @@ window.v62DeleteScenario=i=>{
  const a=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]');a.splice(i,1);localStorage.setItem(V62_SCENARIO_KEY,JSON.stringify(a));v62SavedScenarios();
 };
 
+function v78FocusRegional(regional){
+ $('modal')?.classList.remove('show');
+ if($('fRegional'))$('fRegional').value=regional||'';
+ refreshCascadingFilters({preserve:true});applyFilters();fitResults();
+}
+window.v78FocusRegional=v78FocusRegional;
+window.v78ReviewScenario=i=>{
+ const s=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]')[i];if(!s)return;
+ openModal(`Final Placement Review — ${esc(s.name)}`,`<div class="callout">Planning-only review. Click a placement to open the detailed simulator and validate its impact against the current network.</div><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Area</th><th>Modeled Net-New</th><th>Review</th></tr></thead><tbody>${s.placements.map(p=>`<tr class="v78-drill-row" data-drill-type="simulate" data-lat="${p.lat}" data-lng="${p.lng}"><td>${p.rank}</td><td><b>${esc(p.city)}, ${esc(p.state||'')}</b></td><td>+${p.gain}</td><td><select onclick="event.stopPropagation()"><option>Pending</option><option>Approve</option><option>Maybe</option><option>Replace</option></select></td></tr>`).join('')}</tbody></table></div>`);
+};
+window.v78CompareScenarios=()=>{
+ const a=JSON.parse(localStorage.getItem(V62_SCENARIO_KEY)||'[]');
+ if(a.length<2){openModal('Compare Saved Plans','<div class="callout">Save at least two placement scenarios before comparing them.</div>');return}
+ openModal('Compare Saved Plans',`<div class="callout">Saved planning snapshots are compared side by side. Open either scenario on the map for geographic review.</div><div class="tablewrap"><table><thead><tr><th>Scenario</th><th>Saved</th><th>Scope</th><th>Radius</th><th>Starting Coverage</th><th>Placements</th><th>Modeled Net-New</th><th></th></tr></thead><tbody>${a.map((s,i)=>`<tr><td><b>${esc(s.name)}</b></td><td>${new Date(s.savedAt).toLocaleString()}</td><td>${esc(s.scope)}</td><td>${s.radius} mi</td><td>${Number(s.currentCoverage).toFixed(1)}%</td><td>${s.placements.length}</td><td>${s.placements.reduce((n,p)=>n+(Number(p.gain)||0),0)}</td><td><button class="btn" onclick="window.v62OpenScenario(${i})">Open</button></td></tr>`).join('')}</tbody></table></div>`);
+};
 function v62InstallClickableDrilldowns(){
+ if(window.__v78DrillInstalled)return;window.__v78DrillInstalled=true;
  document.addEventListener('click',e=>{
-   const card=e.target.closest('[data-drill-type]');
-   if(!card)return;
-   const type=card.dataset.drillType,value=card.dataset.drillValue;
-   if(type==='state')v62FocusState(value);
-   if(type==='manager')v62FocusManager(value);
-   if(type==='rts')v62FocusRts(value);
-   if(type==='store')v62FocusStore(value);
+   const row=e.target.closest('[data-drill-type]');if(!row)return;
+   if(e.target.closest('button,a,input,select,textarea') && e.target!==row)return;
+   e.preventDefault();e.stopPropagation();
+   const type=row.dataset.drillType,value=row.dataset.drillValue;
+   if(type==='state')return v62FocusState(value);
+   if(type==='manager')return v62FocusManager(value);
+   if(type==='regional')return v78FocusRegional(value);
+   if(type==='retailer')return v78FocusRetailer(value);
+   if(type==='rts')return v62FocusRts(value);
+   if(type==='store')return v62FocusStore(value);
+   if(type==='simulate'){
+     const lat=Number(row.dataset.lat),lng=Number(row.dataset.lng);
+     $('modal')?.classList.remove('show');if(Number.isFinite(lat)&&Number.isFinite(lng))simulateAt(lat,lng);
+   }
  });
 }
 window.v62FocusState=v62FocusState;
@@ -2128,15 +2167,25 @@ function territoryProfiles(){
 }
 function compareTerritories(){ return v4CompareRts(); }
 function resiliency(){
- const model=coverageModel(filtered);
- const rows=model.byRts.filter(x=>x.count>0).map(x=>({r:x.rts,count:x.count,backup:x.sharedCount,lost:x.uniqueCount})).sort((a,b)=>b.lost-a.lost||b.count-a.count);
- openModal('RTS Resiliency Simulator',`
-  <div class="callout">If an RTS becomes unavailable, <b>At Risk</b> stores are those for which that RTS is the only eligible RTS inside the selected radius. Shared stores remain backup-covered. Click a row to open its RTS profile.</div>
-  <div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores in Radius</th><th>Backup-Covered</th><th>At Risk</th><th></th></tr></thead><tbody>
-   ${rows.map(x=>`<tr class="v76-drill-row" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')"><td><b>${esc(x.r.name)}</b></td><td>${x.count}</td><td>${x.backup}</td><td>${x.lost}</td><td>↗</td></tr>`).join('')}
-  </tbody></table></div>`);
+ const model=coverageModel(currentScope());
+ const rows=model.byRts.filter(x=>x.count>0).map(x=>({r:x.rts,count:x.count,backup:x.sharedCount,lost:x.uniqueCount,stores:x.stores})).sort((a,b)=>b.lost-a.lost||b.count-a.count);
+ window._v78Resiliency=rows;
+ openModal('RTS Resiliency Simulator',`<div class="callout">At Risk = stores for which this RTS is the only eligible RTS inside the selected radius. Click a row to highlight the at-risk stores; click the RTS name button to open its profile.</div><div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores in Radius</th><th>Backup-Covered</th><th>At Risk</th><th>Actions</th></tr></thead><tbody>${rows.map((x,i)=>`<tr class="v78-highlight-row" onclick="window.v78ShowResiliency(${i})"><td><b>${esc(x.r.name)}</b></td><td>${x.count}</td><td>${x.backup}</td><td>${x.lost}</td><td><button class="btn" onclick="event.stopPropagation();window.v62FocusRts('${esc(x.r.id)}')">RTS Profile</button></td></tr>`).join('')}</tbody></table></div>`);
 }
+window.v78ShowResiliency=i=>{
+ const x=(window._v78Resiliency||[])[i];if(!x)return;
+ const radius=Number($('radius')?.value||75);highlightLayer.clearLayers();
+ x.stores.filter(s=>s.coverCount===1).forEach(s=>L.circleMarker([s.lat,s.lng],{radius:7,weight:3,fillOpacity:.8}).bindTooltip(`${s.retailer||'Store'} ${s.storeNumber||s.siteId||''} · At risk if ${x.r.name} unavailable`).addTo(highlightLayer));
+ $('modal')?.classList.remove('show');if(x.stores.length)map.fitBounds(x.stores.map(s=>[s.lat,s.lng]),{padding:[35,35],maxZoom:8});
+};
 
+function v78CopyViewLink(){
+ const u=new URL(location.href);u.searchParams.set('program',ACTIVE_PROGRAM_ID);u.searchParams.set('radius',$('radius')?.value||75);
+ [['coverage','fCoverage'],['retailer','fRetailer'],['state','fState'],['regional','fRegional'],['manager','fManager'],['rts','fRts']].forEach(([k,id])=>{const v=$(id)?.value||'';if(v)u.searchParams.set(k,v);else u.searchParams.delete(k)});
+ const c=map.getCenter();u.searchParams.set('lat',c.lat.toFixed(5));u.searchParams.set('lng',c.lng.toFixed(5));u.searchParams.set('zoom',map.getZoom());
+ navigator.clipboard?.writeText(u.toString());setDataStatus('success','Current view link copied');
+}
+window.v78CopyViewLink=v78CopyViewLink;
 function init(){
  initializeDataStatus();
  const regionalSelect=$('fRegional');
@@ -2211,6 +2260,7 @@ function installApplicationBindings(){
   if($('radiusLbl'))$('radiusLbl').textContent=75;
   window.clearHighlight();simLayer.clearLayers();recompute();map.setView(HOME.center,HOME.zoom)
  },'Reset');
+ safe('v78CopyViewBtn',v78CopyViewLink,'Copy View Link');
  safe('clearFilters',()=>{
   ['fCoverage','fRetailer','fState','fRegional','fManager','fRts'].forEach(x=>{if($(x))$(x).value=''});
   refreshCascadingFilters({preserve:false});applyFilters()
