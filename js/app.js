@@ -1760,16 +1760,71 @@ function v6OpenStoreIntelligence(siteId){
    <div class="v6-kpi"><small>Nearest RTS</small><b>${ranked[0]?esc(ranked[0].name):'None'}</b><span>${ranked[0]?ranked[0].distance.toFixed(1)+' miles':'No eligible RTS'}</span></div>
    <div class="v6-kpi"><small>Backup RTS</small><b>${inside[1]?esc(inside[1].name):'None'}</b><span>${inside[1]?inside[1].distance.toFixed(1)+' miles':'No second RTS in radius'}</span></div>
    <div class="v6-kpi"><small>Nearby Stores</small><b>${nearby.length}</b><span>Other stores within 25 miles</span></div>
-   <div class="v6-kpi"><small>Manager</small><b>${esc(s.manager||'Not listed')}</b><span>${esc(s.market||'Market not listed')}</span></div>
+   <div class="v6-kpi"><small>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</small><b class="v78-inline-link" onclick="window.v79OpenManagerWorkspace(${JSON.stringify(v7OrgForStore(s).areaManager||s.manager||'Not listed')})">${esc(v7OrgForStore(s).areaManager||s.manager||'Not listed')}</b><span>${v7OrgForStore(s).regionalManager?`Regional: ${esc(v7OrgForStore(s).regionalManager)}`:esc(s.market||'Hierarchy not listed')}</span></div>
    <div class="v6-kpi"><small>Team Exposure</small><b>${esc((s.dedicatedTeams||[]).join(', ')||'Core')}</b><span>${esc(v4ProgramLabel())}</span></div>
   </div>
   <div class="v4-two">
    <div class="v4-panel"><h3>Eligible RTS ranking</h3>${ranked.slice(0,8).map((r,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(r.name)}</b><br>${esc(r.email||'')}</span><span>${r.distance.toFixed(1)} mi</span></div>`).join('')}</div>
    <div class="v4-panel"><h3>Nearby store concentration</h3>${nearby.slice(0,8).map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.retailer)} #${esc(x.storeNumber)}</b><br>${esc(x.city)}, ${esc(x.state)}</span><span>${hav(s.lat,s.lng,x.lat,x.lng).toFixed(1)} mi</span></div>`).join('')||'<div class="callout">No nearby stores within 25 miles.</div>'}</div>
   </div>
-  <div class="actions"><button class="btn primary" onclick="window.simulateAt(${s.lat},${s.lng});document.getElementById('modal').classList.remove('show')">Simulate RTS Here</button><button class="btn" onclick="window.v6FocusManager(${JSON.stringify(s.manager||'Not listed')})">Open Manager</button></div>`);
+  <div class="actions"><button class="btn primary" onclick="window.simulateAt(${s.lat},${s.lng});document.getElementById('modal').classList.remove('show')">Simulate RTS Here</button><button class="btn" onclick="window.v79OpenManagerWorkspace(${JSON.stringify(v7OrgForStore(s).areaManager||s.manager||'Not listed')})">Open Manager</button></div>`);
 }
 window.v6OpenStoreIntelligence=v6OpenStoreIntelligence;
+
+
+/* ===== v7.9 Manager Coverage & Placement Intelligence ===== */
+function v79ManagerScope(name){
+ return stores.filter(s=>(v7OrgForStore(s).areaManager||s.manager||'Not listed')===name);
+}
+function v79ManagerPlacementPlan(scope,limit=6){
+ const base=v4Plan(scope,Math.max(limit*3,12));
+ const total=scope.length||1;
+ return base.map(x=>{
+   const gain=Number(x.gain||0);
+   const pctGain=gain/total*100;
+   let tier='No Recommendation', reason='The modeled placement does not create enough concentrated net-new coverage to justify surfacing it as a staffing opportunity.';
+   if(gain>=15 && pctGain>=8){tier='Strong';reason='Concentrated uncovered stores create a material coverage improvement in this manager footprint.'}
+   else if(gain>=8 && pctGain>=5){tier='Worth Evaluating';reason='The location produces a reasonable manager-level coverage gain and is worth validating in the simulator.'}
+   else if(gain>=5){tier='Limited Impact';reason='Some coverage improves, but the modeled return is modest for an additional RTS placement.'}
+   return {...x,gain,pctGain,tier,reason};
+ }).filter(x=>x.tier==='Strong'||x.tier==='Worth Evaluating').slice(0,limit);
+}
+window.v79OpenManagerWorkspace=function(name){
+ const scope=v79ManagerScope(name);
+ if(!scope.length){openModal('Manager Intelligence',`<div class="callout">No stores were found for ${esc(name)}.</div>`);return}
+ const model=v4Model(scope),covered=scope.length-model.gaps.length,pct=covered/scope.length*100;
+ const orgs=scope.map(v7OrgForStore),regional=orgs.find(x=>x.regionalManager)?.regionalManager||'Unaligned';
+ const states=[...new Set(scope.map(s=>s.state).filter(Boolean))].sort();
+ const retailers=[...new Set(scope.map(s=>s.retailer).filter(Boolean))].sort();
+ const rtsStats=activeRTS().map(r=>{
+   const ds=scope.map(s=>({s,d:hav(s.lat,s.lng,r.lat,r.lng)})).filter(x=>x.d<=Number($('radius').value));
+   return {r,count:ds.length,unique:ds.filter(x=>scope.filter(t=>hav(t.lat,t.lng,x.s.lat,x.s.lng)<0.01).length).length};
+ }).filter(x=>x.count).sort((a,b)=>b.count-a.count);
+ const plan=v79ManagerPlacementPlan(scope,6);
+ const placementHtml=plan.length?plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.tier)} · +${x.gain} net-new stores · +${x.pctGain.toFixed(1)} pts of manager footprint<br><small>${esc(x.reason)}</small></span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">Simulate</button></div>`).join(''):`<div class="callout"><b>No meaningful additional RTS placement identified.</b><br>The current gap pattern does not meet the manager-level impact threshold for a placement recommendation. Isolated or low-return gaps remain visible for operational review, but are not being presented as headcount opportunities.</div>`;
+ openModal('Manager Coverage & Placement Intelligence',`
+  <div class="v6-hero"><h2>${esc(name)}</h2><p>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} · Regional Manager: <b>${esc(regional)}</b> · ${states.join(', ')}</p></div>
+  <div class="v6-kpi-grid">
+   <div class="v6-kpi"><small>Stores</small><b>${scope.length}</b><span>${retailers.length} retailer${retailers.length===1?'':'s'}</span></div>
+   <div class="v6-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered} covered</span></div>
+   <div class="v6-kpi"><small>Gaps</small><b>${model.gaps.length}</b><span>No eligible RTS in radius</span></div>
+   <div class="v6-kpi"><small>RTS Supporting Area</small><b>${rtsStats.length}</b><span>At least one store in radius</span></div>
+  </div>
+  <div class="v4-two">
+   <div class="v4-panel"><h3>RTS dependency</h3>${rtsStats.slice(0,10).map((x,i)=>`<div class="v78-drill-row v4-list-row" data-drill-type="rts" data-drill-value="${esc(x.r.id||x.r.name)}"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b></span><span>${x.count} stores ↗</span></div>`).join('')||'<div class="callout">No active RTS currently reaches this manager footprint.</div>'}</div>
+   <div class="v4-panel"><h3>Placement opportunities</h3>${placementHtml}</div>
+  </div>
+  <div class="callout"><b>Placement rule:</b> recommendations are surfaced only when the modeled location produces a reasonable, concentrated manager-level impact. Low-value placements are intentionally suppressed. Use the simulator to validate any surfaced opportunity before treating it as a staffing decision.</div>
+  <div class="actions"><button class="btn primary" onclick="window.v79ApplyManagerScope(${JSON.stringify(name)})">View Manager on Map</button><button class="btn" onclick="window.v79ShowManagerGaps(${JSON.stringify(name)})">Show Manager Gaps</button></div>`);
+};
+window.v79ApplyManagerScope=function(name){
+ const el=$('fManager'); if(el){[...el.options].forEach(o=>o.selected=o.value===name); refreshCascadingFilters({preserve:true}); applyFilters();}
+ $('modal')?.classList.remove('show'); fitResults();
+};
+window.v79ShowManagerGaps=function(name){
+ window.v79ApplyManagerScope(name);
+ const cov=$('fCoverage'); if(cov){cov.value='Gap'; applyFilters(); fitResults();}
+};
 
 function v6OpenExecutiveIntelligence(){
  const model=v6ScopeModel(),health=v4Health(filtered),plan=v4Plan(filtered,5);
