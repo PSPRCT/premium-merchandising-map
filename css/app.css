@@ -1287,3 +1287,32 @@ button:disabled{
 .v76-sim-search input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px;padding:7px 9px;margin:4px 0;background:#fff}
 .v76-sim-actions{display:flex;gap:6px;flex-wrap:wrap;margin:3px 0}
 .v76-sim-msg{font-size:10.5px;color:#64748b;margin-top:4px}
+
+/* Version 7.7 mature planning consolidation */
+.v77-workflow-strip{display:flex;gap:5px;flex-wrap:wrap;margin:7px 0}
+.v77-workflow-strip span{border:1px solid #dbeafe;background:#f8fbff;color:#1e3a8a;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:900}
+.v77-sim-assessment{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dbe3ea;border-radius:12px;padding:10px;margin:8px 0;background:#f8fafc}
+.v77-sim-assessment small{display:block;text-transform:uppercase;letter-spacing:.06em;color:#64748b;font-weight:900}
+.v77-sim-assessment b{display:block;font-size:18px;color:#0f172a;margin-top:2px}
+.v77-sim-assessment span{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:4px 8px;font-weight:900;white-space:nowrap}
+.v77-sim-assessment.excellent{border-color:#86efac;background:#f0fdf4}
+.v77-sim-assessment.good{border-color:#bfdbfe;background:#eff6ff}
+.v77-sim-assessment.watch{border-color:#fed7aa;background:#fff7ed}
+.v77-sim-why{border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:12px;padding:9px 10px;margin:8px 0;font-size:12px;line-height:1.4}
+.v77-sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.v77-sim-metric{border:1px solid #e2e8f0;background:#fff;border-radius:12px;padding:9px;text-align:left;cursor:pointer;color:#0f172a}
+.v77-sim-metric:hover{border-color:#60a5fa;background:#f8fbff;box-shadow:0 3px 10px rgba(37,99,235,.08)}
+.v77-sim-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:950;display:flex;align-items:center;gap:5px}
+.v77-help-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid #94a3b8;border-radius:999px;font-size:10px;color:#475569}
+.v77-sim-value{font-size:25px;font-weight:950;line-height:1.05;margin-top:3px}
+.v77-sim-sub{font-size:11.5px;color:#64748b;margin-top:3px}
+.v77-sim-section{border:1px solid #e2e8f0;border-radius:12px;background:#fff;padding:9px;margin-top:8px}
+.v77-sim-section h4{margin:0 0 7px;font-size:13px}
+.v77-relief-list,.v77-impact-actions,.v77-sim-actions-bottom{display:flex;flex-wrap:wrap;gap:6px}
+.v77-relief-chip{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:4px 7px;font-size:11px;font-weight:850;cursor:pointer}
+.v77-impact-details{margin-top:7px;background:#f8fafc;border-radius:9px;padding:8px;font-size:11.5px;line-height:1.35;color:#475569;max-height:220px;overflow:auto}
+.v77-impact-row{padding:5px 0;border-top:1px solid #e2e8f0;cursor:pointer}
+.v77-impact-row:first-child{border-top:0}
+.v77-impact-row:hover{color:#1d4ed8}
+.v77-projected{background:#f8fafc}
+@media(max-width:720px){.v77-sim-grid{grid-template-columns:1fr}.v77-sim-assessment{align-items:flex-start;flex-direction:column}}

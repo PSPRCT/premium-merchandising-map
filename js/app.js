@@ -352,18 +352,239 @@ function v76SimulationControls(){
    <div id="v76SimMessage" class="v76-sim-msg">You can also click anywhere on the map.</div>
   </div>`;
 }
-function v76SimulationResultHtml(p,gained,current,after,total){
- return `${v76SimulationControls()}
- <div class="callout">Drag the blue RTS marker and release it to recalculate. This planning result does not alter production coverage.</div>
- <div class="grid2">
-  <div class="metric"><small>Current coverage</small><b>${total?(current/total*100).toFixed(1):'0.0'}%</b></div>
-  <div class="metric"><small>After placement</small><b>${total?(after/total*100).toFixed(1):'0.0'}%</b></div>
-  <div class="metric"><small>New stores covered</small><b>${gained.length}</b></div>
-  <div class="metric"><small>Gaps remaining</small><b>${Math.max(0,total-after)}</b></div>
- </div>
- <div class="popcard"><strong>Proposed coordinates</strong>${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div>
- <button class="btn" onclick="window.exportSimulation()">Export Impact</button>`;
+
+function v77ActiveRts(){
+ return activeRTS();
 }
+function v77CoverageAtStore(store,radius=Number($('radius')?.value||75)){
+ return (store._eligibleDistances||[]).filter(x=>x.distance<=radius);
+}
+function v77SimImpact(lat,lng,radius=Number($('radius')?.value||75)){
+ const active=v77ActiveRts();
+ const byName=new Map(active.map(r=>[r.name,r]));
+ const currentCovered=stores.filter(s=>s.covered);
+ const currentGaps=stores.filter(s=>!s.covered);
+
+ const inRadius=stores
+   .map(s=>({store:s,simDistance:hav(lat,lng,s.lat,s.lng)}))
+   .filter(x=>x.simDistance<=radius)
+   .sort((a,b)=>a.simDistance-b.simDistance);
+
+ const netNew=[],backup=[],primaryRelief=[],fringeImproved=[],singlePoint=[],redundant=[];
+ const relievedMap=new Map();
+
+ for(const row of inRadius){
+   const s=row.store;
+   const current=v77CoverageAtStore(s,radius);
+   const nearest=current[0]||null;
+   const next=[...current];
+
+   if(current.length===0){
+     netNew.push(row);
+   } else {
+     backup.push(row);
+   }
+
+   if(nearest && row.simDistance < nearest.distance){
+     primaryRelief.push({...row,currentPrimary:nearest});
+     const key=nearest.name;
+     if(!relievedMap.has(key))relievedMap.set(key,{name:key,count:0,stores:[]});
+     relievedMap.get(key).count++;
+     relievedMap.get(key).stores.push(s);
+   }
+
+   if(nearest && nearest.distance>=60 && nearest.distance<=75 && row.simDistance<nearest.distance){
+     fringeImproved.push({...row,currentPrimary:nearest});
+   }
+
+   if(current.length===1){
+     singlePoint.push({...row,currentPrimary:nearest});
+   }
+
+   if(current.length>=2){
+     redundant.push(row);
+   }
+ }
+
+ const projectedCovered=currentCovered.length+netNew.length;
+ const relief=[...relievedMap.values()].sort((a,b)=>b.count-a.count);
+
+ let rating='Balanced opportunity',ratingClass='good',ratingWhy='';
+ if(netNew.length>=75){
+   rating='Strong coverage opportunity';ratingClass='excellent';
+   ratingWhy='This location closes a meaningful uncovered concentration while also improving network flexibility.';
+ }else if(netNew.length>=25 || singlePoint.length>=25 || primaryRelief.length>=25){
+   rating='Useful network improvement';ratingClass='good';
+   ratingWhy='This location adds meaningful coverage, backup, or workload relief within the selected radius.';
+ }else if(netNew.length<10 && backup.length>netNew.length*5){
+   rating='High overlap / limited benefit';ratingClass='watch';
+   ratingWhy='Most stores are already well covered and the location adds limited network improvement.';
+ }else{
+   ratingWhy='The location provides moderate improvement but should be compared with nearby gap-cluster alternatives.';
+ }
+
+ return {
+   lat,lng,radius,inRadius,netNew,backup,primaryRelief,fringeImproved,
+   singlePoint,redundant,relief,projectedCovered,rating,ratingClass,ratingWhy
+ };
+}
+function v77ImpactRows(mode,impact){
+ if(mode==='netNew')return impact.netNew;
+ if(mode==='backup')return impact.backup;
+ if(mode==='relief')return impact.primaryRelief;
+ if(mode==='fringe')return impact.fringeImproved;
+ if(mode==='single')return impact.singlePoint;
+ if(mode==='redundant')return impact.redundant;
+ return [];
+}
+function v77ImpactTitle(mode){
+ return ({
+  netNew:'Net-new coverage',
+  backup:'Backup coverage gained',
+  relief:'Primary relief potential',
+  fringe:'Fringe stores improved',
+  single:'Single-point strengthened',
+  redundant:'Redundant overlap'
+ })[mode]||'Simulation impact';
+}
+function v77ClearSimulationImpact(){
+ highlightLayer.clearLayers();
+}
+function v77HighlightSimulationImpact(mode){
+ const impact=window._v77SimImpact;if(!impact)return;
+ const rows=v77ImpactRows(mode,impact);
+ highlightLayer.clearLayers();
+ rows.forEach(row=>{
+   const s=row.store;
+   L.circleMarker([s.lat,s.lng],{
+     radius:7,weight:3,fillOpacity:.85
+   }).bindTooltip(`${s.retailer||'Store'} ${s.storeNumber||s.storeNbr||s.siteId||''} · ${v77ImpactTitle(mode)}`)
+     .addTo(highlightLayer);
+ });
+ const details=$('v77ImpactDetails');
+ if(details){
+   const first=rows.slice(0,15).map(r=>{
+     const s=r.store;
+     const label=`${s.retailer||'Store'} ${s.storeNumber||s.storeNbr||s.siteId||''} — ${s.city||''}, ${s.state||''}`;
+     const extra=r.currentPrimary?` · current RTS ${r.currentPrimary.name} ${r.currentPrimary.distance.toFixed(1)} mi`:'';
+     return `<div class="v77-impact-row" onclick="window.v77FocusStore('${esc(s.siteId)}')"><b>${esc(label)}</b>${esc(extra)}</div>`;
+   }).join('');
+   details.innerHTML=`<b>${esc(v77ImpactTitle(mode))}: ${rows.length}</b>${first||'<div>No stores in this category.</div>'}${rows.length>15?`<div class="muted">Showing first 15 of ${rows.length}.</div>`:''}`;
+ }
+}
+function v77FocusStore(siteId){
+ const s=stores.find(x=>String(x.siteId)===String(siteId));
+ if(!s)return;
+ map.flyTo([s.lat,s.lng],11,{duration:.4});
+ const marker=markerById.get(s.siteId);
+ if(marker?.openPopup)marker.openPopup();
+}
+window.v77HighlightSimulationImpact=v77HighlightSimulationImpact;
+window.v77ClearSimulationImpact=v77ClearSimulationImpact;
+window.v77FocusStore=v77FocusStore;
+
+function v76SimulationResultHtml(p,gained,current,after,total){
+ const impact=v77SimImpact(p.lat,p.lng,Number($('radius')?.value||75));
+ window._v77SimImpact=impact;
+ window._simGained=impact.netNew.map(x=>x.store);
+
+ const reliefHtml=impact.relief.length
+   ? impact.relief.slice(0,8).map(x=>`<button class="v77-relief-chip" onclick="window.openTerritoryByName?.('${esc(x.name)}')">${esc(x.name)} · ${x.count}</button>`).join('')
+   : '<span class="muted">No current RTS would become farther than the simulated location for stores in this radius.</span>';
+
+ const metric=(key,title,count,sub)=>`<button class="v77-sim-metric" onclick="window.v77HighlightSimulationImpact('${key}')">
+   <div class="v77-sim-label">${title}<span class="v77-help-dot">?</span></div>
+   <div class="v77-sim-value">${count.toLocaleString()}</div>
+   <div class="v77-sim-sub">${sub}</div>
+ </button>`;
+
+ return `${v76SimulationControls()}
+  <div class="v77-sim-assessment ${impact.ratingClass}">
+    <div><small>Placement assessment</small><b>${esc(impact.rating)}</b></div>
+    <span>${impact.radius} mi simulation</span>
+  </div>
+  <div class="v77-sim-why"><b>Why this rating:</b> ${esc(impact.ratingWhy)} Click any metric below to highlight its stores on the map.</div>
+
+  <div class="v77-sim-grid">
+   ${metric('netNew','Net-new coverage',impact.netNew.length,'currently uncovered stores')}
+   ${metric('backup','Backup coverage gained',impact.backup.length,'covered stores gain another RTS option')}
+   ${metric('relief','Primary relief potential',impact.primaryRelief.length,'simulated RTS becomes closer')}
+   ${metric('fringe','Fringe stores improved',impact.fringeImproved.length,'current nearest RTS is 60–75 miles away')}
+   ${metric('single','Single-point strengthened',impact.singlePoint.length,'stores gain an in-radius backup')}
+   ${metric('redundant','Redundant overlap',impact.redundant.length,'already have two or more RTS in range')}
+  </div>
+
+  <div class="v77-sim-section">
+   <h4>Current RTS potentially relieved</h4>
+   <div class="v77-relief-list">${reliefHtml}</div>
+  </div>
+
+  <div class="v77-sim-section">
+   <h4>Compare simulated placement to current network</h4>
+   <div class="v77-impact-actions">
+    <button class="btn" onclick="window.v77HighlightSimulationImpact('netNew')">Net-new (${impact.netNew.length})</button>
+    <button class="btn" onclick="window.v77HighlightSimulationImpact('backup')">Backup gained (${impact.backup.length})</button>
+    <button class="btn" onclick="window.v77HighlightSimulationImpact('relief')">Primary relief (${impact.primaryRelief.length})</button>
+    <button class="btn" onclick="window.v77HighlightSimulationImpact('fringe')">Fringe improved (${impact.fringeImproved.length})</button>
+    <button class="btn" onclick="window.v77HighlightSimulationImpact('single')">Single-point (${impact.singlePoint.length})</button>
+    <button class="btn" onclick="window.v77HighlightSimulationImpact('redundant')">Redundant overlap (${impact.redundant.length})</button>
+    <button class="btn" onclick="window.v77ClearSimulationImpact()">Clear highlights</button>
+   </div>
+   <div id="v77ImpactDetails" class="v77-impact-details">Choose a category to highlight those stores and compare the simulated RTS with current coverage.</div>
+  </div>
+
+  <div class="v77-sim-section v77-projected">
+   <b>Projected ${ACTIVE_PROGRAM_ID==='one-walmart'?'One Walmart':'Premium Merchandising'} coverage:</b>
+   ${impact.projectedCovered.toLocaleString()} / ${stores.length.toLocaleString()} stores
+   (${stores.length?(impact.projectedCovered/stores.length*100).toFixed(1):'0.0'}%)
+   <div class="muted">Impact compares the simulated location against the current RTS network using the selected ${impact.radius}-mile radius.</div>
+  </div>
+
+  <div class="v77-sim-section">
+    <div class="v77-sim-actions-bottom">
+      <button class="btn primary" onclick="window.v77ViewSimulationStores()">View stores in radius</button>
+      <button class="btn" onclick="window.exportSimulation()">Export impact</button>
+      <button class="btn" onclick="window.v77CopySimulationJson()">Copy JSON for this location</button>
+      <button class="btn" onclick="window.v77ClearSimulation()">Clear simulation</button>
+    </div>
+  </div>`;
+}
+function v77ViewSimulationStores(){
+ const impact=window._v77SimImpact;if(!impact)return;
+ openModal('Stores inside simulated RTS radius',`
+  <div class="callout">${impact.inRadius.length.toLocaleString()} stores are within ${impact.radius} miles of the simulated location.</div>
+  <div class="tablewrap"><table><thead><tr><th>Store</th><th>Location</th><th>Distance</th><th>Current Coverage</th><th>District/Area</th></tr></thead><tbody>
+  ${impact.inRadius.map(x=>{
+    const s=x.store,org=v7OrgForStore(s);
+    return `<tr class="v76-drill-row" onclick="window.v77FocusStore('${esc(s.siteId)}')"><td><b>${esc(s.retailer||'Store')} ${esc(s.storeNumber||s.storeNbr||s.siteId||'')}</b></td><td>${esc((s.city||'')+', '+(s.state||''))}</td><td>${x.simDistance.toFixed(1)} mi</td><td>${esc(s.coverageType||'')}</td><td>${esc(org.areaManager||'')}</td></tr>`;
+  }).join('')}</tbody></table></div>`);
+}
+function v77CopySimulationJson(){
+ const impact=window._v77SimImpact;if(!impact)return;
+ const payload={
+   program:ACTIVE_PROGRAM_ID,
+   lat:Number(impact.lat.toFixed(6)),lng:Number(impact.lng.toFixed(6)),
+   radiusMiles:impact.radius,
+   netNewCoverage:impact.netNew.length,
+   backupCoverageGained:impact.backup.length,
+   primaryReliefPotential:impact.primaryRelief.length,
+   fringeStoresImproved:impact.fringeImproved.length,
+   singlePointStrengthened:impact.singlePoint.length,
+   redundantOverlap:impact.redundant.length,
+   projectedCoverage:impact.projectedCovered
+ };
+ navigator.clipboard?.writeText(JSON.stringify(payload,null,2));
+}
+function v77ClearSimulation(){
+ simMode=false;
+ if(simMarker){simLayer.removeLayer(simMarker);simMarker=null}
+ highlightLayer.clearLayers();
+ if($('drawer'))$('drawer').classList.remove('show');
+}
+window.v77ViewSimulationStores=v77ViewSimulationStores;
+window.v77CopySimulationJson=v77CopySimulationJson;
+window.v77ClearSimulation=v77ClearSimulation;
+
 function updateSimulation(){
  if(!simMarker)return;
  const p=simMarker.getLatLng(),rad=Number($('radius').value);
@@ -402,8 +623,31 @@ function v76UseMapCenter(){const c=map.getCenter();simulateAt(c.lat,c.lng)}
 window.v76GeocodeSimulation=v76GeocodeSimulation;
 window.v76UseSimulationCoords=v76UseSimulationCoords;
 window.v76UseMapCenter=v76UseMapCenter;
-window.exportSimulation=()=>csv(storeRows(window._simGained||[]),'simulated_rts_impact.csv');
-
+window.exportSimulation=()=>{
+ const impact=window._v77SimImpact;if(!impact)return;
+ const rows=[];
+ const push=(category,list)=>list.forEach(x=>{
+   const s=x.store,org=v7OrgForStore(s);
+   rows.push({
+     Category:category,
+     Store:s.storeNumber||s.storeNbr||s.siteId||'',
+     Retailer:s.retailer||'',
+     City:s.city||'',State:s.state||'',
+     SimDistance:Number(x.simDistance.toFixed(2)),
+     CurrentNearestRTS:x.currentPrimary?.name||s.nearest?.[0]?.name||'',
+     CurrentNearestDistance:Number((x.currentPrimary?.distance??s.nearest?.[0]?.distance??0).toFixed(2)),
+     RegionalManager:org.regionalManager||'',
+     DistrictAreaManager:org.areaManager||''
+   });
+ });
+ push('Net-new',impact.netNew);
+ push('Backup gained',impact.backup);
+ push('Primary relief',impact.primaryRelief);
+ push('Fringe improved',impact.fringeImproved);
+ push('Single-point strengthened',impact.singlePoint);
+ push('Redundant overlap',impact.redundant);
+ csv(rows,`simulation_${ACTIVE_PROGRAM_ID}_${impact.lat.toFixed(4)}_${impact.lng.toFixed(4)}.csv`);
+};
 window.showNearbyStores=function(siteId){
  const s=stores.find(x=>String(x.siteId)===String(siteId));
  if(!s)return;
@@ -429,7 +673,7 @@ function gapClusters(base=stores.filter(s=>!s.covered),rad=75,min=10){const rema
 function openGapFinder(){
  const clusters=gapClustersV2(filtered,100);
  openModal('Current Gap Finder',`
-  <div class="callout">Highest-value uncovered concentrations in the current filtered scope. Click any row to simulate a placement there.</div>
+  <div class="callout"><b>Purpose:</b> Find concentrated uncovered areas in the current filtered scope. Every row is actionable: click it to simulate an RTS at that location, then compare net-new coverage, backup strength, relief, and overlap.</div>
   <div class="tools"><button class="btn" onclick="window.exportGapClusters()">Export Gap Clusters</button></div>
   <div class="tablewrap"><table><thead><tr><th>Rank</th><th>Area</th><th>Uncovered Stores</th><th></th></tr></thead><tbody>
    ${clusters.map(c=>`<tr class="v76-drill-row" onclick="window.simulateAt(${c.lat},${c.lng});document.getElementById('modal').classList.remove('show')"><td>${c.rank}</td><td><b>${esc(c.city)}, ${esc(c.state)}</b></td><td>${c.gain}</td><td>Simulate ↗</td></tr>`).join('')}
