@@ -218,7 +218,17 @@ function applyFilters(){
    (!rr||(s._eligibleDistances||[]).some(r=>r.name===rr&&r.distance<=rad))&&
    (!$('within').checked||(s._eligibleDistances||[]).some(r=>r.distance<=rad))
  );
- renderStores();updateMetrics();drawTerritories()
+ updateMetrics();
+ scheduleMapRender();
+}
+let v76MapRenderFrame=0;
+function scheduleMapRender(){
+ if(v76MapRenderFrame)cancelAnimationFrame(v76MapRenderFrame);
+ v76MapRenderFrame=requestAnimationFrame(()=>{
+  v76MapRenderFrame=0;
+  renderStores();
+  if($('territories')?.checked)drawTerritories();
+ });
 }
 function renderStores(){clusterLayer.clearLayers();plainLayer.clearLayers();const ms=filtered.map(s=>markerById.get(s.siteId));if($('cluster').checked){clusterLayer.addLayers(ms);if(!map.hasLayer(clusterLayer))map.addLayer(clusterLayer);if(map.hasLayer(plainLayer))map.removeLayer(plainLayer)}else{ms.forEach(m=>plainLayer.addLayer(m));if(!map.hasLayer(plainLayer))map.addLayer(plainLayer);if(map.hasLayer(clusterLayer))map.removeLayer(clusterLayer)}drawHeat();drawOverlap()}
 function updateMetrics(){
@@ -280,19 +290,20 @@ function territoryQuality(owned,inside,avg,farthest,overlapCount){
 }
 function openTerritory(id){
  const r=activeRTS().find(x=>String(x.id)===String(id));if(!r)return;
- const rad=Number($('radius').value),active=activeRTS();
- const inside=stores.filter(s=>hav(s.lat,s.lng,r.lat,r.lng)<=rad);
- const unique=inside.filter(s=>active.filter(x=>hav(s.lat,s.lng,x.lat,x.lng)<=rad).length===1);
- const shared=inside.filter(s=>active.filter(x=>hav(s.lat,s.lng,x.lat,x.lng)<=rad).length>=2);
- const distances=inside.map(s=>hav(s.lat,s.lng,r.lat,r.lng));
+ const rad=Number($('radius').value),active=activeRTS(),scope=filtered.length?filtered:stores;
+ const distFor=s=>(s._eligibleDistances||[]).find(x=>String(x.id)===String(r.id))?.distance ?? Infinity;
+ const inside=scope.filter(s=>distFor(s)<=rad);
+ const unique=inside.filter(s=>s.coverCount===1);
+ const shared=inside.filter(s=>s.coverCount>=2);
+ const distances=inside.map(distFor);
  const avg=distances.length?distances.reduce((a,b)=>a+b,0)/distances.length:0;
  const farthest=distances.length?Math.max(...distances):0;
- const farthestObj=inside.length?[...inside].sort((a,b)=>hav(b.lat,b.lng,r.lat,r.lng)-hav(a.lat,a.lng,r.lat,r.lng))[0]:null;
- const teamCounts=active.map(x=>stores.filter(s=>hav(s.lat,s.lng,x.lat,x.lng)<=rad).length);
+ const farthestObj=inside.length?[...inside].sort((a,b)=>distFor(b)-distFor(a))[0]:null;
+ const teamCounts=coverageModel(scope).byRts.map(x=>x.count);
  const teamAvg=teamCounts.length?teamCounts.reduce((a,b)=>a+b,0)/teamCounts.length:0;
  const delta=teamAvg?((inside.length-teamAvg)/teamAvg*100):0;
  const retailers=Object.entries(inside.reduce((o,s)=>(o[s.retailer]=(o[s.retailer]||0)+1,o),{})).sort((a,b)=>b[1]-a[1]).slice(0,8);
- const managers=Object.entries(inside.reduce((o,s)=>(o[s.manager||'Not listed']=(o[s.manager||'Not listed']||0)+1,o),{})).sort((a,b)=>b[1]-a[1]).slice(0,8);
+ const managers=Object.entries(inside.reduce((o,s)=>{const k=v7OrgForStore(s).areaManager||'Not listed';o[k]=(o[k]||0)+1;return o},{})).sort((a,b)=>b[1]-a[1]).slice(0,8);
  const maxRetail=Math.max(1,...retailers.map(x=>x[1])),maxMgr=Math.max(1,...managers.map(x=>x[1]));
  let score=100;
  if(avg>48)score-=22;else if(avg>38)score-=12;else if(avg>28)score-=6;
@@ -326,9 +337,71 @@ window.openTerritory=openTerritory;window.clearHighlight=()=>{highlightLayer.cle
  const rows=stores.filter(s=>hav(s.lat,s.lng,r.lat,r.lng)<=rad).map(s=>{const covering=active.filter(x=>hav(s.lat,s.lng,x.lat,x.lng)<=rad);return {SiteID:s.siteId,Retailer:s.retailer,StoreNumber:s.storeNumber,Address:s.address||'',City:s.city,State:s.state,ZIP:s.zip,DistanceMiles:hav(s.lat,s.lng,r.lat,r.lng).toFixed(1),CoverageType:covering.length===1?'Unique':'Shared',RTSWithinRadius:covering.length}});
  csv(rows,`territory_${r.name.replace(/\W+/g,'_')}.csv`);
 }
-function simulateAt(lat,lng){simLayer.clearLayers();const icon=L.divIcon({className:'',html:'<div class="sim-icon"></div>',iconSize:[24,24],iconAnchor:[12,12]});simMarker=L.marker([lat,lng],{icon,draggable:true}).addTo(simLayer);simMarker.on('drag',updateSimulation);simMarker.on('dragend',updateSimulation);updateSimulation();simMode=false}
+function simulateAt(lat,lng){simLayer.clearLayers();const icon=L.divIcon({className:'',html:'<div class="sim-icon"></div>',iconSize:[24,24],iconAnchor:[12,12]});simMarker=L.marker([lat,lng],{icon,draggable:true}).addTo(simLayer);simMarker.on('dragend',updateSimulation);updateSimulation();simMode=false}
 window.simulateAt=simulateAt;
-function updateSimulation(){if(!simMarker)return;const p=simMarker.getLatLng(),rad=Number($('radius').value),gaps=stores.filter(s=>!s.covered),gained=gaps.filter(s=>hav(s.lat,s.lng,p.lat,p.lng)<=rad),current=stores.filter(s=>s.covered).length,after=current+gained.length;showDrawer('Simulated New RTS',`<div class="callout">Drag the blue RTS marker to test another location. This planning result does not alter production coverage.</div><div class="grid2"><div class="metric"><small>Current coverage</small><b>${(current/stores.length*100).toFixed(1)}%</b></div><div class="metric"><small>After placement</small><b>${(after/stores.length*100).toFixed(1)}%</b></div><div class="metric"><small>New stores covered</small><b>${gained.length}</b></div><div class="metric"><small>Gaps remaining</small><b>${stores.length-after}</b></div></div><div class="popcard"><strong>Proposed coordinates</strong>${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div><button class="btn" onclick="window.exportSimulation()">Export Impact</button>`);window._simGained=gained}
+function v76SimulationControls(){
+ return `<div class="v76-sim-search">
+   <div class="v76-sim-title">Find a home address</div>
+   <input id="v76SimAddress" type="text" placeholder="Street, city, state ZIP" autocomplete="street-address">
+   <div class="v76-sim-actions">
+    <button class="btn primary" onclick="window.v76GeocodeSimulation()">Find Address</button>
+    <button class="btn" onclick="window.v76UseSimulationCoords()">Use Coordinates</button>
+    <button class="btn" onclick="window.v76UseMapCenter()">Use Map Center</button>
+   </div>
+   <input id="v76SimCoords" type="text" placeholder="Latitude, longitude — e.g. 34.36340, -111.50162">
+   <div id="v76SimMessage" class="v76-sim-msg">You can also click anywhere on the map.</div>
+  </div>`;
+}
+function v76SimulationResultHtml(p,gained,current,after,total){
+ return `${v76SimulationControls()}
+ <div class="callout">Drag the blue RTS marker and release it to recalculate. This planning result does not alter production coverage.</div>
+ <div class="grid2">
+  <div class="metric"><small>Current coverage</small><b>${total?(current/total*100).toFixed(1):'0.0'}%</b></div>
+  <div class="metric"><small>After placement</small><b>${total?(after/total*100).toFixed(1):'0.0'}%</b></div>
+  <div class="metric"><small>New stores covered</small><b>${gained.length}</b></div>
+  <div class="metric"><small>Gaps remaining</small><b>${Math.max(0,total-after)}</b></div>
+ </div>
+ <div class="popcard"><strong>Proposed coordinates</strong>${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div>
+ <button class="btn" onclick="window.exportSimulation()">Export Impact</button>`;
+}
+function updateSimulation(){
+ if(!simMarker)return;
+ const p=simMarker.getLatLng(),rad=Number($('radius').value);
+ const scope=stores,gaps=scope.filter(s=>!s.covered);
+ const gained=gaps.filter(s=>hav(s.lat,s.lng,p.lat,p.lng)<=rad);
+ const current=scope.length-gaps.length,after=current+gained.length;
+ showDrawer('Simulated New RTS',v76SimulationResultHtml(p,gained,current,after,scope.length));
+ window._simGained=gained;
+}
+async function v76GeocodeSimulation(){
+ const input=$('v76SimAddress'),msg=$('v76SimMessage');
+ const q=(input?.value||'').trim();if(!q){if(msg)msg.textContent='Enter an address first.';return}
+ if(msg)msg.textContent='Searching address…';
+ try{
+  const url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&q='+encodeURIComponent(q);
+  const response=await fetch(url,{headers:{'Accept':'application/json'}});
+  if(!response.ok)throw new Error('Address search failed');
+  const rows=await response.json();
+  if(!rows.length){if(msg)msg.textContent='No matching address found. Try adding city, state, and ZIP.';return}
+  const lat=Number(rows[0].lat),lng=Number(rows[0].lon);
+  simulateAt(lat,lng);map.flyTo([lat,lng],8,{duration:.5});
+ }catch(error){
+  if(msg)msg.textContent='Address search could not complete. You can enter latitude/longitude or click the map.';
+ }
+}
+function v76UseSimulationCoords(){
+ const raw=($('v76SimCoords')?.value||'').trim();
+ const m=raw.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+ const msg=$('v76SimMessage');
+ if(!m){if(msg)msg.textContent='Enter coordinates as latitude, longitude.';return}
+ const lat=Number(m[1]),lng=Number(m[2]);
+ if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180){if(msg)msg.textContent='Those coordinates are not valid.';return}
+ simulateAt(lat,lng);map.flyTo([lat,lng],8,{duration:.5});
+}
+function v76UseMapCenter(){const c=map.getCenter();simulateAt(c.lat,c.lng)}
+window.v76GeocodeSimulation=v76GeocodeSimulation;
+window.v76UseSimulationCoords=v76UseSimulationCoords;
+window.v76UseMapCenter=v76UseMapCenter;
 window.exportSimulation=()=>csv(storeRows(window._simGained||[]),'simulated_rts_impact.csv');
 
 window.showNearbyStores=function(siteId){
@@ -346,31 +419,22 @@ window.showNearbyStores=function(siteId){
  `);
 };
 
-function startSimulation(){simMode=true;showDrawer('Simulate New RTS','<div class="callout">Click anywhere on the map to place a draggable simulated RTS marker.</div>')}
+function startSimulation(){
+ simMode=true;
+ showDrawer('Simulate New RTS',`${v76SimulationControls()}<div class="callout">Enter an address, use coordinates, use the map center, or click anywhere on the map to place a draggable simulated RTS marker.</div>`);
+}
 map.on('click',e=>{if(simMode)simulateAt(e.latlng.lat,e.latlng.lng)});
 function openModal(title,html){$('modalTitle').textContent=title;$('modalContent').innerHTML=html;$('modal').classList.add('show')}
 function gapClusters(base=stores.filter(s=>!s.covered),rad=75,min=10){const remaining=new Set(base.map(s=>s.siteId)),out=[];for(const seed of base){if(!remaining.has(seed.siteId))continue;const group=base.filter(s=>remaining.has(s.siteId)&&hav(seed.lat,seed.lng,s.lat,s.lng)<=rad);group.forEach(s=>remaining.delete(s.siteId));if(group.length>=min){const lat=group.reduce((a,s)=>a+s.lat,0)/group.length,lng=group.reduce((a,s)=>a+s.lng,0)/group.length;out.push({lat,lng,count:group.length,city:seed.city,state:seed.state,stores:group})}}return out.sort((a,b)=>b.count-a.count)}
-function openGapFinder(){const clusters=gapClusters(stores.filter(s=>!s.covered),75,10);openModal('Current Gap Finder',`<div class="callout">Concentrated uncovered store groups based on the current ${$('radius').value}-mile RTS coverage model.</div><div class="tools"><button class="btn" onclick="window.exportGapClusters()">Export Gap Clusters</button></div><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Area</th><th>Uncovered Stores</th><th>Action</th></tr></thead><tbody>${clusters.slice(0,200).map((c,i)=>`<tr><td>${i+1}</td><td>${esc(c.city)}, ${esc(c.state)}</td><td>${c.count}</td><td><button class="btn" onclick="window.simulateAt(${c.lat},${c.lng});document.getElementById('modal').classList.remove('show')">Simulate Here</button></td></tr>`).join('')}</tbody></table></div>`);window._clusters=clusters}
-window.exportGapClusters=()=>csv((window._clusters||[]).map((c,i)=>({Rank:i+1,City:c.city,State:c.state,Latitude:c.lat,Longitude:c.lng,UncoveredStores:c.count})),'gap_clusters.csv');
-function modelPlacement(){let uncovered=stores.filter(s=>!s.covered),chosen=[];for(let i=0;i<25&&uncovered.length;i++){let best=null;for(const c of uncovered){const gain=uncovered.filter(s=>hav(c.lat,c.lng,s.lat,s.lng)<=75);if(!best||gain.length>best.gain.length)best={c,gain}}if(!best||best.gain.length<5)break;chosen.push({lat:best.c.lat,lng:best.c.lng,city:best.c.city,state:best.c.state,gain:best.gain.length});const ids=new Set(best.gain.map(s=>s.siteId));uncovered=uncovered.filter(s=>!ids.has(s.siteId))}openModal('Model New RTS Placement',`<div class="callout">Greedy planning model: each proposed location is selected to cover the largest remaining uncovered store group within 75 miles. Planning only.</div><div class="tools"><button class="btn" onclick="window.exportModel()">Export Model</button></div><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Suggested Area</th><th>New Stores Covered</th><th>Action</th></tr></thead><tbody>${chosen.map((c,i)=>`<tr><td>${i+1}</td><td>${esc(c.city)}, ${esc(c.state)}</td><td>${c.gain}</td><td><button class="btn" onclick="window.simulateAt(${c.lat},${c.lng});document.getElementById('modal').classList.remove('show')">Simulate</button></td></tr>`).join('')}</tbody></table></div>`);window._model=chosen}
-window.exportModel=()=>csv((window._model||[]).map((c,i)=>({Rank:i+1,City:c.city,State:c.state,Latitude:c.lat,Longitude:c.lng,NewStoresCovered:c.gain})),'modeled_rts_placements.csv');
-function rollup(key,title){const d={};stores.forEach(s=>{const k=s[key]||'Not listed';d[k]??={name:k,total:0,covered:0,gaps:0};d[k].total++;s.covered?d[k].covered++:d[k].gaps++});const rows=Object.values(d).sort((a,b)=>b.gaps-a.gaps);openModal(title,`<div class="tools"><button class="btn" onclick="window.exportRollup()">Export Rollup</button></div><div class="tablewrap"><table><thead><tr><th>${title.replace(' Rollups','')}</th><th>Stores</th><th>Covered</th><th>Gaps</th><th>Coverage</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.total}</td><td>${r.covered}</td><td>${r.gaps}</td><td>${(r.covered/r.total*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`);window._rollup=rows}
-window.exportRollup=()=>csv(window._rollup||[],'coverage_rollup.csv');
-function territoryProfiles(){const rows=activeRTS().map(r=>{const inside=stores.filter(s=>hav(s.lat,s.lng,r.lat,r.lng)<=Number($('radius').value)),nearest=stores.filter(s=>s.nearest[0]?.id===r.id),avg=inside.length?inside.reduce((a,s)=>a+hav(s.lat,s.lng,r.lat,r.lng),0)/inside.length:0;return {r,inside:inside.length,nearest:nearest.length,avg}}).sort((a,b)=>b.inside-a.inside);openModal('RTS Territory Profiles',`<div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores in Radius</th><th>In-Radius</th><th>Avg Distance</th><th>Review</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.r.name)}</td><td>${x.inside}</td><td>${x.nearest}</td><td>${x.avg.toFixed(1)} mi</td><td><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open</button></td></tr>`).join('')}</tbody></table></div>`)}
-function compareTerritories(){const opts=activeRTS().map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');openModal('Compare RTS Territories',`<div class="tools"><label>RTS A <select id="cmpA">${opts}</select></label><label>RTS B <select id="cmpB">${opts}</select></label><button class="btn" onclick="window.runCompare()">Compare</button></div><div id="cmpResults"></div>`)}
-window.runCompare=()=>{const a=activeRTS().find(r=>String(r.id)==$('cmpA').value),b=activeRTS().find(r=>String(r.id)==$('cmpB').value),rad=Number($('radius').value),A=stores.filter(s=>hav(s.lat,s.lng,a.lat,a.lng)<=rad),B=stores.filter(s=>hav(s.lat,s.lng,b.lat,b.lng)<=rad),idsA=new Set(A.map(s=>s.siteId)),shared=B.filter(s=>idsA.has(s.siteId));$('cmpResults').innerHTML=`<div class="grid2"><div class="metric"><small>${esc(a.name)}</small><b>${A.length}</b></div><div class="metric"><small>${esc(b.name)}</small><b>${B.length}</b></div><div class="metric"><small>Shared stores</small><b>${shared.length}</b></div><div class="metric"><small>Combined unique</small><b>${new Set([...A,...B].map(s=>s.siteId)).size}</b></div></div>`}
-function resiliency(){const rows=activeRTS().map(r=>{const owned=stores.filter(s=>s.nearest[0]?.id===r.id),lost=owned.filter(s=>!s.nearest[1]||s.nearest[1].distance>Number($('radius').value));return {r,owned:owned.length,lost:lost.length,backup:owned.length-lost.length}}).sort((a,b)=>b.lost-a.lost);openModal('RTS Resiliency Simulator',`<div class="callout">Shows what happens if an RTS becomes unavailable. “At risk” stores have no second RTS within the selected radius.</div><div class="tablewrap"><table><thead><tr><th>RTS</th><th>In-Radius</th><th>Backup-Covered</th><th>At Risk</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.r.name)}</td><td>${x.owned}</td><td>${x.backup}</td><td>${x.lost}</td></tr>`).join('')}</tbody></table></div>`)}
-
-
-function currentScope(){return filtered}
-function scopeLabel(){
- const p=[];
- if($('fCoverage').value)p.push($('fCoverage').value==='covered'?'Covered':'Gaps');
- if($('fRetailer').value)p.push($('fRetailer').value);
- if($('fState').value)p.push($('fState').value);
- if($('fRegional')?.value)p.push($('fRegional').value);if($('fManager').value)p.push($('fManager').value);
- if($('fRts').value)p.push($('fRts').value);
- return p.length?p.join(' · '):'All Premium Merchandising stores';
+function openGapFinder(){
+ const clusters=gapClustersV2(filtered,100);
+ openModal('Current Gap Finder',`
+  <div class="callout">Highest-value uncovered concentrations in the current filtered scope. Click any row to simulate a placement there.</div>
+  <div class="tools"><button class="btn" onclick="window.exportGapClusters()">Export Gap Clusters</button></div>
+  <div class="tablewrap"><table><thead><tr><th>Rank</th><th>Area</th><th>Uncovered Stores</th><th></th></tr></thead><tbody>
+   ${clusters.map(c=>`<tr class="v76-drill-row" onclick="window.simulateAt(${c.lat},${c.lng});document.getElementById('modal').classList.remove('show')"><td>${c.rank}</td><td><b>${esc(c.city)}, ${esc(c.state)}</b></td><td>${c.gain}</td><td>Simulate ↗</td></tr>`).join('')}
+  </tbody></table></div>`);
+ window._clusters=clusters.map(c=>({...c,count:c.gain}));
 }
 function territoryBalanceRows(scope=currentScope()){
  const rows=territoryHealthV2(scope);
@@ -493,49 +557,160 @@ window.exportLeadershipSummary=()=>csv(window._leadershipSummary||[],'premium_me
 
 
 
+
+const V76_PLAN_CACHE=new Map();
+function v76ScopeCacheKey(scope,limit=0){
+ const parts=[
+   ACTIVE_PROGRAM_ID,Number($('radius')?.value||75),limit,
+   $('fCoverage')?.value||'', $('fRetailer')?.value||'', $('fState')?.value||'',
+   $('fRegional')?.value||'', $('fManager')?.value||'', $('fRts')?.value||'',
+   scope.length
+ ];
+ if(scope!==filtered&&scope!==stores){
+   parts.push(scope.slice(0,30).map(s=>s.siteId).join(','));
+ }
+ return parts.join('|');
+}
+function v76RtsLookup(){
+ const map=new Map();
+ RTS.forEach(r=>map.set(String(r.id),r));
+ return map;
+}
 function coverageModel(scope=stores){
- return buildCoverageModel({
-   stores: scope,
-   rts: RTS,
-   radiusMiles: Number($('radius').value),
-   isRtsEligibleForStore: PROGRAM_ELIGIBILITY
- });
-}
+ const radius=Number($('radius')?.value||75);
+ const lookup=v76RtsLookup();
+ const byRtsMap=new Map(RTS.map(r=>[String(r.id),{
+   rts:r,entries:[],stores:[],count:0,uniqueCount:0,sharedCount:0,
+   distanceSum:0,averageDistance:0,farthestDistance:0
+ }]));
+ const storeCoverage=[];
+ const gaps=[],uniqueStores=[],sharedStores=[];
 
+ for(const store of scope){
+   const covering=[];
+   for(const d of (store._eligibleDistances||[])){
+     if(d.distance>radius)break;
+     const r=lookup.get(String(d.id));
+     if(!r)continue;
+     covering.push({...r,distance:d.distance});
+   }
+   const type=covering.length===0?'Gap':covering.length===1?'Unique':'Shared';
+   const entry={store,coveringRts:covering,coverageType:type};
+   storeCoverage.push(entry);
+   if(type==='Gap')gaps.push(store);
+   else if(type==='Unique')uniqueStores.push(store);
+   else sharedStores.push(store);
+
+   for(const coveringRts of covering){
+     const row=byRtsMap.get(String(coveringRts.id));
+     if(!row)continue;
+     row.entries.push(entry);
+     row.stores.push(store);
+     row.count++;
+     row.distanceSum+=coveringRts.distance;
+     if(coveringRts.distance>row.farthestDistance)row.farthestDistance=coveringRts.distance;
+     if(type==='Unique')row.uniqueCount++;
+     else if(type==='Shared')row.sharedCount++;
+   }
+ }
+ const byRts=[...byRtsMap.values()].map(row=>{
+   row.averageDistance=row.count?row.distanceSum/row.count:0;
+   delete row.distanceSum;
+   return row;
+ });
+ return {radiusMiles:radius,activeRts:[...RTS],storeCoverage,byRts,gaps,uniqueStores,sharedStores};
+}
 function territoryHealthV2(scope=filtered){
- return buildTerritoryHealth({
-   stores: scope,
-   rts: RTS,
-   radiusMiles: Number($('radius').value),
-   isRtsEligibleForStore: PROGRAM_ELIGIBILITY
- }).map(item=>({
-   ...item,
-   r:item.rts,
-   avgDistance:item.averageDistance,
-   farthest:item.farthestDistance,
-   ratio:item.workloadRatio,
-   cls:item.className
- }));
+ const model=coverageModel(scope);
+ const counts=model.byRts.map(x=>x.count);
+ const avgCount=counts.length?counts.reduce((a,b)=>a+b,0)/counts.length:0;
+ return model.byRts.map(item=>{
+   const ratio=item.count/Math.max(1,avgCount);
+   const uniqueShare=item.count?item.uniqueCount/item.count*100:0;
+   let score=100;
+   if(item.averageDistance>50)score-=20;else if(item.averageDistance>40)score-=12;else if(item.averageDistance>30)score-=6;
+   if(ratio>1.65)score-=20;else if(ratio>1.35)score-=12;else if(ratio<.4)score-=8;
+   if(uniqueShare>85&&item.uniqueCount>100)score-=12;else if(uniqueShare>70&&item.uniqueCount>75)score-=6;
+   score=Math.max(0,Math.min(100,score));
+   let health='Excellent',cls='excellent';
+   if(score<50){health='Needs Attention';cls='critical'}
+   else if(score<68){health='Fair';cls='watch'}
+   else if(score<84){health='Good';cls='good'}
+   return {...item,r:item.rts,avgDistance:item.averageDistance,farthest:item.farthestDistance,
+     ratio,workloadRatio:ratio,uniqueShare,score,health,className:cls,cls,
+     backupRisk:item.uniqueCount,overlap:item.sharedCount};
+ }).sort((a,b)=>a.score-b.score||b.count-a.count);
 }
-
 function gapClustersV2(scope=filtered,limit=25){
- return buildGapPlacementPlan({
-   stores: scope,
-   rts: RTS,
-   radiusMiles: Number($('radius').value),
-   limit,
-   isRtsEligibleForStore: PROGRAM_ELIGIBILITY
- });
+ const radius=Number($('radius')?.value||75);
+ const cacheKey=v76ScopeCacheKey(scope,limit);
+ if(V76_PLAN_CACHE.has(cacheKey))return V76_PLAN_CACHE.get(cacheKey);
+
+ let remaining=scope.filter(s=>!s.covered);
+ if(!remaining.length)return [];
+
+ // Grid index: keeps candidate evaluation local rather than gap × gap national scans.
+ const cell=Math.max(.75,radius/55);
+ const grid=new Map();
+ const keyFor=s=>`${Math.floor(s.lat/cell)}:${Math.floor(s.lng/cell)}`;
+ for(const s of remaining){
+   const k=keyFor(s);
+   if(!grid.has(k))grid.set(k,[]);
+   grid.get(k).push(s);
+ }
+ const neighbors=(candidate,activeSet)=>{
+   const cx=Math.floor(candidate.lat/cell),cy=Math.floor(candidate.lng/cell),out=[];
+   for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
+     const arr=grid.get(`${cx+dx}:${cy+dy}`)||[];
+     for(const s of arr){
+       if(!activeSet.has(s.siteId))continue;
+       if(Math.abs(s.lat-candidate.lat)>radius/50)continue;
+       if(hav(candidate.lat,candidate.lng,s.lat,s.lng)<=radius)out.push(s);
+     }
+   }
+   return out;
+ };
+
+ const activeSet=new Set(remaining.map(s=>s.siteId));
+ const recommendations=[];
+ for(let rank=1;rank<=limit&&activeSet.size;rank++){
+   let best=null;
+   for(const candidate of remaining){
+     if(!activeSet.has(candidate.siteId))continue;
+     const gain=neighbors(candidate,activeSet);
+     if(!best||gain.length>best.gain.length)best={candidate,gain};
+   }
+   if(!best||best.gain.length<3)break;
+   const countBy=key=>Object.entries(best.gain.reduce((o,s)=>{
+     const v=s[key]||'Not listed';o[v]=(o[v]||0)+1;return o;
+   },{})).sort((a,b)=>b[1]-a[1]);
+   recommendations.push({
+     rank,lat:best.candidate.lat,lng:best.candidate.lng,city:best.candidate.city,
+     state:best.candidate.state,gain:best.gain.length,stores:best.gain,
+     manager:countBy('manager')[0]?.[0]||'',retailer:countBy('retailer')[0]?.[0]||''
+   });
+   best.gain.forEach(s=>activeSet.delete(s.siteId));
+ }
+ V76_PLAN_CACHE.set(cacheKey,recommendations);
+ if(V76_PLAN_CACHE.size>30)V76_PLAN_CACHE.delete(V76_PLAN_CACHE.keys().next().value);
+ return recommendations;
 }
 
 function s6Scope(){return filtered}
 function s6ScopeName(){return scopeLabel ? scopeLabel() : 'Current filtered scope'}
 
 function s6TerritoryData(scope=s6Scope()){
- const rad=Number($('radius').value),active=activeRTS();
- const counts=active.map(r=>scope.filter(s=>hav(s.lat,s.lng,r.lat,r.lng)<=rad).length);
- const avgCount=counts.length?counts.reduce((a,b)=>a+b,0)/counts.length:0;
- return active.map(r=>{const inside=scope.filter(s=>hav(s.lat,s.lng,r.lat,r.lng)<=rad);const unique=inside.filter(s=>active.filter(x=>hav(s.lat,s.lng,x.lat,x.lng)<=rad).length===1);const shared=inside.filter(s=>active.filter(x=>hav(s.lat,s.lng,x.lat,x.lng)<=rad).length>=2);const d=inside.map(s=>hav(s.lat,s.lng,r.lat,r.lng));const avgDistance=d.length?d.reduce((a,b)=>a+b,0)/d.length:0;const farthest=d.length?Math.max(...d):0;const ratio=inside.length/Math.max(1,avgCount);let score=100;if(avgDistance>48)score-=22;else if(avgDistance>38)score-=12;else if(avgDistance>28)score-=6;if(ratio>1.6)score-=18;else if(ratio>1.3)score-=10;if(ratio<.45)score-=6;if(unique.length>inside.length*.75&&unique.length>80)score-=12;score=Math.max(0,Math.min(100,score));let health='Excellent',cls='excellent';if(score<50){health='Needs Attention';cls='critical'}else if(score<68){health='Fair';cls='watch'}else if(score<84){health='Good';cls='good'}return {r,inside,owned:inside,ownedCount:inside.length,covered:inside.length,gaps:0,coverage:inside.length?100:0,avgDistance,farthest,backupRisk:unique.length,overlap:shared.length,ratio,score,health,cls,uniqueCount:unique.length,sharedCount:shared.length}}).sort((a,b)=>a.score-b.score||b.ownedCount-a.ownedCount);
+ return territoryHealthV2(scope).map(x=>({
+   ...x,
+   inside:x.stores,
+   owned:x.stores,
+   ownedCount:x.count,
+   covered:x.count,
+   gaps:0,
+   coverage:x.count?100:0,
+   backupRisk:x.uniqueCount,
+   overlap:x.sharedCount
+ }));
 }
 
 function s6CandidatePlan(scope=s6Scope(),maxHires=10){
@@ -591,11 +766,11 @@ function territoryHealthScores(){
  openModal('Territory Health Scores',`
   <div class="callout">Health scores evaluate only the RTS service area: stores within the selected radius, average drive distance, in-radius workload, unique dependency, and shared coverage. Network gaps outside the service area do not reduce an RTS score.</div>
   <div class="tools"><button class="btn" onclick="window.exportHealthScores()">Export Health Scores</button></div>
-  ${rows.map(x=>`<div class="s6-rec ${x.cls==='critical'?'high':x.cls==='watch'?'watch':'good'}">
+  ${rows.map(x=>`<div class="s6-rec v76-click-card ${x.cls==='critical'?'high':x.cls==='watch'?'watch':'good'}" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">
     <h4>${esc(x.r.name)} <span class="s6-tag ${x.cls}">${x.health} · ${x.score.toFixed(0)}/100</span></h4>
     <p>${x.count} stores within radius · ${x.uniqueCount} unique · ${x.sharedCount} shared · ${x.avgDistance.toFixed(1)} mi average distance.</p>
     <div class="s6-health-bar"><span style="width:${x.score}%;background:${x.score>=82?'#16a34a':x.score>=65?'#2563eb':x.score>=45?'#f59e0b':'#dc2626'}"></span></div>
-    <div style="margin-top:6px"><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Open Territory</button></div>
+    <div class="v76-open-hint">Open RTS profile ↗</div>
   </div>`).join('')}
  `);
  window._healthRows=rows;
@@ -939,7 +1114,7 @@ function v4CompareRts(){
 }
 window.v4RenderCompare=()=>{
  const aId=$('v4CmpA')?.value,bId=$('v4CmpB')?.value;
- const rows=v4Health(stores);
+ const rows=v4Health(filtered);
  const a=rows.find(x=>String(x.r.id)===String(aId)),b=rows.find(x=>String(x.r.id)===String(bId));
  const el=$('v4CompareResults');if(!el||!a||!b)return;
  const card=x=>`<div class="v4-compare-card"><h3>${esc(x.r.name)}</h3>
@@ -970,7 +1145,7 @@ function v4TerritoryReport(){
  openModal('Territory Report',`
   <div class="tools"><button class="btn primary" onclick="window.print()">Print / Save PDF</button><button class="btn" onclick="window.v4ExportTerritorySummary()">Export CSV</button></div>
   <div class="tablewrap"><table><thead><tr><th>RTS</th><th>Stores</th><th>Unique</th><th>Shared</th><th>Avg Miles</th><th>Farthest</th><th>Health</th></tr></thead><tbody>
-  ${rows.map(x=>`<tr><td>${esc(x.r.name)}</td><td>${x.count}</td><td>${x.uniqueCount}</td><td>${x.sharedCount}</td><td>${x.avgDistance.toFixed(1)}</td><td>${x.farthest.toFixed(1)}</td><td>${x.score.toFixed(0)} · ${esc(x.health)}</td></tr>`).join('')}
+  ${rows.map(x=>`<tr class="v76-drill-row" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')"><td><b>${esc(x.r.name)}</b></td><td>${x.count}</td><td>${x.uniqueCount}</td><td>${x.sharedCount}</td><td>${x.avgDistance.toFixed(1)}</td><td>${x.farthest.toFixed(1)}</td><td>${x.score.toFixed(0)} · ${esc(x.health)}</td></tr>`).join('')}
   </tbody></table></div>`);
  window._v4TerritoryRows=rows;
 }
@@ -1133,16 +1308,23 @@ function v41DedicatedGapsQuick(){
 }
 function v41OperationalFocus(){
  const scope=filtered,model=v4Model(scope),health=v4Health(scope),plan=v4Plan(scope,3);
+ const gapIds=new Set(model.gaps.map(g=>g.siteId));
  const states=Object.values(scope.reduce((o,s)=>{
    const k=s.state||'Unknown';o[k]??={state:k,total:0,gaps:0};o[k].total++;
-   if(model.gaps.some(g=>g.siteId===s.siteId))o[k].gaps++;return o;
+   if(gapIds.has(s.siteId))o[k].gaps++;return o;
  },{})).sort((a,b)=>b.gaps-a.gaps);
  const workload=[...health].sort((a,b)=>b.count-a.count)[0];
- $('v41FocusScope').textContent=scopeLabel();
- $('v41FocusGap').textContent=states[0]?`${states[0].state} · ${states[0].gaps.toLocaleString()} gaps`:'No gaps';
- $('v41FocusWorkload').textContent=workload?`${workload.r.name} · ${workload.count} stores`:'No RTS';
- $('v41FocusHire').textContent=plan[0]?`${plan[0].city}, ${plan[0].state||''} · +${plan[0].gain}`:'No qualifying cluster';
- $('v41FocusAction').textContent=model.gaps.length?`Review ${plan[0]?.city||states[0]?.state||'largest gap'}`:'Monitor workload and resiliency';
+ const summary={
+   scope:scopeLabel(),
+   gap:states[0]?`${states[0].state} · ${states[0].gaps.toLocaleString()} gaps`:'No gaps',
+   workload:workload?`${workload.r.name} · ${workload.count} stores`:'No RTS',
+   hire:plan[0]?`${plan[0].city}, ${plan[0].state||''} · +${plan[0].gain}`:'No qualifying cluster',
+   action:model.gaps.length?`Review ${plan[0]?.city||states[0]?.state||'largest gap'}`:'Monitor workload and resiliency'
+ };
+ const set=(id,value)=>{const el=$(id);if(el)el.textContent=value};
+ set('v41FocusScope',summary.scope);set('v41FocusGap',summary.gap);
+ set('v41FocusWorkload',summary.workload);set('v41FocusHire',summary.hire);set('v41FocusAction',summary.action);
+ return summary;
 }
 function v41OperationalFocusModal(){
  v41OperationalFocus();
@@ -1258,7 +1440,7 @@ function v6StateRows(){
    if(gapIds.has(s.siteId))row.gaps++;else row.covered++;
    if(s.coverageType==='Unique')row.unique++;
    if(s.coverageType==='Shared')row.shared++;
-   if(s.manager)row.managers.add(s.manager);
+   const area=v7OrgForStore(s).areaManager;if(area)row.managers.add(area);
    if(s.retailer)row.retailers.add(s.retailer);
    return o;
  },{})).map(r=>({...r,managerCount:r.managers.size,retailerCount:r.retailers.size,coverage:r.total?r.covered/r.total*100:0}))
@@ -1280,8 +1462,8 @@ window.v6FocusState=state=>{
 function v6ManagerRows(){
  const model=v6ScopeModel(),gapIds=new Set(model.gaps.map(s=>s.siteId));
  return Object.values(filtered.reduce((o,s)=>{
-   const key=s.manager||'Not listed';
-   o[key]??={name:key,total:0,covered:0,gaps:0,unique:0,shared:0,states:new Set(),retailers:new Set()};
+   const org=v7OrgForStore(s),key=org.areaManager||'Not listed';
+   o[key]??={name:key,regionalManager:org.regionalManager,total:0,covered:0,gaps:0,unique:0,shared:0,states:new Set(),retailers:new Set()};
    const row=o[key];row.total++;
    if(gapIds.has(s.siteId))row.gaps++;else row.covered++;
    if(s.coverageType==='Unique')row.unique++;
@@ -1295,8 +1477,8 @@ function v6ManagerRows(){
 function v6OpenManagerIntelligence(){
  const rows=v6ManagerRows();
  openModal('Manager Intelligence',`
-  <div class="v6-hero"><h2>Manager Coverage Overview</h2><p>Coverage, gap exposure, unique dependency, retailer complexity, and geographic breadth for the selected scope.</p></div>
-  <div class="tablewrap"><table><thead><tr><th>Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody>
+  <div class="v6-hero"><h2>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} Coverage Overview</h2><p>Every row is clickable. Coverage, gap exposure, unique dependency, retailer complexity, and geographic breadth for the selected scope.</p></div>
+  <div class="tablewrap"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Unique</th><th>Shared</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody>
    ${rows.map(r=>`<tr class="v62-click-row" onclick="window.v62FocusManager(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.unique}</td><td>${r.shared}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
   </tbody></table></div>`);
 }
@@ -1371,11 +1553,19 @@ function v62ApplySingleFilter(id,value){
 }
 function v62FocusState(state){
  $('modal').classList.remove('show');
- v62ApplySingleFilter('fState',state);
+ if($('fState'))$('fState').value=state;
+ refreshCascadingFilters({preserve:false});
+ applyFilters();fitResults();
 }
 function v62FocusManager(manager){
  $('modal').classList.remove('show');
- v62ApplySingleFilter('fManager',manager);
+ const sample=stores.find(s=>v7OrgForStore(s).areaManager===manager);
+ const regional=sample?v7OrgForStore(sample).regionalManager:'';
+ if($('fRegional'))$('fRegional').value=regional&&regional!=='Unaligned'?regional:'';
+ refreshCascadingFilters({preserve:true});
+ if($('fManager'))$('fManager').value=manager;
+ refreshCascadingFilters({preserve:true});
+ applyFilters();fitResults();
 }
 function v62FocusRts(id){
  $('modal').classList.remove('show');
@@ -1399,7 +1589,7 @@ function v62GapSummary(){
  },{})).map(r=>({...r,coverage:r.total?(r.total-r.gaps)/r.total*100:0})).sort((a,b)=>b.gaps-a.gaps);
 
  const byManager=Object.values(filtered.reduce((o,s)=>{
-   const k=s.manager||'Not listed';o[k]??={key:k,total:0,gaps:0,states:new Set(),retailers:new Set()};
+   const k=v7OrgForStore(s).areaManager||'Not listed';o[k]??={key:k,total:0,gaps:0,states:new Set(),retailers:new Set()};
    const r=o[k];r.total++;if(gapIds.has(s.siteId))r.gaps++;
    if(s.state)r.states.add(s.state);if(s.retailer)r.retailers.add(s.retailer);return o;
  },{})).map(r=>({...r,coverage:r.total?(r.total-r.gaps)/r.total*100:0})).sort((a,b)=>b.gaps-a.gaps);

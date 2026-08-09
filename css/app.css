@@ -1275,3 +1275,15 @@ button:disabled{
 /* Version 7.5 performance + cascading filters */
 #fRegional,#fManager,#fRts{transition:border-color .12s ease,box-shadow .12s ease}
 .v72-regional-field + .field{border-left:3px solid #93c5fd;padding-left:7px}
+
+/* Version 7.6 performance, drilldowns, simulator */
+.v76-drill-row{cursor:pointer;transition:background .12s ease}
+.v76-drill-row:hover{background:#eff6ff!important}
+.v76-click-card{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
+.v76-click-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.08)}
+.v76-open-hint{margin-top:7px;font-size:10px;font-weight:900;color:#2563eb}
+.v76-sim-search{border:1px solid #bfdbfe;background:#f8fbff;border-radius:12px;padding:10px;margin-bottom:9px}
+.v76-sim-title{font-weight:950;margin-bottom:6px;color:#0f172a}
+.v76-sim-search input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px;padding:7px 9px;margin:4px 0;background:#fff}
+.v76-sim-actions{display:flex;gap:6px;flex-wrap:wrap;margin:3px 0}
+.v76-sim-msg{font-size:10.5px;color:#64748b;margin-top:4px}
