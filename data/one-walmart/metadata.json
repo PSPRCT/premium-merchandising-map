@@ -4,7 +4,7 @@
   "release": "Version 3.3 \u2014 Walmart Address Enrichment",
   "dataUpdated": "2026-07-31",
   "storeCount": 4598,
-  "rtsCount": 51,
+  "rtsCount": 48,
   "combinedOneWalmartRosterRows": 51,
   "acostaDedicatedRosterRows": 21,
   "coverageRadiusMiles": 75,
@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.8 \u2014 Consolidation, Drilldowns & Leadership",
+  "platformRelease": "Version 7.9.1 \u2014 Manager Drilldown and RTS Roster Correction",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",

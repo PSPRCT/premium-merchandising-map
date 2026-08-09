@@ -1760,17 +1760,28 @@ function v6OpenStoreIntelligence(siteId){
    <div class="v6-kpi"><small>Nearest RTS</small><b>${ranked[0]?esc(ranked[0].name):'None'}</b><span>${ranked[0]?ranked[0].distance.toFixed(1)+' miles':'No eligible RTS'}</span></div>
    <div class="v6-kpi"><small>Backup RTS</small><b>${inside[1]?esc(inside[1].name):'None'}</b><span>${inside[1]?inside[1].distance.toFixed(1)+' miles':'No second RTS in radius'}</span></div>
    <div class="v6-kpi"><small>Nearby Stores</small><b>${nearby.length}</b><span>Other stores within 25 miles</span></div>
-   <div class="v6-kpi"><small>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</small><b class="v78-inline-link" onclick="window.v79OpenManagerWorkspace(${JSON.stringify(v7OrgForStore(s).areaManager||s.manager||'Not listed')})">${esc(v7OrgForStore(s).areaManager||s.manager||'Not listed')}</b><span>${v7OrgForStore(s).regionalManager?`Regional: ${esc(v7OrgForStore(s).regionalManager)}`:esc(s.market||'Hierarchy not listed')}</span></div>
+   <div class="v6-kpi"><small>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</small><b class="v78-inline-link" role="button" tabindex="0" onclick="window.v791OpenManagerToken('${v791ManagerToken(v7OrgForStore(s).areaManager||s.manager||'Not listed')}')">${esc(v7OrgForStore(s).areaManager||s.manager||'Not listed')}</b><span>${v7OrgForStore(s).regionalManager?`Regional: ${esc(v7OrgForStore(s).regionalManager)}`:esc(s.market||'Hierarchy not listed')}</span></div>
    <div class="v6-kpi"><small>Team Exposure</small><b>${esc((s.dedicatedTeams||[]).join(', ')||'Core')}</b><span>${esc(v4ProgramLabel())}</span></div>
   </div>
   <div class="v4-two">
    <div class="v4-panel"><h3>Eligible RTS ranking</h3>${ranked.slice(0,8).map((r,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(r.name)}</b><br>${esc(r.email||'')}</span><span>${r.distance.toFixed(1)} mi</span></div>`).join('')}</div>
    <div class="v4-panel"><h3>Nearby store concentration</h3>${nearby.slice(0,8).map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.retailer)} #${esc(x.storeNumber)}</b><br>${esc(x.city)}, ${esc(x.state)}</span><span>${hav(s.lat,s.lng,x.lat,x.lng).toFixed(1)} mi</span></div>`).join('')||'<div class="callout">No nearby stores within 25 miles.</div>'}</div>
   </div>
-  <div class="actions"><button class="btn primary" onclick="window.simulateAt(${s.lat},${s.lng});document.getElementById('modal').classList.remove('show')">Simulate RTS Here</button><button class="btn" onclick="window.v79OpenManagerWorkspace(${JSON.stringify(v7OrgForStore(s).areaManager||s.manager||'Not listed')})">Open Manager</button></div>`);
+  <div class="actions"><button class="btn primary" onclick="window.simulateAt(${s.lat},${s.lng});document.getElementById('modal').classList.remove('show')">Simulate RTS Here</button><button class="btn" onclick="window.v791OpenManagerToken('${v791ManagerToken(v7OrgForStore(s).areaManager||s.manager||'Not listed')}')">Open Manager</button></div>`);
 }
 window.v6OpenStoreIntelligence=v6OpenStoreIntelligence;
 
+
+/* ===== v7.9.1 safe manager action tokens ===== */
+function v791ManagerToken(value){
+ try{return btoa(unescape(encodeURIComponent(String(value||''))))}catch(_){return ''}
+}
+function v791ManagerFromToken(token){
+ try{return decodeURIComponent(escape(atob(String(token||''))))}catch(_){return ''}
+}
+window.v791OpenManagerToken=function(token){return window.v79OpenManagerWorkspace(v791ManagerFromToken(token))};
+window.v791ApplyManagerToken=function(token){return window.v79ApplyManagerScope(v791ManagerFromToken(token))};
+window.v791ShowManagerGapsToken=function(token){return window.v79ShowManagerGaps(v791ManagerFromToken(token))};
 
 /* ===== v7.9 Manager Coverage & Placement Intelligence ===== */
 function v79ManagerScope(name){
@@ -1815,10 +1826,18 @@ window.v79OpenManagerWorkspace=function(name){
    <div class="v4-panel"><h3>Placement opportunities</h3>${placementHtml}</div>
   </div>
   <div class="callout"><b>Placement rule:</b> recommendations are surfaced only when the modeled location produces a reasonable, concentrated manager-level impact. Low-value placements are intentionally suppressed. Use the simulator to validate any surfaced opportunity before treating it as a staffing decision.</div>
-  <div class="actions"><button class="btn primary" onclick="window.v79ApplyManagerScope(${JSON.stringify(name)})">View Manager on Map</button><button class="btn" onclick="window.v79ShowManagerGaps(${JSON.stringify(name)})">Show Manager Gaps</button></div>`);
+  <div class="actions"><button class="btn primary" onclick="window.v791ApplyManagerToken('${v791ManagerToken(name)}')">View Manager on Map</button><button class="btn" onclick="window.v791ShowManagerGapsToken('${v791ManagerToken(name)}')">Show Manager Gaps</button></div>`);
 };
 window.v79ApplyManagerScope=function(name){
- const el=$('fManager'); if(el){[...el.options].forEach(o=>o.selected=o.value===name); refreshCascadingFilters({preserve:true}); applyFilters();}
+ const sample=stores.find(s=>(v7OrgForStore(s).areaManager||s.manager||'Not listed')===name);
+ const org=sample?v7OrgForStore(sample):null;
+ if($('fRegional'))$('fRegional').value=(org?.regionalManager&&org.regionalManager!=='Unaligned')?org.regionalManager:'';
+ refreshCascadingFilters({preserve:true});
+ const el=$('fManager');
+ if(el){el.value=name;}
+ refreshCascadingFilters({preserve:true});
+ if(el){el.value=name;}
+ applyFilters();
  $('modal')?.classList.remove('show'); fitResults();
 };
 window.v79ShowManagerGaps=function(name){
