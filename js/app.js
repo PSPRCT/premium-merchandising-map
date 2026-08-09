@@ -1667,7 +1667,7 @@ function installApplicationBindings(){
   ['v62StoreBtn',()=>{$('search').focus();openModal('Store Intelligence','<div class="callout">Search for a store, open its popup, and choose Store Intelligence.</div>')},'Store Intelligence'],
   ['v62DedicatedBtn',v41DedicatedAnalysis,'Dedicated Teams'],
   ['v62ResiliencyBtn',resiliencySimulator,'Resiliency'],
-  ['v62SimulateBtn',simulate,'Simulate New RTS'],
+  ['v62SimulateBtn',startSimulation,'Simulate New RTS'],
   ['v62OptimizerBtn',networkOptimizer,'Optimize Network'],
   ['v62MultiHireBtn',multiHirePlanner,'Multi-Hire Plan'],
   ['v62CompareBtn',v4CompareRts,'Compare RTS'],

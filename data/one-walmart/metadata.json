@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.2 \u2014 Hierarchy Filters and Tool Binding Fix",
+  "platformRelease": "Version 7.4 \u2014 Simulation Binding Fix",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
