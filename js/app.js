@@ -1055,6 +1055,68 @@ window.exportMultiHire=n=>csv((window._multiHirePlan||[]).slice(0,n).map(x=>({
 
 
 /* ===== v7.10 Sequential Authorized-Capacity Optimizer ===== */
+
+/* ===== v7.11 Practical Posting Market Resolver ===== */
+const V711_POSTING_MARKETS=[
+ ['Atlanta','GA',33.7490,-84.3880],['Austin','TX',30.2672,-97.7431],['Baltimore','MD',39.2904,-76.6122],
+ ['Birmingham','AL',33.5186,-86.8104],['Boise','ID',43.6150,-116.2023],['Boston','MA',42.3601,-71.0589],
+ ['Buffalo','NY',42.8864,-78.8784],['Charlotte','NC',35.2271,-80.8431],['Chicago','IL',41.8781,-87.6298],
+ ['Cincinnati','OH',39.1031,-84.5120],['Cleveland','OH',41.4993,-81.6944],['Columbus','OH',39.9612,-82.9988],
+ ['Dallas','TX',32.7767,-96.7970],['Denver','CO',39.7392,-104.9903],['Des Moines','IA',41.5868,-93.6250],
+ ['Detroit','MI',42.3314,-83.0458],['El Paso','TX',31.7619,-106.4850],['Fresno','CA',36.7378,-119.7871],
+ ['Grand Rapids','MI',42.9634,-85.6681],['Greenville','SC',34.8526,-82.3940],['Harrisburg','PA',40.2732,-76.8867],
+ ['Hartford','CT',41.7658,-72.6734],['Houston','TX',29.7604,-95.3698],['Indianapolis','IN',39.7684,-86.1581],
+ ['Jackson','MS',32.2988,-90.1848],['Jacksonville','FL',30.3322,-81.6557],['Kansas City','MO',39.0997,-94.5786],
+ ['Knoxville','TN',35.9606,-83.9207],['Las Vegas','NV',36.1699,-115.1398],['Little Rock','AR',34.7465,-92.2896],
+ ['Los Angeles','CA',34.0522,-118.2437],['Louisville','KY',38.2527,-85.7585],['Memphis','TN',35.1495,-90.0490],
+ ['Miami','FL',25.7617,-80.1918],['Milwaukee','WI',43.0389,-87.9065],['Minneapolis','MN',44.9778,-93.2650],
+ ['Mobile','AL',30.6954,-88.0399],['Nashville','TN',36.1627,-86.7816],['New Orleans','LA',29.9511,-90.0715],
+ ['New York','NY',40.7128,-74.0060],['Norfolk','VA',36.8508,-76.2859],['Oklahoma City','OK',35.4676,-97.5164],
+ ['Omaha','NE',41.2565,-95.9345],['Orlando','FL',28.5383,-81.3792],['Philadelphia','PA',39.9526,-75.1652],
+ ['Phoenix','AZ',33.4484,-112.0740],['Pittsburgh','PA',40.4406,-79.9959],['Portland','OR',45.5152,-122.6784],
+ ['Providence','RI',41.8240,-71.4128],['Raleigh','NC',35.7796,-78.6382],['Richmond','VA',37.5407,-77.4360],
+ ['Rochester','NY',43.1566,-77.6088],['Sacramento','CA',38.5816,-121.4944],['Salt Lake City','UT',40.7608,-111.8910],
+ ['San Antonio','TX',29.4241,-98.4936],['San Diego','CA',32.7157,-117.1611],['San Francisco','CA',37.7749,-122.4194],
+ ['San Jose','CA',37.3382,-121.8863],['Savannah','GA',32.0809,-81.0912],['Seattle','WA',47.6062,-122.3321],
+ ['St. Louis','MO',38.6270,-90.1994],['Syracuse','NY',43.0481,-76.1474],['Tampa','FL',27.9506,-82.4572],
+ ['Toledo','OH',41.6528,-83.5379],['Tucson','AZ',32.2226,-110.9747],['Tulsa','OK',36.1540,-95.9928],
+ ['Washington','DC',38.9072,-77.0369],['Wichita','KS',37.6872,-97.3301],['Albuquerque','NM',35.0844,-106.6504],
+ ['Charleston','SC',32.7765,-79.9311],['Charleston','WV',38.3498,-81.6326],['Chattanooga','TN',35.0456,-85.3097],
+ ['Columbia','SC',34.0007,-81.0348],['Dayton','OH',39.7589,-84.1916],['Fort Wayne','IN',41.0793,-85.1394],
+ ['Lexington','KY',38.0406,-84.5037],['Madison','WI',43.0731,-89.4012],['Roanoke','VA',37.2709,-79.9414],
+ ['Scranton','PA',41.4089,-75.6624],['Spokane','WA',47.6588,-117.4260],['Springfield','MO',37.2089,-93.2923],
+ ['Tallahassee','FL',30.4383,-84.2807],['Anchorage','AK',61.2181,-149.9003],['Fairbanks','AK',64.8378,-147.7164],
+ ['Honolulu','HI',21.3069,-157.8583],['San Juan','PR',18.4655,-66.1057]
+];
+
+function v711PostingMarket(candidate){
+ let best=null;
+ for(const m of V711_POSTING_MARKETS){
+   const d=hav(candidate.lat,candidate.lng,m[2],m[3]);
+   if(!best||d<best.distance)best={city:m[0],state:m[1],lat:m[2],lng:m[3],distance:d};
+ }
+ // Use a practical metro if it is reasonably close to the actual modeled service center.
+ // Otherwise preserve the coverage-center community rather than inventing a distant recruiting market.
+ if(best && best.distance<=95){
+   return {...best,label:`${best.city}, ${best.state}`,source:'major-metro'};
+ }
+
+ // Fall back to the most common nearby store city within 35 miles.
+ const nearby=stores.filter(s=>hav(candidate.lat,candidate.lng,s.lat,s.lng)<=35);
+ const counts=new Map();
+ nearby.forEach(s=>{
+   const key=`${s.city||''}|${s.state||''}`;
+   if(!s.city)return;
+   counts.set(key,(counts.get(key)||0)+1);
+ });
+ const top=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0];
+ if(top){
+   const [city,state]=top[0].split('|');
+   return {city,state,label:`${city}, ${state}`,distance:0,source:'local-market'};
+ }
+ return {city:candidate.city||candidate.label||'Coverage area',state:candidate.state||'',label:`${candidate.city||candidate.label||'Coverage area'}${candidate.state?', '+candidate.state:''}`,distance:0,source:'coverage-center'};
+}
+
 function v710Roster(){ return Array.isArray(RTS)?RTS:[]; }
 function v710ProgramCapacity(){
  const cap=100;
@@ -1148,13 +1210,16 @@ function v710EvaluateCandidate(candidate,placements,currentState){
  const score=Math.round(netNewScore*.65 + gapCaptureScore*.25 + backupScore*.10);
 
  let tier='No Recommendation';
- if(netNew>=35 && score>=75) tier='High Priority';
- else if(netNew>=25 && score>=60) tier='Competitive';
- else if(netNew>=20 && score>=50) tier='Monitor';
+ if(netNew>=35 && score>=72) tier='High Priority';
+ else if(netNew>=25 && score>=58) tier='Strong Candidate';
+ else if(netNew>=15 && score>=42) tier='Expansion Candidate';
+ else if(netNew>=10 && score>=34) tier='Monitor';
+
+ const postingMarket=v711PostingMarket(candidate);
 
  return {
    ...candidate,netNew,backup,totalInRadius,pctFootprint,gapCapture,score,tier,
-   newlyCovered,backupStores
+   postingMarket,newlyCovered,backupStores
  };
 }
 
@@ -1170,13 +1235,13 @@ function v710SequentialPlan(){
    let best=null;
 
    for(const c of candidates){
-     if(placements.some(p=>hav(p.lat,p.lng,c.lat,c.lng)<40))continue; // avoid overlapping proposed hires
+     if(placements.some(p=>hav(p.lat,p.lng,c.lat,c.lng)<30))continue; // suppress only strongly overlapping proposed hires
      const q=v710EvaluateCandidate(c,placements,state);
      if(!best || q.score>best.score || (q.score===best.score && q.netNew>best.netNew))best=q;
    }
 
    // Stop if the next available position no longer produces a competitive return.
-   if(!best || !['High Priority','Competitive'].includes(best.tier))break;
+   if(!best || !['High Priority','Strong Candidate','Expansion Candidate'].includes(best.tier))break;
 
    placements.push({...best,rank:placements.length+1});
    state=v710CoverageState(placements);
@@ -1205,8 +1270,10 @@ function v710ExportSequentialPlan(){
  const plan=window._v710Plan||v710SequentialPlan();
  const rows=plan.placements.map(p=>({
    Rank:p.rank,
-   City:p.city,
-   State:p.state,
+   PostingMarket:p.postingMarket?.label||'',
+   PostingMarketDistanceMiles:p.postingMarket?.distance?Number(p.postingMarket.distance.toFixed(1)):0,
+   CoverageCenterCity:p.city,
+   CoverageCenterState:p.state,
    Source:p.source,
    PositionValue:p.score,
    Tier:p.tier,
@@ -1238,7 +1305,7 @@ function networkOptimizer(){
  const placementRows=plan.placements.length
    ? plan.placements.map(p=>`<tr class="v76-drill-row" onclick="window.v710SimulatePortfolioPlacement(${p.rank})">
       <td>${p.rank}</td>
-      <td><b>${esc(p.city||p.label)}, ${esc(p.state||'')}</b><br><small>${esc(p.source)}</small></td>
+      <td><b>${esc(p.postingMarket?.label||p.city||p.label)}</b><br><small>Recommended posting market${p.postingMarket?.distance?` · ${p.postingMarket.distance.toFixed(0)} mi from coverage center`:''}</small><br><small class="v711-coverage-center">Coverage center: ${esc(p.city||p.label)}, ${esc(p.state||'')} · ${esc(p.source)}</small></td>
       <td>${p.score}/100<br><small>${esc(p.tier)}</small></td>
       <td>+${p.netNew}</td>
       <td>+${p.backup}</td>
@@ -1276,11 +1343,11 @@ function networkOptimizer(){
    <div><small>NET IMPROVEMENT</small><b>+${(plan.finalCovered-plan.baselineCovered).toLocaleString()}</b><span>incrementally covered stores</span></div>
   </div>
 
-  <div class="callout"><b>How ranking works:</b> Candidate #1 is evaluated against the current RTS network. After it is hypothetically added, Candidate #2 is recalculated against that expanded network, and so on. This prevents two nearby proposed positions from both receiving credit for covering the same gaps.</div>
+  <div class="callout"><b>How ranking works:</b> Candidate #1 is evaluated against the current RTS network. After it is hypothetically added, Candidate #2 is recalculated against that expanded network, and so on. The portfolio now includes <b>High Priority</b>, <b>Strong Candidate</b>, and <b>Expansion Candidate</b> opportunities so you can see a broader path toward authorized headcount. The modeled coverage center remains mathematically precise, while the displayed posting market favors a practical nearby major metro when one is within about 95 miles.</div>
 
   <div class="v4-two">
    <div class="v4-panel"><h3>Sequential placement plan</h3>
-    <div class="tablewrap"><table><thead><tr><th>#</th><th>Suggested Area</th><th>Position Value</th><th>Net-new</th><th>Backup</th><th>Remaining-gap share</th><th></th></tr></thead><tbody>${placementRows}</tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>#</th><th>Recommended Posting Market</th><th>Position Value</th><th>Net-new</th><th>Backup</th><th>Remaining-gap share</th><th></th></tr></thead><tbody>${placementRows}</tbody></table></div>
    </div>
    <div class="v4-panel"><h3>Marginal coverage curve</h3>
     <div class="tablewrap"><table><thead><tr><th>Total Positions</th><th>Covered Stores</th><th>Coverage</th><th>Incremental Gain</th></tr></thead><tbody>${curveRows}</tbody></table></div>
@@ -2453,7 +2520,7 @@ function v7RegionalDashboard(rmName){
  const metrics=rm?.metrics||{};
  openModal(`Regional Manager — ${rmName}`,`
   ${v7Breadcrumb([{label:'National',action:'window.v7OpenOrganizationNavigator()'},{label:rmName,action:'void(0)'}])}
-  <div class="v7-hero"><h2>${esc(rmName)}</h2><p>${rdmRows.length} Area Managers · ${scope.length.toLocaleString()} stores</p></div>
+  <div class="v7-hero"><h2>${esc(rmName)}</h2><p>${rdmRows.length} ${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers / RDMs'} · ${scope.length.toLocaleString()} stores · click a manager row for full coverage & placement intelligence</p></div>
   <div class="v7-metrics">
    ${v7MetricCard('Coverage',pct.toFixed(1)+'%',`${model.gaps.length} gaps`)}
    ${v7MetricCard('SO Executed',metrics.soExecuted!=null?metrics.soExecuted.toFixed(2)+'%':'—')}
@@ -2462,7 +2529,7 @@ function v7RegionalDashboard(rmName){
    ${v7MetricCard('Efficiency Gained',metrics.efficiencyGained!=null?metrics.efficiencyGained.toFixed(2)+'%':'—')}
   </div>
   <div class="tablewrap"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
-   ${rdmRows.map(r=>`<tr class="v62-click-row" onclick="window.v7AreaDashboard(${JSON.stringify(r.name)})"><td><b>${esc(r.name)}</b></td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
+   ${rdmRows.map(r=>`<tr class="v711-manager-drill-row" onclick="window.v793OpenManagerProfileToken('${encodeURIComponent(r.name)}')"><td><b class="v711-link-name">${esc(r.name)}</b></td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
   </tbody></table></div>
   <div class="actions"><button class="btn primary" onclick="window.v7ApplyRegionalFilter(${JSON.stringify(rmName)})">Show Region on Map</button><button class="btn" onclick="window.v7ExportRegional(${JSON.stringify(rmName)})">Export</button></div>`);
 }

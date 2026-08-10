@@ -32,7 +32,7 @@
     "Hiring recommendations are gap-driven"
   ],
   "platformProgramId": "premium-merchandising",
-  "platformRelease": "Version 7.10.1 \u2014 Optimize Network Roster Fix",
+  "platformRelease": "Version 7.11 \u2014 Expanded Position Pipeline & Posting Markets",
   "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius",
   "regionalManagerCount": 18,
   "districtManagerCount": 133,
@@ -42,5 +42,6 @@
   "organizationSource": "data (42).xlsx",
   "authorizedRTSPositions": 100,
   "existingRosterPolicy": "fixed-protected",
-  "positionOptimization": "sequential-incremental"
+  "positionOptimization": "sequential-expanded-pipeline",
+  "postingMarketStrategy": "nearest-major-metro-with-local-fallback"
 }

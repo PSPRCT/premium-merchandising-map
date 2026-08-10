@@ -1364,3 +1364,9 @@ button:disabled{
 .v710-summary b{display:block;font-size:23px;color:#0f172a;margin-top:2px}
 .v710-summary span{display:block;color:#64748b;font-size:11px;margin-top:2px}
 @media(max-width:800px){.v710-summary{grid-template-columns:1fr}}
+
+/* Version 7.11 manager drilldowns + practical posting markets */
+.v711-manager-drill-row{cursor:pointer;transition:background .12s ease}
+.v711-manager-drill-row:hover{background:#eff6ff!important}
+.v711-manager-drill-row:hover .v711-link-name{color:#1d4ed8;text-decoration:underline}
+.v711-coverage-center{display:block;color:#64748b;margin-top:2px;line-height:1.2}
