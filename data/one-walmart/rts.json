@@ -759,26 +759,6 @@
     ]
   },
   {
-    "id": "444040",
-    "name": "Saxe, Melissa",
-    "email": "MSaxe@premiumretail.com",
-    "lat": 45.26214,
-    "lng": -93.58561,
-    "active": true,
-    "status": "Active",
-    "team": "One Walmart",
-    "legacyTeam": "Acosta PSP",
-    "routingPool": "Legacy",
-    "sourceActiveForRouting": "True",
-    "rtm": "Daphney Elvis",
-    "remoteCapable": false,
-    "maxDistanceMiles": 75,
-    "program": "one-walmart",
-    "eligibility": [
-      "ONE_WALMART"
-    ]
-  },
-  {
     "id": "322584",
     "name": "Slater, Sami Jo",
     "email": "SamiJoSlater.322584@premiumretail.com",
