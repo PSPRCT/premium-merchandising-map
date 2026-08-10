@@ -1608,29 +1608,57 @@ function v7142OpenStoreDirect(s){
    selectedSearch=-1;
 
    const lat=Number(s.lat),lng=Number(s.lng);
-   if(Number.isFinite(lat)&&Number.isFinite(lng)){
-     map.flyTo([lat,lng],12,{duration:.55});
-   }
-
    const marker=markerById.get(s.siteId);
-   if(marker){
-     setTimeout(()=>{
+
+   const openResolvedMarker=()=>{
+     const liveMarker=markerById.get(s.siteId);
+     if(!liveMarker)return false;
+
+     // MarkerCluster requires zoomToShowLayer on the first jump. Opening the
+     // popup directly while the marker is still represented by a cluster
+     // silently fails; this callback fires only after the individual marker
+     // is actually visible.
+     if($('cluster')?.checked && clusterLayer && typeof clusterLayer.zoomToShowLayer==='function'){
        try{
-         // Ensure marker is present in the currently rendered layer before opening.
-         if(!filtered.some(x=>String(x.siteId)===String(s.siteId))){
-           filtered=[s];
-           renderStores();
-           updateMetrics();
-         }
-         marker.openPopup();
-       }catch(err){console.error('Exact store popup failed',err)}
-     },420);
+         clusterLayer.zoomToShowLayer(liveMarker,()=>{
+           requestAnimationFrame(()=>liveMarker.openPopup());
+         });
+         return true;
+       }catch(err){
+         console.warn('Cluster reveal fallback',err);
+       }
+     }
+
+     requestAnimationFrame(()=>liveMarker.openPopup());
+     return true;
+   };
+
+   if(Number.isFinite(lat)&&Number.isFinite(lng)){
+     let opened=false;
+     const afterMove=()=>{
+       if(opened)return;
+       opened=true;
+       if(!openResolvedMarker() && typeof window.v6OpenStoreIntelligence==='function'){
+         window.v6OpenStoreIntelligence(String(s.siteId));
+       }
+     };
+
+     // Wait for the first map movement to finish before asking MarkerCluster
+     // to reveal the individual store marker.
+     map.once('moveend',afterMove);
+     map.flyTo([lat,lng],12,{duration:.55});
+
+     // Safety fallback for browsers where moveend is delayed/suppressed.
+     setTimeout(afterMove,900);
      return true;
    }
 
-   // Full Store Intelligence remains a fallback if no map marker exists.
+   if(marker){
+     return openResolvedMarker();
+   }
+
    if(typeof window.v6OpenStoreIntelligence==='function'){
-     setTimeout(()=>window.v6OpenStoreIntelligence(String(s.siteId)),420);
+     window.v6OpenStoreIntelligence(String(s.siteId));
      return true;
    }
  }catch(err){
