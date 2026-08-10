@@ -1055,9 +1055,10 @@ window.exportMultiHire=n=>csv((window._multiHirePlan||[]).slice(0,n).map(x=>({
 
 
 /* ===== v7.10 Sequential Authorized-Capacity Optimizer ===== */
+function v710Roster(){ return Array.isArray(RTS)?RTS:[]; }
 function v710ProgramCapacity(){
  const cap=100;
- const active=(rts||[]).filter(r=>r.active!==false).length;
+ const active=v710Roster().filter(r=>r.active!==false).length;
  return {cap,active,remaining:Math.max(0,cap-active)};
 }
 
@@ -2114,7 +2115,7 @@ function v79ManagerScope(name){
 }
 function v795PositionCapacity(){
  const cap=100;
- const active=(rts||[]).filter(r=>r.active!==false).length;
+ const active=(RTS||[]).filter(r=>r.active!==false).length;
  return {cap,active,remaining:Math.max(0,cap-active)};
 }
 function v795CandidateScore(x,scope){

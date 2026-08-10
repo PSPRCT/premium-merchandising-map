@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.10 \u2014 Sequential Authorized Position Optimizer",
+  "platformRelease": "Version 7.10.1 \u2014 Optimize Network Roster Fix",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
