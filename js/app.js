@@ -2113,14 +2113,42 @@ function v793OpenManagerProfileToken(token){window.v79OpenManagerWorkspace(decod
 window.v793OpenRegionalProfileToken=v793OpenRegionalProfileToken;
 window.v793OpenManagerProfileToken=v793OpenManagerProfileToken;
 
+function v713PortfolioPlan(){
+ const plan=v710SequentialPlan();
+ v712DisambiguatePostingMarkets(plan.placements);
+ window._v710Plan=plan;
+ return plan;
+}
+function v713CandidateScopeImpact(p,scope){
+ const radius=Number($('radius')?.value||75);
+ const baseline=v4Model(scope), gapIds=new Set(baseline.gaps.map(s=>String(s.siteId)));
+ const gained=scope.filter(s=>gapIds.has(String(s.siteId)) && hav(s.lat,s.lng,p.lat,p.lng)<=radius);
+ const beforeCovered=scope.length-baseline.gaps.length, afterCovered=beforeCovered+gained.length;
+ const managers=new Map();
+ gained.forEach(s=>{const o=v7OrgForStore(s),n=o.areaManager||s.manager||'Not listed';managers.set(n,(managers.get(n)||0)+1)});
+ return {gain:gained.length,gained,beforeCovered,afterCovered,beforePct:scope.length?beforeCovered/scope.length*100:0,afterPct:scope.length?afterCovered/scope.length*100:0,pointGain:scope.length?gained.length/scope.length*100:0,gapCapture:baseline.gaps.length?gained.length/baseline.gaps.length*100:0,managers:[...managers.entries()].sort((a,b)=>b[1]-a[1])};
+}
+function v713ScopePortfolioOpportunities(scope,limit=6){
+ return v713PortfolioPlan().placements.map(p=>({...p,scopeImpact:v713CandidateScopeImpact(p,scope)}))
+  .filter(p=>p.scopeImpact.gain>0)
+  .sort((a,b)=>b.scopeImpact.gain-a.scopeImpact.gain||b.scopeImpact.pointGain-a.scopeImpact.pointGain||a.rank-b.rank)
+  .slice(0,limit);
+}
+function v713OpportunityRows(scope,limit=6,kind='manager'){
+ const rows=v713ScopePortfolioOpportunities(scope,limit);
+ if(!rows.length)return `<div class="callout"><b>No qualifying portfolio placement currently improves this ${kind} footprint.</b><br>Smaller local gaps remain available in Gap and Simulation tools, but the authorized-position optimizer does not currently surface a staffing candidate that reaches this scope.</div>`;
+ return rows.map((p,i)=>{const q=p.scopeImpact, mgr=q.managers.slice(0,3).map(([n,c])=>`${n} +${c}`).join(' · ');return `<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(p.postingMarket?.label||`${p.city}, ${p.state||''}`)}</b><br>${esc(p.tier)} · Portfolio #${p.rank} · +${p.netNew} network net-new · <b>+${q.gain} in this ${kind}</b> · ${q.beforePct.toFixed(1)}% → ${q.afterPct.toFixed(1)}% (+${q.pointGain.toFixed(1)} pts)<br><small>Modeled 75-mi center: ${esc(p.city||p.label)}, ${esc(p.state||'')}${mgr?` · Manager benefit: ${esc(mgr)}`:''}</small></span><button class="btn" onclick="window.v710SimulatePortfolioPlacement(${p.rank})">Simulate</button></div>`}).join('');
+}
 function v793OpenRegionalProfile(name){
  const scope=stores.filter(s=>v7OrgForStore(s).regionalManager===name);
  if(!scope.length){openModal('Regional Manager Intelligence',`<div class="callout">No stores were found for ${esc(name)}.</div>`);return}
  const model=v4Model(scope),covered=scope.length-model.gaps.length,pct=covered/scope.length*100;
  const mgrs=v793ManagerRows(scope);
- const plan=v4Plan(scope,8).filter(x=>Number(x.gain||0)>=8).slice(0,6);
+ const opportunities=v713ScopePortfolioOpportunities(scope,8);
+ const managerImpact=new Map();
+ opportunities.forEach(p=>p.scopeImpact.managers.forEach(([m,c])=>managerImpact.set(m,Math.max(managerImpact.get(m)||0,c))));
  openModal('Regional Manager Intelligence',`
-  <div class="v6-hero"><h2>${esc(name)}</h2><p>Regional Manager · ${mgrs.length} ${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers / RDMs'}</p></div>
+  <div class="v6-hero"><h2>${esc(name)}</h2><p>Regional Manager · ${mgrs.length} ${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers / RDMs'} · portfolio candidates may sit outside the region when their 75-mi radius materially improves stores inside it</p></div>
   <div class="v6-kpi-grid">
    <div class="v6-kpi"><small>Stores</small><b>${scope.length}</b></div>
    <div class="v6-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered} covered</span></div>
@@ -2129,12 +2157,11 @@ function v793OpenRegionalProfile(name){
   </div>
   <div class="v4-two">
    <div class="v4-panel"><h3>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers / RDMs'}</h3>
-    ${mgrs.map((m,i)=>`<div class="v793-manager-row"><span class="v4-rank">${i+1}</span><button class="v793-text-link" onclick="window.v793OpenManagerProfileToken('${encodeURIComponent(m.name)}')"><b>${esc(m.name)}</b><br><small>${m.total} stores · ${m.coverage.toFixed(1)}% coverage · ${m.gaps} gaps</small></button></div>`).join('')}
+    ${mgrs.sort((a,b)=>b.gaps-a.gaps).map((m,i)=>`<div class="v793-manager-row"><span class="v4-rank">${i+1}</span><button class="v793-text-link" onclick="window.v793OpenManagerProfileToken('${encodeURIComponent(m.name)}')"><b>${esc(m.name)}</b><br><small>${m.total} stores · ${m.coverage.toFixed(1)}% coverage · ${m.gaps} gaps${managerImpact.get(m.name)?` · best portfolio candidate +${managerImpact.get(m.name)}`:''}</small></button></div>`).join('')}
    </div>
-   <div class="v4-panel"><h3>Regional placement opportunities</h3>
-    ${plan.length?plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>+${x.gain} modeled net-new stores</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">Simulate</button></div>`).join(''):'<div class="callout">No meaningful regional placement opportunity is currently surfaced.</div>'}
-   </div>
+   <div class="v4-panel"><h3>Portfolio opportunities affecting this region</h3>${v713OpportunityRows(scope,8,'region')}</div>
   </div>
+  <div class="callout"><b>Cross-boundary rule:</b> RTS coverage is evaluated by the 75-mile service radius, not by management boundaries. A portfolio candidate can therefore appear here even when its modeled center is outside ${esc(name)}'s region, provided it materially improves stores inside the region.</div>
   <div class="actions"><button class="btn primary" onclick="window.v793ApplyRegionalScope('${encodeURIComponent(name)}')">View Region on Map</button></div>`);
 }
 window.v793OpenRegionalProfile=v793OpenRegionalProfile;
@@ -2279,8 +2306,7 @@ window.v79OpenManagerWorkspace=function(name){
    const ds=scope.map(s=>({s,d:hav(s.lat,s.lng,r.lat,r.lng)})).filter(x=>x.d<=Number($('radius').value));
    return {r,count:ds.length,unique:ds.filter(x=>scope.filter(t=>hav(t.lat,t.lng,x.s.lat,x.s.lng)<0.01).length).length};
  }).filter(x=>x.count).sort((a,b)=>b.count-a.count);
- const plan=v79ManagerPlacementPlan(scope,6);
- const placementHtml=plan.length?plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.tier)} · Position Value ${x.score}/100 · +${x.gain} net-new stores · ${x.pctGain.toFixed(1)}% of manager footprint · ${x.gapCapture.toFixed(1)}% of current gaps addressed<br><small>${esc(x.reason)}</small></span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">Simulate</button></div>`).join(''):`<div class="callout"><b>No meaningful additional RTS placement identified.</b><br>The current gap pattern does not meet the manager-level impact threshold for a placement recommendation. Isolated or low-return gaps remain visible for operational review, but are not being presented as headcount opportunities.</div>`;
+ const placementHtml=v713OpportunityRows(scope,6,'manager');
  openModal('Manager Coverage & Placement Intelligence',`
   <div class="v6-hero"><h2>${esc(name)}</h2><p>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} · Regional Manager: <button class="v79-inline-hierarchy-link" onclick="window.v7RegionalDashboard(decodeURIComponent('${encodeURIComponent(regional)}'))">${esc(regional)}</button> · ${states.join(', ')}</p></div>
   <div class="v6-kpi-grid">
@@ -2293,7 +2319,7 @@ window.v79OpenManagerWorkspace=function(name){
    <div class="v4-panel"><h3>RTS dependency</h3>${rtsStats.slice(0,10).map((x,i)=>`<div class="v78-drill-row v4-list-row" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b></span><span>${x.count} stores ↗</span></div>`).join('')||'<div class="callout">No active RTS currently reaches this manager footprint.</div>'}</div>
    <div class="v4-panel"><h3>Placement opportunities</h3>${placementHtml}</div>
   </div>
-  <div class="callout"><b>Position-capacity rule:</b> existing RTS positions are treated as fixed and protected — this model does <b>not</b> recommend relocations or replacement. New placements are surfaced only when they are competitive uses of remaining authorized capacity. Each program is capped at <b>100 RTS positions</b>. Candidates must pass minimum impact gates and earn a strong Position Value score before appearing here. Smaller positive improvements remain available in Gap and Simulation tools but are not staffing recommendations.</div>
+  <div class="callout"><b>Portfolio & cross-boundary rule:</b> existing RTS positions are fixed/protected and each program is capped at <b>100 RTS positions</b>. This panel consumes the same sequential candidates as Optimize Network, then shows which of those candidates improve this manager’s stores. The candidate center does <b>not</b> have to sit inside the manager footprint; the 75-mile RTS service radius determines impact.</div>
   <div class="actions"><button class="btn primary" onclick="window.v791ApplyManagerToken('${v791ManagerToken(name)}')">View Manager on Map</button><button class="btn" onclick="window.v791ShowManagerGapsToken('${v791ManagerToken(name)}')">Show Manager Gaps</button></div>`);
 };
 window.v79ApplyManagerScope=function(name){
