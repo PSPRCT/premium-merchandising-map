@@ -1379,3 +1379,9 @@ button:disabled{
 .v714-manager-drill{cursor:pointer}
 .v714-manager-drill:hover{background:#eff6ff!important}
 .v714-manager-drill:hover .v714-link-name{color:#1d4ed8;text-decoration:underline}
+
+/* v7.14.2 exact store-number search */
+.v7142-exact-store-result{
+  background:#eff6ff!important;
+  box-shadow:inset 4px 0 0 #2563eb;
+}

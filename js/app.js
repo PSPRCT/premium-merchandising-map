@@ -1583,6 +1583,51 @@ function executiveDashboard(){
  `);
 }
 
+
+/* ===== v7.14.2 Exact Store Search ===== */
+function v7142StoreNumber(s){
+ const raw=String(s.storeNbr??s.storeNumber??s.store??'').trim();
+ if(raw)return raw.replace(/^0+/,'')||'0';
+ const name=String(s.name||s.storeName||'');
+ const m=name.match(/#\s*0*(\d+)/);
+ return m ? (m[1].replace(/^0+/,'')||'0') : '';
+}
+function v7142ExactStoreMatch(query){
+ const q=String(query||'').trim().replace(/^#/, '').replace(/^0+/,'')||'0';
+ if(!/^\d+$/.test(q))return null;
+ return stores.find(s=>v7142StoreNumber(s)===q)||null;
+}
+function v7142OpenStoreDirect(s){
+ if(!s)return false;
+ try{
+   // Clear search suggestion overlay first.
+   const results=document.getElementById('searchResults')||document.querySelector('.search-results');
+   if(results){results.innerHTML='';results.style.display='none';}
+   const lat=Number(s.lat),lng=Number(s.lng);
+   if(Number.isFinite(lat)&&Number.isFinite(lng)){
+     map.flyTo([lat,lng], Math.max(map.getZoom?.()||0, 12), {duration:.45});
+   }
+
+   // Prefer the platform's full store intelligence/popup functions.
+   if(typeof window.openStore==='function'){window.openStore(s.siteId??s.id??s);return true;}
+   if(typeof window.openStorePopup==='function'){window.openStorePopup(s);return true;}
+   if(typeof window.storeIntelligence==='function'){window.storeIntelligence(s.siteId??s.id??s);return true;}
+   if(typeof window.v6StoreIntelligence==='function'){window.v6StoreIntelligence(s);return true;}
+   if(typeof openStore==='function'){openStore(s.siteId??s.id??s);return true;}
+   if(typeof storeIntelligence==='function'){storeIntelligence(s.siteId??s.id??s);return true;}
+
+   // Leaflet fallback: open the existing marker popup if the marker can be resolved.
+   const sid=String(s.siteId??s.id??'');
+   const marker = (window.storeMarkers instanceof Map && window.storeMarkers.get(sid))
+     || (window.markersByStore instanceof Map && window.markersByStore.get(sid))
+     || s._marker;
+   if(marker?.openPopup){marker.openPopup();return true;}
+ }catch(err){console.error('Exact store search open failed',err)}
+ return false;
+}
+window.v7142ExactStoreMatch=v7142ExactStoreMatch;
+window.v7142OpenStoreDirect=v7142OpenStoreDirect;
+
 function search(){
  const raw=$('search').value.trim(),q=raw.toLowerCase();
  selectedSearch=-1;
@@ -3067,6 +3112,43 @@ initializeProgramSwitcher({
 
 try {
   init();
+
+(function(){
+ const search=document.getElementById('search')||document.getElementById('searchBox')||document.querySelector('input[placeholder*="Search store"]');
+ if(!search || search.dataset.v7142ExactSearch)return;
+ search.dataset.v7142ExactSearch='1';
+
+ search.addEventListener('keydown',event=>{
+   if(event.key!=='Enter')return;
+   const exact=v7142ExactStoreMatch(search.value);
+   if(!exact)return;
+   event.preventDefault();
+   event.stopImmediatePropagation();
+   v7142OpenStoreDirect(exact);
+ },true);
+
+ // Also make exact-number searches visually prioritize the exact store.
+ search.addEventListener('input',()=>{
+   const exact=v7142ExactStoreMatch(search.value);
+   if(!exact)return;
+   setTimeout(()=>{
+     const results=document.getElementById('searchResults')||document.querySelector('.search-results');
+     if(!results)return;
+     const rows=[...results.querySelectorAll('[data-store-id],.search-result,.search-item,li,button')];
+     const exactId=String(exact.siteId??exact.id??'');
+     const row=rows.find(r=>String(r.dataset?.storeId||r.dataset?.id||'')===exactId)
+       || rows.find(r=>{
+         const t=(r.textContent||'').toLowerCase();
+         return t.includes(`#${v7142StoreNumber(exact)}`.toLowerCase());
+       });
+     if(row && row.parentElement){
+       row.parentElement.insertBefore(row,row.parentElement.firstChild);
+       row.classList.add('v7142-exact-store-result');
+     }
+   },0);
+ });
+})();
+
   installApplicationBindings();
   setTimeout(()=>{
     try{
