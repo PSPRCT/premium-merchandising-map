@@ -1385,3 +1385,9 @@ button:disabled{
   background:#eff6ff!important;
   box-shadow:inset 4px 0 0 #2563eb;
 }
+
+/* v7.14.3 exact store result */
+.v7142-exact-store-result{
+  background:#eff6ff!important;
+  box-shadow:inset 4px 0 0 #2563eb;
+}

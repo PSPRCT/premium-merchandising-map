@@ -1600,29 +1600,42 @@ function v7142ExactStoreMatch(query){
 function v7142OpenStoreDirect(s){
  if(!s)return false;
  try{
-   // Clear search suggestion overlay first.
-   const results=document.getElementById('searchResults')||document.querySelector('.search-results');
-   if(results){results.innerHTML='';results.style.display='none';}
+   const results=$('results');
+   if(results){
+     results.classList.remove('show');
+     results.innerHTML='';
+   }
+   selectedSearch=-1;
+
    const lat=Number(s.lat),lng=Number(s.lng);
    if(Number.isFinite(lat)&&Number.isFinite(lng)){
-     map.flyTo([lat,lng], Math.max(map.getZoom?.()||0, 12), {duration:.45});
+     map.flyTo([lat,lng],12,{duration:.55});
    }
 
-   // Prefer the platform's full store intelligence/popup functions.
-   if(typeof window.openStore==='function'){window.openStore(s.siteId??s.id??s);return true;}
-   if(typeof window.openStorePopup==='function'){window.openStorePopup(s);return true;}
-   if(typeof window.storeIntelligence==='function'){window.storeIntelligence(s.siteId??s.id??s);return true;}
-   if(typeof window.v6StoreIntelligence==='function'){window.v6StoreIntelligence(s);return true;}
-   if(typeof openStore==='function'){openStore(s.siteId??s.id??s);return true;}
-   if(typeof storeIntelligence==='function'){storeIntelligence(s.siteId??s.id??s);return true;}
+   const marker=markerById.get(s.siteId);
+   if(marker){
+     setTimeout(()=>{
+       try{
+         // Ensure marker is present in the currently rendered layer before opening.
+         if(!filtered.some(x=>String(x.siteId)===String(s.siteId))){
+           filtered=[s];
+           renderStores();
+           updateMetrics();
+         }
+         marker.openPopup();
+       }catch(err){console.error('Exact store popup failed',err)}
+     },420);
+     return true;
+   }
 
-   // Leaflet fallback: open the existing marker popup if the marker can be resolved.
-   const sid=String(s.siteId??s.id??'');
-   const marker = (window.storeMarkers instanceof Map && window.storeMarkers.get(sid))
-     || (window.markersByStore instanceof Map && window.markersByStore.get(sid))
-     || s._marker;
-   if(marker?.openPopup){marker.openPopup();return true;}
- }catch(err){console.error('Exact store search open failed',err)}
+   // Full Store Intelligence remains a fallback if no map marker exists.
+   if(typeof window.v6OpenStoreIntelligence==='function'){
+     setTimeout(()=>window.v6OpenStoreIntelligence(String(s.siteId)),420);
+     return true;
+   }
+ }catch(err){
+   console.error('Exact store search open failed',err);
+ }
  return false;
 }
 window.v7142ExactStoreMatch=v7142ExactStoreMatch;
@@ -1632,6 +1645,22 @@ function search(){
  const raw=$('search').value.trim(),q=raw.toLowerCase();
  selectedSearch=-1;
  if(!q){$('results').classList.remove('show');return}
+ const exactStore=v7142ExactStoreMatch(raw);
+ if(exactStore){
+   const hit={
+     type:'Store',
+     obj:exactStore,
+     exactStoreNumber:true,
+     title:`${exactStore.retailer} #${exactStore.storeNumber||'—'}`,
+     sub:`${exactStore.address?exactStore.address+' · ':''}${exactStore.city}, ${exactStore.state} ${exactStore.zip} · SiteID ${exactStore.siteId}`
+   };
+   $('results').innerHTML=`<div class="res v7142-exact-store-result" data-i="0"><b>Store · ${esc(hit.title)}</b><span>${esc(hit.sub)}</span></div>`;
+   $('results').classList.add('show');
+   $('results').firstElementChild.onclick=()=>selectHit(hit);
+   $('search')._hits=[hit];
+   selectedSearch=0;
+   return;
+ }
 
  // Build city/state summary results first so a city search behaves like a location search,
  // rather than simply showing the first matching store.
@@ -1693,8 +1722,7 @@ function selectHit(h){
      map.flyToBounds(pts,{padding:[45,45],maxZoom:11,duration:.75});
    }
  }else if(h.type==='Store'){
-   map.flyTo([h.obj.lat,h.obj.lng],12,{duration:.7});
-   setTimeout(()=>markerById.get(h.obj.siteId)?.openPopup(),450);
+   v7142OpenStoreDirect(h.obj);
  }else{
    openTerritory(h.obj.id);
  }

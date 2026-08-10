@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.14.2 \u2014 Exact Store Search Restoration",
+  "platformRelease": "Version 7.14.3 \u2014 Exact Store Search Completion",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
