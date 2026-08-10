@@ -205,6 +205,15 @@ function drawTerritories(){
  });
 }
 
+
+function v714Debounce(fn,wait=120){
+ let t=null;
+ return function(...args){
+   clearTimeout(t);
+   t=setTimeout(()=>fn.apply(this,args),wait);
+ };
+}
+
 function applyFilters(){
  const c=$('fCoverage').value,ret=$('fRetailer').value,st=$('fState').value,
  regional=$('fRegional')?.value||'',mgr=$('fManager').value,rr=$('fRts').value,
@@ -1054,6 +1063,61 @@ window.exportMultiHire=n=>csv((window._multiHirePlan||[]).slice(0,n).map(x=>({
 })),'premium_merchandising_multi_hire_plan.csv');
 
 
+
+/* ===== v7.14 Performance Cache ===== */
+const V714_CACHE={
+  seqPlan:null,
+  seqKey:'',
+  managerRows:null,
+  managerKey:'',
+  regionalRows:null,
+  regionalKey:'',
+  managerProfiles:new Map(),
+  regionalProfiles:new Map(),
+  candidateImpact:new Map()
+};
+
+function v714CoverageVersionKey(){
+  const radius=Number($('radius')?.value||75);
+  const activeCount=Array.isArray(RTS)?RTS.filter(r=>r.active!==false).length:0;
+  return `${ACTIVE_PROGRAM_ID}|${radius}|${stores.length}|${activeCount}`;
+}
+function v714ClearPlanningCache(){
+  V714_CACHE.seqPlan=null;V714_CACHE.seqKey='';
+  V714_CACHE.managerRows=null;V714_CACHE.managerKey='';
+  V714_CACHE.regionalRows=null;V714_CACHE.regionalKey='';
+  V714_CACHE.managerProfiles.clear();
+  V714_CACHE.regionalProfiles.clear();
+  V714_CACHE.candidateImpact.clear();
+}
+window.v714ClearPlanningCache=v714ClearPlanningCache;
+
+function v714CachedSequentialPlan(){
+  const key=v714CoverageVersionKey();
+  if(V714_CACHE.seqPlan && V714_CACHE.seqKey===key)return V714_CACHE.seqPlan;
+  const plan=v714CachedSequentialPlan();
+  if(window.v712DisambiguatePostingMarkets)v712DisambiguatePostingMarkets(plan.placements);
+  V714_CACHE.seqPlan=plan;
+  V714_CACHE.seqKey=key;
+  return plan;
+}
+window.v714CachedSequentialPlan=v714CachedSequentialPlan;
+
+function v714ManagerRowsCached(){
+  const key=v714CoverageVersionKey();
+  if(V714_CACHE.managerRows && V714_CACHE.managerKey===key)return V714_CACHE.managerRows;
+  const rows=v793ManagerRows(stores);
+  V714_CACHE.managerRows=rows;V714_CACHE.managerKey=key;
+  return rows;
+}
+function v714RegionalRowsCached(){
+  const key=v714CoverageVersionKey();
+  if(V714_CACHE.regionalRows && V714_CACHE.regionalKey===key)return V714_CACHE.regionalRows;
+  const rows=v793RegionalRows(stores);
+  V714_CACHE.regionalRows=rows;V714_CACHE.regionalKey=key;
+  return rows;
+}
+
 /* ===== v7.10 Sequential Authorized-Capacity Optimizer ===== */
 
 /* ===== v7.11 Practical Posting Market Resolver ===== */
@@ -1299,7 +1363,7 @@ function v712DisambiguatePostingMarkets(placements){
  return placements;
 }
 function v710ExportSequentialPlan(){
- const plan=window._v710Plan||v710SequentialPlan();
+ const plan=window._v710Plan||v714CachedSequentialPlan();
  const rows=plan.placements.map(p=>({
    Rank:p.rank,
    PostingMarket:p.postingMarket?.label||'',
@@ -1330,7 +1394,7 @@ function v710SimulatePortfolioPlacement(rank){
 window.v710SimulatePortfolioPlacement=v710SimulatePortfolioPlacement;
 
 function networkOptimizer(){
- const plan=v710SequentialPlan();
+ const plan=v714CachedSequentialPlan();
  v712DisambiguatePostingMarkets(plan.placements);
  window._v710Plan=plan;
  const c=plan.capacity;
@@ -1441,7 +1505,7 @@ window.rtmDashboard=rtmDashboard;
 
 
 function v710PositionPlanningCard(){
- const p=v710SequentialPlan();
+ const p=v714CachedSequentialPlan();
  return `<div class="v4-panel"><h3>Authorized Position Outlook</h3>
    <div class="v4-grid">
     <div class="metric"><small>Active RTS</small><b>${p.capacity.active}</b></div>
@@ -2114,7 +2178,7 @@ window.v793OpenRegionalProfileToken=v793OpenRegionalProfileToken;
 window.v793OpenManagerProfileToken=v793OpenManagerProfileToken;
 
 function v713PortfolioPlan(){
- const plan=v710SequentialPlan();
+ const plan=v714CachedSequentialPlan();
  v712DisambiguatePostingMarkets(plan.placements);
  window._v710Plan=plan;
  return plan;
@@ -2171,22 +2235,42 @@ window.v793ApplyRegionalScope=function(token){
  $('modal')?.classList.remove('show');fitResults();
 };
 
+function v714RenderRowsChunked(targetId,rows,renderer,chunkSize=30){
+ const target=$(targetId); if(!target)return;
+ target.innerHTML='';
+ let i=0;
+ const step=()=>{
+   const frag=document.createDocumentFragment();
+   const end=Math.min(i+chunkSize,rows.length);
+   for(;i<end;i++){
+     const wrap=document.createElement('tbody');
+     wrap.innerHTML=renderer(rows[i]);
+     if(wrap.firstElementChild)frag.appendChild(wrap.firstElementChild);
+   }
+   target.appendChild(frag);
+   if(i<rows.length)requestAnimationFrame(step);
+ };
+ requestAnimationFrame(step);
+}
+
 function v6OpenManagerIntelligence(){
- const regionalRows=v793RegionalRows(stores);
- const managerRows=v793ManagerRows(stores);
+ const regionalRows=v714RegionalRowsCached();
+ const managerRows=v714ManagerRowsCached();
+
  openModal('Manager Intelligence',`
-  <div class="v6-hero"><h2>Manager Intelligence</h2><p>Browse the full organization without setting a map filter first. Click any Regional Manager or ${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} to open its detailed profile.</p></div>
+  <div class="v6-hero"><h2>Manager Intelligence</h2><p>Browse the full organization without setting a map filter first. Profiles load on demand so the national list stays fast.</p></div>
   <div class="v793-tabs">
    <button id="v793RegionalTab" class="btn primary" onclick="window.v793ShowManagerTab('regional')">Regional Managers</button>
    <button id="v793DistrictTab" class="btn" onclick="window.v793ShowManagerTab('district')">${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers / RDMs'}</button>
   </div>
-  <div id="v793RegionalPanel" class="tablewrap"><table><thead><tr><th>Regional Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Managers</th><th>States</th><th></th></tr></thead><tbody>
-   ${regionalRows.map(r=>`<tr class="v793-click-row" onclick="window.v793OpenRegionalProfileToken('${encodeURIComponent(r.name)}')"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.managerCount}</td><td>${r.stateCount}</td><td>↗</td></tr>`).join('')}
-  </tbody></table></div>
-  <div id="v793DistrictPanel" class="tablewrap" style="display:none"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</th><th>Regional Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody>
-   ${managerRows.map(r=>`<tr class="v793-click-row" onclick="window.v793OpenManagerProfileToken('${encodeURIComponent(r.name)}')"><td><b>${esc(r.name)}</b></td><td>${esc(r.regionalManager)}</td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`).join('')}
-  </tbody></table></div>`);
+  <div id="v793RegionalPanel" class="tablewrap"><table><thead><tr><th>Regional Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>Managers</th><th>States</th><th></th></tr></thead><tbody id="v714RegionalBody"><tr><td colspan="7">Loading manager rows…</td></tr></tbody></table></div>
+  <div id="v793DistrictPanel" class="tablewrap" style="display:none"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</th><th>Regional Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody id="v714ManagerBody"><tr><td colspan="8">Loading manager rows…</td></tr></tbody></table></div>
+ `);
+
+ v714RenderRowsChunked('v714RegionalBody',regionalRows,r=>`<tr class="v793-click-row" onclick="window.v793OpenRegionalProfileToken('${encodeURIComponent(r.name)}')"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.managerCount}</td><td>${r.stateCount}</td><td>↗</td></tr>`);
+ v714RenderRowsChunked('v714ManagerBody',managerRows,r=>`<tr class="v793-click-row" onclick="window.v793OpenManagerProfileToken('${encodeURIComponent(r.name)}')"><td><b>${esc(r.name)}</b></td><td>${esc(r.regionalManager)}</td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`);
 }
+
 window.v793ShowManagerTab=function(tab){
  const regional=$('v793RegionalPanel'),district=$('v793DistrictPanel'),rt=$('v793RegionalTab'),dt=$('v793DistrictTab');
  const isRegional=tab==='regional';
@@ -2237,6 +2321,34 @@ window.v791ApplyManagerToken=function(token){return window.v79ApplyManagerScope(
 window.v791ShowManagerGapsToken=function(token){return window.v79ShowManagerGaps(v791ManagerFromToken(token))};
 
 /* ===== v7.9 Manager Coverage & Placement Intelligence ===== */
+
+function v714CandidateImpactForScope(scopeKey,scope){
+ const key=`${v714CoverageVersionKey()}|${scopeKey}`;
+ if(V714_CACHE.candidateImpact.has(key))return V714_CACHE.candidateImpact.get(key);
+
+ const plan=v714CachedSequentialPlan();
+ const radius=Number($('radius')?.value||75);
+ const currentCovered=scope.filter(s=>s.covered).length;
+
+ const impacts=plan.placements.map(p=>{
+   const newly=scope.filter(s=>!s.covered && hav(s.lat,s.lng,p.lat,p.lng)<=radius);
+   const allReached=scope.filter(s=>hav(s.lat,s.lng,p.lat,p.lng)<=radius);
+   const projected=currentCovered+newly.length;
+   return {
+     ...p,
+     scopeNetNew:newly.length,
+     scopeReached:allReached.length,
+     currentCoverage:scope.length?currentCovered/scope.length*100:0,
+     projectedCoverage:scope.length?projected/scope.length*100:0,
+     coveragePointGain:scope.length?newly.length/scope.length*100:0
+   };
+ }).filter(x=>x.scopeNetNew>0)
+   .sort((a,b)=>b.scopeNetNew-a.scopeNetNew||b.score-a.score);
+
+ V714_CACHE.candidateImpact.set(key,impacts);
+ return impacts;
+}
+
 function v79ManagerScope(name){
  return stores.filter(s=>(v7OrgForStore(s).areaManager||s.manager||'Not listed')===name);
 }

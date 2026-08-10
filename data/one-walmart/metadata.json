@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.11 \u2014 Expanded Position Pipeline & Posting Markets",
+  "platformRelease": "Version 7.14 \u2014 Performance Pass",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
@@ -64,5 +64,6 @@
   "authorizedRTSPositions": 100,
   "existingRosterPolicy": "fixed-protected",
   "positionOptimization": "sequential-expanded-pipeline",
-  "postingMarketStrategy": "nearest-major-metro-with-local-fallback"
+  "postingMarketStrategy": "nearest-major-metro-with-local-fallback",
+  "planningCache": "shared-memoized"
 }

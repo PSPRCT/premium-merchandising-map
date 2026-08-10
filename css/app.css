@@ -1370,3 +1370,7 @@ button:disabled{
 .v711-manager-drill-row:hover{background:#eff6ff!important}
 .v711-manager-drill-row:hover .v711-link-name{color:#1d4ed8;text-decoration:underline}
 .v711-coverage-center{display:block;color:#64748b;margin-top:2px;line-height:1.2}
+
+/* v7.14 performance-focused rendering */
+#v714RegionalBody tr,#v714ManagerBody tr{content-visibility:auto;contain-intrinsic-size:36px}
+.tablewrap{overscroll-behavior:contain}
