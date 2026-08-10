@@ -206,6 +206,19 @@ function drawTerritories(){
 }
 
 
+
+function v7141RuntimeSmokeCheck(){
+ const issues=[];
+ try{
+   if(typeof v710SequentialPlan!=='function')issues.push('v710SequentialPlan missing');
+   if(typeof v714CachedSequentialPlan!=='function')issues.push('v714CachedSequentialPlan missing');
+   if(typeof window.v793OpenManagerProfileToken!=='function')issues.push('manager drill handler missing');
+   if(typeof window.v793OpenRegionalProfileToken!=='function')issues.push('regional drill handler missing');
+ }catch(e){issues.push(e.message)}
+ return issues;
+}
+window.v7141RuntimeSmokeCheck=v7141RuntimeSmokeCheck;
+
 function v714Debounce(fn,wait=120){
  let t=null;
  return function(...args){
@@ -1095,7 +1108,7 @@ window.v714ClearPlanningCache=v714ClearPlanningCache;
 function v714CachedSequentialPlan(){
   const key=v714CoverageVersionKey();
   if(V714_CACHE.seqPlan && V714_CACHE.seqKey===key)return V714_CACHE.seqPlan;
-  const plan=v714CachedSequentialPlan();
+  const plan=v710SequentialPlan();
   if(window.v712DisambiguatePostingMarkets)v712DisambiguatePostingMarkets(plan.placements);
   V714_CACHE.seqPlan=plan;
   V714_CACHE.seqKey=key;
@@ -2267,8 +2280,27 @@ function v6OpenManagerIntelligence(){
   <div id="v793DistrictPanel" class="tablewrap" style="display:none"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'}</th><th>Regional Manager</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>States</th><th>Retailers</th><th></th></tr></thead><tbody id="v714ManagerBody"><tr><td colspan="8">Loading manager rows…</td></tr></tbody></table></div>
  `);
 
- v714RenderRowsChunked('v714RegionalBody',regionalRows,r=>`<tr class="v793-click-row" onclick="window.v793OpenRegionalProfileToken('${encodeURIComponent(r.name)}')"><td><b>${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.managerCount}</td><td>${r.stateCount}</td><td>↗</td></tr>`);
- v714RenderRowsChunked('v714ManagerBody',managerRows,r=>`<tr class="v793-click-row" onclick="window.v793OpenManagerProfileToken('${encodeURIComponent(r.name)}')"><td><b>${esc(r.name)}</b></td><td>${esc(r.regionalManager)}</td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`);
+ v714RenderRowsChunked('v714RegionalBody',regionalRows,r=>`<tr class="v793-click-row v714-manager-drill" data-drill-type="regional" data-drill-token="${encodeURIComponent(r.name)}"><td><b class="v714-link-name">${esc(r.name)}</b></td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.managerCount}</td><td>${r.stateCount}</td><td>↗</td></tr>`);
+ v714RenderRowsChunked('v714ManagerBody',managerRows,r=>`<tr class="v793-click-row v714-manager-drill" data-drill-type="manager" data-drill-token="${encodeURIComponent(r.name)}"><td><b class="v714-link-name">${esc(r.name)}</b></td><td>${esc(r.regionalManager)}</td><td>${r.total}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.stateCount}</td><td>${r.retailerCount}</td><td>↗</td></tr>`);
+ const modalEl=$('modal');
+ if(modalEl && !modalEl.dataset.v714ManagerDelegation){
+   modalEl.dataset.v714ManagerDelegation='1';
+   modalEl.addEventListener('click',event=>{
+     const row=event.target.closest('.v714-manager-drill');
+     if(!row || !modalEl.contains(row))return;
+     const token=row.dataset.drillToken;
+     const type=row.dataset.drillType;
+     if(!token)return;
+     event.preventDefault();
+     event.stopPropagation();
+     if(type==='regional'){
+       window.v793OpenRegionalProfileToken(token);
+     }else if(type==='manager'){
+       window.v793OpenManagerProfileToken(token);
+     }
+   });
+ }
+
 }
 
 window.v793ShowManagerTab=function(tab){
@@ -2700,7 +2732,7 @@ function v7RegionalDashboard(rmName){
    ${v7MetricCard('Efficiency Gained',metrics.efficiencyGained!=null?metrics.efficiencyGained.toFixed(2)+'%':'—')}
   </div>
   <div class="tablewrap"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
-   ${rdmRows.map(r=>`<tr class="v711-manager-drill-row" onclick="window.v793OpenManagerProfileToken('${encodeURIComponent(r.name)}')"><td><b class="v711-link-name">${esc(r.name)}</b></td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
+   ${rdmRows.map(r=>`<tr class="v711-manager-drill-row" data-v714-manager-token="${encodeURIComponent(r.name)}" onclick="window.v793OpenManagerProfileToken(this.dataset.v714ManagerToken)"><td><b class="v711-link-name">${esc(r.name)}</b></td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
   </tbody></table></div>
   <div class="actions"><button class="btn primary" onclick="window.v7ApplyRegionalFilter(${JSON.stringify(rmName)})">Show Region on Map</button><button class="btn" onclick="window.v7ExportRegional(${JSON.stringify(rmName)})">Export</button></div>`);
 }

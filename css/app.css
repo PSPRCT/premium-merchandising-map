@@ -1374,3 +1374,8 @@ button:disabled{
 /* v7.14 performance-focused rendering */
 #v714RegionalBody tr,#v714ManagerBody tr{content-visibility:auto;contain-intrinsic-size:36px}
 .tablewrap{overscroll-behavior:contain}
+
+/* v7.14.1 drilldown repair */
+.v714-manager-drill{cursor:pointer}
+.v714-manager-drill:hover{background:#eff6ff!important}
+.v714-manager-drill:hover .v714-link-name{color:#1d4ed8;text-decoration:underline}
