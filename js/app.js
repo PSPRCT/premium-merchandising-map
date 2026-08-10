@@ -2577,7 +2577,7 @@ window.v79OpenManagerWorkspace=function(name){
  }).filter(x=>x.count).sort((a,b)=>b.count-a.count);
  const placementHtml=v713OpportunityRows(scope,6,'manager');
  openModal('Manager Coverage & Placement Intelligence',`
-  <div class="v6-hero"><h2>${esc(name)}</h2><p>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} · Regional Manager: <button class="v79-inline-hierarchy-link" onclick="window.v7RegionalDashboard(decodeURIComponent('${encodeURIComponent(regional)}'))">${esc(regional)}</button> · ${states.join(', ')}</p></div>
+  <div class="v6-hero"><h2>${esc(name)}</h2><p>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} · Regional Manager: <button class="v79-inline-hierarchy-link" onclick="window.v7146OpenRegionalToken('${encodeURIComponent(regional)}')">${esc(regional)}</button> · ${states.join(', ')}</p></div>
   <div class="v6-kpi-grid">
    <div class="v6-kpi"><small>Stores</small><b>${scope.length}</b><span>${retailers.length} retailer${retailers.length===1?'':'s'}</span></div>
    <div class="v6-kpi"><small>Coverage</small><b>${pct.toFixed(1)}%</b><span>${covered} covered</span></div>
@@ -2872,34 +2872,68 @@ function v7MetricCard(label,value,detail=''){
 function v7Breadcrumb(items){
  return `<div class="v7-breadcrumb">${items.map((x,i)=>`${i?'<span>›</span>':''}<button onclick="${x.action}">${esc(x.label)}</button>`).join('')}</div>`;
 }
-function v7RegionalDashboard(rmName){
- const rm=(ORG_HIERARCHY.regionalManagers||[]).find(x=>x.name===rmName);
- const scope=v7StoresForRegional(rmName),model=v7ModelForStores(scope),covered=scope.length-model.gaps.length;
- const pct=scope.length?covered/scope.length*100:0;
- const rdmRows=(rm?.areaManagers||[]).map(r=>{
-   const s=v7StoresForArea(r.name),m=v7ModelForStores(s),c=s.length-m.gaps.length;
 
- const v7145StoreManagerRows=v793ManagerRows(scope);
- const v7145StoreManagerByKey=new Map(v7145StoreManagerRows.map(r=>[v7145ManagerKey(r.name),r]));
- rdmRows.forEach(r=>{
-   const storeRow=v7145StoreManagerByKey.get(v7145ManagerKey(r.name));
-   if(storeRow){
-     r.name=storeRow.name||v7145PreferredManagerName(r.name);
-     r.stores=storeRow.total;
-     r.coverage=storeRow.coverage;
-     r.gaps=storeRow.gaps;
-     r.unique=storeRow.unique;
-     r.shared=storeRow.shared;
-     r.stateCount=storeRow.stateCount;
-     r.retailerCount=storeRow.retailerCount;
-   }
+function v7146ResolveRegionalName(name){
+ const target=v7145ManagerKey(name);
+ const hierarchy=(ORG_HIERARCHY.regionalManagers||[]).find(r=>v7145ManagerKey(r.name)===target);
+ if(hierarchy)return hierarchy.name;
+
+ // Fallback to store hierarchy if operational hierarchy uses a different display variant.
+ const row=v793RegionalRows(stores).find(r=>v7145ManagerKey(r.name)===target);
+ return row?.name||name;
+}
+function v7146OpenRegionalManager(name){
+ const resolved=v7146ResolveRegionalName(name);
+ window.v7RegionalDashboard(resolved);
+}
+function v7146OpenRegionalToken(token){
+ v7146OpenRegionalManager(decodeURIComponent(token));
+}
+window.v7146OpenRegionalManager=v7146OpenRegionalManager;
+window.v7146OpenRegionalToken=v7146OpenRegionalToken;
+
+function v7RegionalDashboard(rmName){
+ const resolved=v7146ResolveRegionalName(rmName);
+ const targetKey=v7145ManagerKey(resolved);
+ const rm=(ORG_HIERARCHY.regionalManagers||[]).find(x=>v7145ManagerKey(x.name)===targetKey);
+
+ const scope=stores.filter(s=>v7145ManagerKey(v7OrgForStore(s).regionalManager)===targetKey);
+ const model=v7ModelForStores(scope),covered=scope.length-model.gaps.length;
+ const pct=scope.length?covered/scope.length*100:0;
+
+ const storeRows=v793ManagerRows(scope);
+ const storeByKey=new Map(storeRows.map(r=>[v7145ManagerKey(r.name),r]));
+
+ const hierarchyManagers=(rm?.areaManagers||[]).map(a=>({
+   ...a,
+   name:v7145PreferredManagerName(a.name)
+ }));
+
+ // Include any manager found in store data even if absent/mismatched in performance hierarchy.
+ const merged=new Map();
+ hierarchyManagers.forEach(a=>merged.set(v7145ManagerKey(a.name),{
+   name:a.name,
+   metrics:a.metrics||{},
+   stores:0,coverage:0,gaps:0
+ }));
+ storeRows.forEach(sr=>{
+   const key=v7145ManagerKey(sr.name);
+   const existing=merged.get(key)||{name:sr.name,metrics:{},stores:0,coverage:0,gaps:0};
+   existing.name=sr.name;
+   existing.stores=sr.total;
+   existing.coverage=sr.coverage;
+   existing.gaps=sr.gaps;
+   existing.unique=sr.unique;
+   existing.shared=sr.shared;
+   merged.set(key,existing);
  });
-   return {...r,stores:s.length,gaps:m.gaps.length,coverage:s.length?c/s.length*100:0};
- }).sort((a,b)=>b.gaps-a.gaps||b.stores-a.stores);
+
+ const rdmRows=[...merged.values()].sort((a,b)=>b.gaps-a.gaps||b.stores-a.stores||a.name.localeCompare(b.name));
  const metrics=rm?.metrics||{};
- openModal(`Regional Manager — ${rmName}`,`
-  ${v7Breadcrumb([{label:'National',action:'window.v7OpenOrganizationNavigator()'},{label:rmName,action:'void(0)'}])}
-  <div class="v7-hero"><h2>${esc(rmName)}</h2><p>${rdmRows.length} ${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers / RDMs'} · ${scope.length.toLocaleString()} stores · click a manager row for full coverage & placement intelligence</p></div>
+
+ openModal(`Regional Manager — ${v7145PreferredManagerName(resolved)}`,`
+  ${v7Breadcrumb([{label:'National',action:'window.v7OpenOrganizationNavigator()'},{label:v7145PreferredManagerName(resolved),action:'void(0)'}])}
+  <div class="v7-hero"><h2>${esc(v7145PreferredManagerName(resolved))}</h2><p>${rdmRows.length} ${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Managers':'Area Managers / RDMs'} · ${scope.length.toLocaleString()} stores · click a manager row for full coverage & placement intelligence</p></div>
   <div class="v7-metrics">
    ${v7MetricCard('Coverage',pct.toFixed(1)+'%',`${model.gaps.length} gaps`)}
    ${v7MetricCard('SO Executed',metrics.soExecuted!=null?metrics.soExecuted.toFixed(2)+'%':'—')}
@@ -2908,9 +2942,9 @@ function v7RegionalDashboard(rmName){
    ${v7MetricCard('Efficiency Gained',metrics.efficiencyGained!=null?metrics.efficiencyGained.toFixed(2)+'%':'—')}
   </div>
   <div class="tablewrap"><table><thead><tr><th>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager'}</th><th>Stores</th><th>Coverage</th><th>Gaps</th><th>SO Executed</th><th>Compliance</th></tr></thead><tbody>
-   ${rdmRows.map(r=>`<tr class="v711-manager-drill-row" data-v714-manager-token="${encodeURIComponent(r.name)}" onclick="window.v793OpenManagerProfileToken(this.dataset.v714ManagerToken)"><td><b class="v711-link-name">${esc(r.name)}</b></td><td>${r.stores}</td><td>${r.coverage.toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
+   ${rdmRows.map(r=>`<tr class="v711-manager-drill-row" data-v714-manager-token="${encodeURIComponent(r.name)}" onclick="window.v793OpenManagerProfileToken(this.dataset.v714ManagerToken)"><td><b class="v711-link-name">${esc(r.name)}</b></td><td>${r.stores}</td><td>${Number(r.coverage||0).toFixed(1)}%</td><td>${r.gaps}</td><td>${r.metrics?.soExecuted!=null?r.metrics.soExecuted.toFixed(2)+'%':'—'}</td><td>${r.metrics?.compliance!=null?r.metrics.compliance.toFixed(2)+'%':'—'}</td></tr>`).join('')}
   </tbody></table></div>
-  <div class="actions"><button class="btn primary" onclick="window.v7ApplyRegionalFilter(${JSON.stringify(rmName)})">Show Region on Map</button><button class="btn" onclick="window.v7ExportRegional(${JSON.stringify(rmName)})">Export</button></div>`);
+  <div class="actions"><button class="btn primary" onclick="window.v7ApplyRegionalFilter(${JSON.stringify(resolved)})">Show Region on Map</button><button class="btn" onclick="window.v7ExportRegional(${JSON.stringify(resolved)})">Export</button></div>`);
 }
 function v7AreaDashboard(areaName){
  const metric=Object.values((ORG_HIERARCHY.regionalManagers||[]).flatMap(r=>r.areaManagers||[])).find?.(()=>false);

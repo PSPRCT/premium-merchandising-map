@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.14.5 \u2014 Canonical Manager Identity",
+  "platformRelease": "Version 7.14.6 \u2014 Regional Hierarchy Navigation Fix",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
