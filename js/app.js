@@ -1093,7 +1093,7 @@ const V714_CACHE={
 function v714CoverageVersionKey(){
   const radius=Number($('radius')?.value||75);
   const activeCount=Array.isArray(RTS)?RTS.filter(r=>r.active!==false).length:0;
-  return `${ACTIVE_PROGRAM_ID}|${radius}|${stores.length}|${activeCount}`;
+  return `v7145|${ACTIVE_PROGRAM_ID}|${radius}|${stores.length}|${activeCount}`;
 }
 function v714ClearPlanningCache(){
   V714_CACHE.seqPlan=null;V714_CACHE.seqKey='';
@@ -2259,32 +2259,52 @@ function v6ManagerRows(){
 
 function v793ManagerRows(scope=stores){
  const model=v4Model(scope),gapIds=new Set(model.gaps.map(s=>s.siteId));
- return Object.values(scope.reduce((o,s)=>{
-   const org=v7OrgForStore(s),key=org.areaManager||'Not listed';
-   o[key]??={name:key,regionalManager:org.regionalManager||'Unaligned',total:0,covered:0,gaps:0,unique:0,shared:0,states:new Set(),retailers:new Set()};
-   const row=o[key];row.total++;
+ const grouped={};
+ for(const s of scope){
+   const org=v7OrgForStore(s);
+   const raw=org.areaManager||'Not listed';
+   const key=v7145ManagerKey(raw)||raw.toLowerCase();
+   grouped[key]??={
+     key,
+     name:v7145PreferredManagerName(raw),
+     regionalManager:org.regionalManager||'Unaligned',
+     total:0,covered:0,gaps:0,unique:0,shared:0,
+     states:new Set(),retailers:new Set()
+   };
+   const row=grouped[key];
+   if(row.name==='Not listed' && raw!=='Not listed')row.name=v7145PreferredManagerName(raw);
+   row.total++;
    if(gapIds.has(s.siteId))row.gaps++;else row.covered++;
    if(s.coverageType==='Unique')row.unique++;
    if(s.coverageType==='Shared')row.shared++;
    if(s.state)row.states.add(s.state);
    if(s.retailer)row.retailers.add(s.retailer);
-   return o;
- },{})).map(r=>({...r,coverage:r.total?r.covered/r.total*100:0,stateCount:r.states.size,retailerCount:r.retailers.size}))
- .sort((a,b)=>a.name.localeCompare(b.name));
+ }
+ return Object.values(grouped)
+   .map(r=>({...r,coverage:r.total?r.covered/r.total*100:0,stateCount:r.states.size,retailerCount:r.retailers.size}))
+   .sort((a,b)=>a.name.localeCompare(b.name));
 }
 function v793RegionalRows(scope=stores){
  const model=v4Model(scope),gapIds=new Set(model.gaps.map(s=>s.siteId));
- return Object.values(scope.reduce((o,s)=>{
-   const org=v7OrgForStore(s),key=org.regionalManager||'Unaligned';
-   o[key]??={name:key,total:0,covered:0,gaps:0,managers:new Set(),states:new Set(),retailers:new Set()};
-   const row=o[key];row.total++;
+ const grouped={};
+ for(const s of scope){
+   const org=v7OrgForStore(s);
+   const raw=org.regionalManager||'Unaligned';
+   const key=v7145ManagerKey(raw)||raw.toLowerCase();
+   grouped[key]??={key,name:v7145PreferredManagerName(raw),total:0,covered:0,gaps:0,managers:new Map(),states:new Set(),retailers:new Set()};
+   const row=grouped[key];
+   row.total++;
    if(gapIds.has(s.siteId))row.gaps++;else row.covered++;
-   if(org.areaManager)row.managers.add(org.areaManager);
+   if(org.areaManager){
+     const mk=v7145ManagerKey(org.areaManager);
+     row.managers.set(mk,v7145PreferredManagerName(org.areaManager));
+   }
    if(s.state)row.states.add(s.state);
    if(s.retailer)row.retailers.add(s.retailer);
-   return o;
- },{})).map(r=>({...r,coverage:r.total?r.covered/r.total*100:0,managerCount:r.managers.size,stateCount:r.states.size,retailerCount:r.retailers.size}))
- .sort((a,b)=>a.name.localeCompare(b.name));
+ }
+ return Object.values(grouped)
+   .map(r=>({...r,coverage:r.total?r.covered/r.total*100:0,managerCount:r.managers.size,stateCount:r.states.size,retailerCount:r.retailers.size}))
+   .sort((a,b)=>a.name.localeCompare(b.name));
 }
 function v793OpenRegionalProfileToken(token){window.v793OpenRegionalProfile(decodeURIComponent(token))}
 function v793OpenManagerProfileToken(token){window.v79OpenManagerWorkspace(decodeURIComponent(token))}
@@ -2483,7 +2503,11 @@ function v714CandidateImpactForScope(scopeKey,scope){
 }
 
 function v79ManagerScope(name){
- return stores.filter(s=>(v7OrgForStore(s).areaManager||s.manager||'Not listed')===name);
+ const target=v7145ManagerKey(name);
+ return stores.filter(s=>{
+   const org=v7OrgForStore(s);
+   return v7145ManagerKey(org.areaManager||s.manager||'Not listed')===target;
+ });
 }
 function v795PositionCapacity(){
  const cap=100;
@@ -2568,7 +2592,7 @@ window.v79OpenManagerWorkspace=function(name){
   <div class="actions"><button class="btn primary" onclick="window.v791ApplyManagerToken('${v791ManagerToken(name)}')">View Manager on Map</button><button class="btn" onclick="window.v791ShowManagerGapsToken('${v791ManagerToken(name)}')">Show Manager Gaps</button></div>`);
 };
 window.v79ApplyManagerScope=function(name){
- const sample=stores.find(s=>(v7OrgForStore(s).areaManager||s.manager||'Not listed')===name);
+ const sample=stores.find(s=>v7145ManagerKey(v7OrgForStore(s).areaManager||s.manager||'Not listed')===v7145ManagerKey(name));
  const org=sample?v7OrgForStore(sample):null;
  if($('fRegional'))$('fRegional').value=(org?.regionalManager&&org.regionalManager!=='Unaligned')?org.regionalManager:'';
  refreshCascadingFilters({preserve:true});
@@ -2785,6 +2809,41 @@ window.v62SavedScenarios=v62SavedScenarios;
 function v7NormalizeName(value){
  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,' ').trim().toLowerCase().replace(/\s+/g,' ');
 }
+
+/* ===== v7.14.5 Canonical Manager Identity ===== */
+function v7145NameParts(raw){
+  const s=String(raw||'').trim().replace(/\s+/g,' ');
+  if(!s)return [];
+  if(s.includes(',')){
+    const [last,...rest]=s.split(',');
+    const first=rest.join(' ').trim();
+    return [last.trim(),first].filter(Boolean);
+  }
+  const bits=s.split(' ').filter(Boolean);
+  if(bits.length>=2){
+    const first=bits.slice(0,-1).join(' ');
+    const last=bits[bits.length-1];
+    return [last,first];
+  }
+  return [s];
+}
+function v7145ManagerKey(raw){
+  return v7145NameParts(raw)
+    .map(x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,''))
+    .map(x=>x.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim())
+    .join('|');
+}
+function v7145PreferredManagerName(raw){
+  const parts=v7145NameParts(raw);
+  if(parts.length>=2){
+    const title=x=>x.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
+    return `${title(parts[0])}, ${title(parts.slice(1).join(' '))}`;
+  }
+  return String(raw||'').trim();
+}
+window.v7145ManagerKey=v7145ManagerKey;
+window.v7145PreferredManagerName=v7145PreferredManagerName;
+
 function v7OrgForStore(store){
  let area;
  if(ACTIVE_PROGRAM_ID==='premium-merchandising'){
@@ -2819,6 +2878,22 @@ function v7RegionalDashboard(rmName){
  const pct=scope.length?covered/scope.length*100:0;
  const rdmRows=(rm?.areaManagers||[]).map(r=>{
    const s=v7StoresForArea(r.name),m=v7ModelForStores(s),c=s.length-m.gaps.length;
+
+ const v7145StoreManagerRows=v793ManagerRows(scope);
+ const v7145StoreManagerByKey=new Map(v7145StoreManagerRows.map(r=>[v7145ManagerKey(r.name),r]));
+ rdmRows.forEach(r=>{
+   const storeRow=v7145StoreManagerByKey.get(v7145ManagerKey(r.name));
+   if(storeRow){
+     r.name=storeRow.name||v7145PreferredManagerName(r.name);
+     r.stores=storeRow.total;
+     r.coverage=storeRow.coverage;
+     r.gaps=storeRow.gaps;
+     r.unique=storeRow.unique;
+     r.shared=storeRow.shared;
+     r.stateCount=storeRow.stateCount;
+     r.retailerCount=storeRow.retailerCount;
+   }
+ });
    return {...r,stores:s.length,gaps:m.gaps.length,coverage:s.length?c/s.length*100:0};
  }).sort((a,b)=>b.gaps-a.gaps||b.stores-a.stores);
  const metrics=rm?.metrics||{};

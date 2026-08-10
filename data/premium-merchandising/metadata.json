@@ -32,7 +32,7 @@
     "Hiring recommendations are gap-driven"
   ],
   "platformProgramId": "premium-merchandising",
-  "platformRelease": "Version 7.14.4 \u2014 First-Search Store Popup Fix",
+  "platformRelease": "Version 7.14.5 \u2014 Canonical Manager Identity",
   "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius",
   "regionalManagerCount": 18,
   "districtManagerCount": 133,
@@ -44,5 +44,6 @@
   "existingRosterPolicy": "fixed-protected",
   "positionOptimization": "sequential-expanded-pipeline",
   "postingMarketStrategy": "nearest-major-metro-with-local-fallback",
-  "planningCache": "shared-memoized"
+  "planningCache": "shared-memoized",
+  "managerIdentityStrategy": "canonical-normalized-key"
 }
