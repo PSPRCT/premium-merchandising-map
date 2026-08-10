@@ -1095,28 +1095,30 @@ function v711PostingMarket(candidate){
    const d=hav(candidate.lat,candidate.lng,m[2],m[3]);
    if(!best||d<best.distance)best={city:m[0],state:m[1],lat:m[2],lng:m[3],distance:d};
  }
- // Use a practical metro if it is reasonably close to the actual modeled service center.
- // Otherwise preserve the coverage-center community rather than inventing a distant recruiting market.
- if(best && best.distance<=95){
-   return {...best,label:`${best.city}, ${best.state}`,source:'major-metro'};
- }
-
- // Fall back to the most common nearby store city within 35 miles.
  const nearby=stores.filter(s=>hav(candidate.lat,candidate.lng,s.lat,s.lng)<=35);
  const counts=new Map();
  nearby.forEach(s=>{
-   const key=`${s.city||''}|${s.state||''}`;
    if(!s.city)return;
-   counts.set(key,(counts.get(key)||0)+1);
+   const key=`${s.city}|${s.state||''}`;
+   const cur=counts.get(key)||{count:0,dist:0};
+   cur.count++; cur.dist+=hav(candidate.lat,candidate.lng,s.lat,s.lng);
+   counts.set(key,cur);
  });
- const top=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0];
- if(top){
-   const [city,state]=top[0].split('|');
-   return {city,state,label:`${city}, ${state}`,distance:0,source:'local-market'};
- }
- return {city:candidate.city||candidate.label||'Coverage area',state:candidate.state||'',label:`${candidate.city||candidate.label||'Coverage area'}${candidate.state?', '+candidate.state:''}`,distance:0,source:'coverage-center'};
-}
+ const local=[...counts.entries()].map(([key,v])=>({key,count:v.count,avgDist:v.dist/v.count}))
+   .sort((a,b)=>b.count-a.count||a.avgDist-b.avgDist)[0];
 
+ if(best&&best.distance<=25)
+   return {...best,label:`${best.city}, ${best.state}`,source:'nearby-major-metro'};
+ if(best&&best.distance<=40&&local&&local.avgDist<=18)
+   return {...best,label:`${best.city}, ${best.state}`,source:'same-market-metro'};
+ if(local){
+   const [city,state]=local.key.split('|');
+   return {city,state,label:`${city}, ${state}`,distance:local.avgDist,source:'local-market'};
+ }
+ return {city:candidate.city||candidate.label||'Coverage area',state:candidate.state||'',
+   label:`${candidate.city||candidate.label||'Coverage area'}${candidate.state?', '+candidate.state:''}`,
+   distance:0,source:'coverage-center'};
+}
 function v710Roster(){ return Array.isArray(RTS)?RTS:[]; }
 function v710ProgramCapacity(){
  const cap=100;
@@ -1266,6 +1268,36 @@ function v710SequentialPlan(){
 }
 window.v710SequentialPlan=v710SequentialPlan;
 
+
+function v712DisambiguatePostingMarkets(placements){
+ const groups=new Map();
+ placements.forEach(p=>{
+   const label=p.postingMarket?.label||`${p.city||p.label}, ${p.state||''}`;
+   if(!groups.has(label))groups.set(label,[]);
+   groups.get(label).push(p);
+ });
+ for(const [label,group] of groups){
+   if(group.length<2)continue;
+   group.sort((a,b)=>(a.postingMarket?.distance??999)-(b.postingMarket?.distance??999));
+   for(const p of group.slice(1)){
+     const counts=new Map();
+     stores.filter(s=>s.city&&hav(p.lat,p.lng,s.lat,s.lng)<=30).forEach(s=>{
+       const key=`${s.city}|${s.state||''}`;
+       counts.set(key,(counts.get(key)||0)+1);
+     });
+     const alt=[...counts.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).find(k=>{
+       const [c,st]=k.split('|'); return `${c}, ${st}`!==label;
+     });
+     if(alt){
+       const [city,state]=alt.split('|');
+       p.postingMarket={city,state,label:`${city}, ${state}`,distance:0,source:'local-market-disambiguated'};
+     }else{
+       p.postingMarket={...(p.postingMarket||{}),label:`${p.city||p.label}, ${p.state||''}`,source:'coverage-center-disambiguated'};
+     }
+   }
+ }
+ return placements;
+}
 function v710ExportSequentialPlan(){
  const plan=window._v710Plan||v710SequentialPlan();
  const rows=plan.placements.map(p=>({
@@ -1299,13 +1331,14 @@ window.v710SimulatePortfolioPlacement=v710SimulatePortfolioPlacement;
 
 function networkOptimizer(){
  const plan=v710SequentialPlan();
+ v712DisambiguatePostingMarkets(plan.placements);
  window._v710Plan=plan;
  const c=plan.capacity;
 
  const placementRows=plan.placements.length
    ? plan.placements.map(p=>`<tr class="v76-drill-row" onclick="window.v710SimulatePortfolioPlacement(${p.rank})">
       <td>${p.rank}</td>
-      <td><b>${esc(p.postingMarket?.label||p.city||p.label)}</b><br><small>Recommended posting market${p.postingMarket?.distance?` · ${p.postingMarket.distance.toFixed(0)} mi from coverage center`:''}</small><br><small class="v711-coverage-center">Coverage center: ${esc(p.city||p.label)}, ${esc(p.state||'')} · ${esc(p.source)}</small></td>
+      <td><b>${esc(p.postingMarket?.label||p.city||p.label)}</b><br><small>Recommended RTS recruiting/home market${p.postingMarket?.distance?` · ${p.postingMarket.distance.toFixed(0)} mi from modeled center`:''}</small><br><small class="v711-coverage-center">Modeled 75-mi coverage center: ${esc(p.city||p.label)}, ${esc(p.state||'')} · ${esc(p.source)}</small></td>
       <td>${p.score}/100<br><small>${esc(p.tier)}</small></td>
       <td>+${p.netNew}</td>
       <td>+${p.backup}</td>
@@ -1343,11 +1376,11 @@ function networkOptimizer(){
    <div><small>NET IMPROVEMENT</small><b>+${(plan.finalCovered-plan.baselineCovered).toLocaleString()}</b><span>incrementally covered stores</span></div>
   </div>
 
-  <div class="callout"><b>How ranking works:</b> Candidate #1 is evaluated against the current RTS network. After it is hypothetically added, Candidate #2 is recalculated against that expanded network, and so on. The portfolio now includes <b>High Priority</b>, <b>Strong Candidate</b>, and <b>Expansion Candidate</b> opportunities so you can see a broader path toward authorized headcount. The modeled coverage center remains mathematically precise, while the displayed posting market favors a practical nearby major metro when one is within about 95 miles.</div>
+  <div class="callout"><b>How ranking works:</b> Candidate #1 is evaluated against the current RTS network. After it is hypothetically added, Candidate #2 is recalculated against that expanded network, and so on. The portfolio now includes <b>High Priority</b>, <b>Strong Candidate</b>, and <b>Expansion Candidate</b> opportunities so you can see a broader path toward authorized headcount. The modeled coverage center remains mathematically precise, while the displayed RTS market stays operationally close to that center: normally within 25 miles, and only selectively out to 40 miles. Duplicate metro labels are split into more local markets.</div>
 
   <div class="v4-two">
    <div class="v4-panel"><h3>Sequential placement plan</h3>
-    <div class="tablewrap"><table><thead><tr><th>#</th><th>Recommended Posting Market</th><th>Position Value</th><th>Net-new</th><th>Backup</th><th>Remaining-gap share</th><th></th></tr></thead><tbody>${placementRows}</tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>#</th><th>Recommended RTS Market</th><th>Position Value</th><th>Net-new</th><th>Backup</th><th>Remaining-gap share</th><th></th></tr></thead><tbody>${placementRows}</tbody></table></div>
    </div>
    <div class="v4-panel"><h3>Marginal coverage curve</h3>
     <div class="tablewrap"><table><thead><tr><th>Total Positions</th><th>Covered Stores</th><th>Coverage</th><th>Incremental Gain</th></tr></thead><tbody>${curveRows}</tbody></table></div>
