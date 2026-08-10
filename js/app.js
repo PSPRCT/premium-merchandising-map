@@ -1053,17 +1053,246 @@ window.exportMultiHire=n=>csv((window._multiHirePlan||[]).slice(0,n).map(x=>({
  NetNewStores:x.gain,PrimaryManager:x.manager,PrimaryRetailer:x.retailer
 })),'premium_merchandising_multi_hire_plan.csv');
 
-function networkOptimizer(){
- const scope=s6Scope(),health=s6TerritoryData(scope),plan=s6CandidatePlan(scope,8);
- const overloaded=health.filter(x=>x.ratio>=1.3||x.uniqueCount>=120).slice(0,8);
- openModal('Network Optimizer',`<div class="s6-hero"><h2>Recommended Network Actions</h2><p><b>Scope:</b> ${esc(s6ScopeName())}. Each RTS service area is every store within the selected ${$('radius').value}-mile radius. Stores outside all active RTS radii are network gaps requiring added placement.</p></div><div class="s6-two"><div class="s6-section"><h3>Priority new-hire locations</h3>${plan.slice(0,8).map(x=>`<div class="s6-row"><span class="s6-rank">${x.rank}</span><span><b>${esc(x.city)}, ${esc(x.state)}</b><br>${esc(x.manager)} · ${esc(x.retailer)}</span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">+${x.gain}</button></div>`).join('')}</div><div class="s6-section"><h3>High in-radius workloads</h3>${overloaded.length?overloaded.map((x,i)=>`<div class="s6-row"><span class="s6-rank">${i+1}</span><span><b>${esc(x.r.name)}</b><br>${x.ownedCount} stores in radius · ${x.uniqueCount} uniquely dependent</span><button class="btn" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')">Review</button></div>`).join(''):'<div class="callout">No unusually high in-radius workloads were identified.</div>'}</div></div><div class="s6-section"><h3>Network interpretation</h3><div class="callout">Out-of-radius stores are not assigned to the nearest RTS. They remain network gaps and are addressed through new placement. Shared stores may legitimately appear in more than one RTS service area.</div></div>`);
- window._optimizerPlan=plan;
-}
-window.exportTransfer=i=>{
- const m=(window._optimizerMoves||[])[i];if(!m)return;
- csv(m.stores.map(s=>({FromRTS:m.from.r.name,ToRTS:m.to.r.name,SiteID:s.siteId,Retailer:s.retailer,StoreNumber:s.storeNumber,Address:s.address,City:s.city,State:s.state,ZIP:s.zip,DistanceToReceivingRTS:hav(s.lat,s.lng,m.to.r.lat,m.to.r.lng).toFixed(1)})),`transfer_${m.from.r.name.replace(/\W+/g,'_')}_to_${m.to.r.name.replace(/\W+/g,'_')}.csv`);
-};
 
+/* ===== v7.10 Sequential Authorized-Capacity Optimizer ===== */
+function v710ProgramCapacity(){
+ const cap=100;
+ const active=(rts||[]).filter(r=>r.active!==false).length;
+ return {cap,active,remaining:Math.max(0,cap-active)};
+}
+
+function v710CoverageState(extraPlacements=[]){
+ const radius=Number($('radius')?.value||75);
+ const covered=new Set();
+ const counts=new Map();
+
+ for(const s of stores){
+   let count=0;
+   for(const d of (s._eligibleDistances||[])){
+     if(d.distance<=radius)count++;
+     else break;
+   }
+   for(const p of extraPlacements){
+     if(hav(s.lat,s.lng,p.lat,p.lng)<=radius)count++;
+   }
+   counts.set(String(s.siteId),count);
+   if(count>0)covered.add(String(s.siteId));
+ }
+ return {covered,counts};
+}
+
+function v710CandidateUniverse(){
+ // Use fast gap-cluster candidates plus state/manager gap centroids to improve recall.
+ const candidates=[];
+ const seen=new Set();
+
+ const push=(lat,lng,city,state,label,source)=>{
+   if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+   const key=`${lat.toFixed(3)}|${lng.toFixed(3)}`;
+   if(seen.has(key))return;
+   seen.add(key);
+   candidates.push({lat,lng,city:city||'',state:state||'',label:label||`${city||''}, ${state||''}`,source});
+ };
+
+ gapClustersV2(stores,120).forEach(c=>push(c.lat,c.lng,c.city,c.state,`${c.city}, ${c.state}`,'gap-cluster'));
+
+ const gaps=stores.filter(s=>!s.covered);
+ const byState=gaps.reduce((o,s)=>(o[s.state||'Unknown']??=[]).push(s)&&o,{});
+ Object.entries(byState).forEach(([state,arr])=>{
+   if(arr.length<8)return;
+   const lat=arr.reduce((a,s)=>a+s.lat,0)/arr.length;
+   const lng=arr.reduce((a,s)=>a+s.lng,0)/arr.length;
+   push(lat,lng,arr[0]?.city||'',state,`${state} gap center`,'state-centroid');
+ });
+
+ const byMgr=gaps.reduce((o,s)=>{
+   const m=v7OrgForStore(s).areaManager||'Unaligned';
+   (o[m]??=[]).push(s);return o;
+ },{});
+ Object.entries(byMgr).forEach(([mgr,arr])=>{
+   if(arr.length<10)return;
+   const lat=arr.reduce((a,s)=>a+s.lat,0)/arr.length;
+   const lng=arr.reduce((a,s)=>a+s.lng,0)/arr.length;
+   push(lat,lng,arr[0]?.city||'',arr[0]?.state||'',`${mgr} gap center`,'manager-centroid');
+ });
+
+ return candidates;
+}
+
+function v710EvaluateCandidate(candidate,placements,currentState){
+ const radius=Number($('radius')?.value||75);
+ let netNew=0,backup=0,totalInRadius=0;
+ const newlyCovered=[];
+ const backupStores=[];
+
+ for(const s of stores){
+   const dist=hav(s.lat,s.lng,candidate.lat,candidate.lng);
+   if(dist>radius)continue;
+   totalInRadius++;
+   const sid=String(s.siteId);
+   const count=currentState.counts.get(sid)||0;
+   if(count===0){netNew++;newlyCovered.push(s)}
+   else if(count===1){backup++;backupStores.push(s)}
+ }
+
+ const totalStores=stores.length||1;
+ const currentGaps=totalStores-currentState.covered.size;
+ const pctFootprint=netNew/totalStores*100;
+ const gapCapture=currentGaps?netNew/currentGaps*100:0;
+
+ // Portfolio score favors incremental net-new stores most strongly.
+ const netNewScore=Math.min(100,netNew/45*100);
+ const gapCaptureScore=Math.min(100,gapCapture/15*100);
+ const backupScore=Math.min(100,backup/30*100);
+ const score=Math.round(netNewScore*.65 + gapCaptureScore*.25 + backupScore*.10);
+
+ let tier='No Recommendation';
+ if(netNew>=35 && score>=75) tier='High Priority';
+ else if(netNew>=25 && score>=60) tier='Competitive';
+ else if(netNew>=20 && score>=50) tier='Monitor';
+
+ return {
+   ...candidate,netNew,backup,totalInRadius,pctFootprint,gapCapture,score,tier,
+   newlyCovered,backupStores
+ };
+}
+
+function v710SequentialPlan(){
+ const capacity=v710ProgramCapacity();
+ const candidates=v710CandidateUniverse();
+ const placements=[];
+ let state=v710CoverageState([]);
+ const baselineCovered=state.covered.size;
+ const curve=[{positions:capacity.active,covered:baselineCovered,coverage:stores.length?baselineCovered/stores.length*100:0,incremental:0}];
+
+ for(let slot=1;slot<=capacity.remaining;slot++){
+   let best=null;
+
+   for(const c of candidates){
+     if(placements.some(p=>hav(p.lat,p.lng,c.lat,c.lng)<40))continue; // avoid overlapping proposed hires
+     const q=v710EvaluateCandidate(c,placements,state);
+     if(!best || q.score>best.score || (q.score===best.score && q.netNew>best.netNew))best=q;
+   }
+
+   // Stop if the next available position no longer produces a competitive return.
+   if(!best || !['High Priority','Competitive'].includes(best.tier))break;
+
+   placements.push({...best,rank:placements.length+1});
+   state=v710CoverageState(placements);
+   const covered=state.covered.size;
+   curve.push({
+     positions:capacity.active+placements.length,
+     covered,
+     coverage:stores.length?covered/stores.length*100:0,
+     incremental:covered-curve[curve.length-1].covered
+   });
+ }
+
+ return {
+   capacity,
+   baselineCovered,
+   baselineCoverage:stores.length?baselineCovered/stores.length*100:0,
+   placements,
+   curve,
+   finalCovered:curve.at(-1)?.covered||baselineCovered,
+   finalCoverage:curve.at(-1)?.coverage||0
+ };
+}
+window.v710SequentialPlan=v710SequentialPlan;
+
+function v710ExportSequentialPlan(){
+ const plan=window._v710Plan||v710SequentialPlan();
+ const rows=plan.placements.map(p=>({
+   Rank:p.rank,
+   City:p.city,
+   State:p.state,
+   Source:p.source,
+   PositionValue:p.score,
+   Tier:p.tier,
+   IncrementalNetNew:p.netNew,
+   BackupCoverageGained:p.backup,
+   GapCapturePct:Number(p.gapCapture.toFixed(1)),
+   Latitude:Number(p.lat.toFixed(5)),
+   Longitude:Number(p.lng.toFixed(5))
+ }));
+ csv(rows,`${ACTIVE_PROGRAM_ID}_sequential_position_plan.csv`);
+}
+window.v710ExportSequentialPlan=v710ExportSequentialPlan;
+
+function v710SimulatePortfolioPlacement(rank){
+ const plan=window._v710Plan;
+ const p=plan?.placements?.find(x=>x.rank===rank);
+ if(!p)return;
+ $('modal')?.classList.remove('show');
+ simulateAt(p.lat,p.lng);
+ map.flyTo([p.lat,p.lng],8,{duration:.4});
+}
+window.v710SimulatePortfolioPlacement=v710SimulatePortfolioPlacement;
+
+function networkOptimizer(){
+ const plan=v710SequentialPlan();
+ window._v710Plan=plan;
+ const c=plan.capacity;
+
+ const placementRows=plan.placements.length
+   ? plan.placements.map(p=>`<tr class="v76-drill-row" onclick="window.v710SimulatePortfolioPlacement(${p.rank})">
+      <td>${p.rank}</td>
+      <td><b>${esc(p.city||p.label)}, ${esc(p.state||'')}</b><br><small>${esc(p.source)}</small></td>
+      <td>${p.score}/100<br><small>${esc(p.tier)}</small></td>
+      <td>+${p.netNew}</td>
+      <td>+${p.backup}</td>
+      <td>${p.gapCapture.toFixed(1)}%</td>
+      <td>Simulate ↗</td>
+     </tr>`).join('')
+   : `<tr><td colspan="7"><div class="callout"><b>No additional position currently meets the competitive threshold.</b><br>The optimizer stopped rather than recommending a low-value use of authorized capacity.</div></td></tr>`;
+
+ const curveRows=plan.curve.map((x,i)=>`<tr>
+   <td>${x.positions}</td>
+   <td>${x.covered.toLocaleString()}</td>
+   <td>${x.coverage.toFixed(1)}%</td>
+   <td>${i===0?'—':`+${x.incremental}`}</td>
+ </tr>`).join('');
+
+ const stopReason=plan.placements.length<c.remaining
+   ? `The model stopped after ${plan.placements.length} additional position${plan.placements.length===1?'':'s'} because the next available candidate no longer met the Competitive threshold.`
+   : `All ${c.remaining} currently available authorized positions were used by qualifying candidates.`;
+
+ openModal('Optimize Network',`
+  <div class="v6-hero"><h2>Authorized Position Portfolio</h2>
+   <p>Existing RTS positions are fixed/protected. The optimizer evaluates only new positions and recalculates the network after each hypothetical placement so overlapping recommendations do not receive duplicate credit.</p>
+  </div>
+
+  <div class="v795-capacity">
+   <div><small>AUTHORIZED POSITIONS</small><b>${c.cap}</b></div>
+   <div><small>ACTIVE RTS</small><b>${c.active}</b></div>
+   <div><small>OPEN CAPACITY</small><b>${c.remaining}</b></div>
+   <div><small>QUALIFYING NEW POSITIONS</small><b>${plan.placements.length}</b><span>Model stops at diminishing value</span></div>
+  </div>
+
+  <div class="v710-summary">
+   <div><small>CURRENT COVERAGE</small><b>${plan.baselineCoverage.toFixed(1)}%</b><span>${plan.baselineCovered.toLocaleString()} stores</span></div>
+   <div><small>PROJECTED COVERAGE</small><b>${plan.finalCoverage.toFixed(1)}%</b><span>${plan.finalCovered.toLocaleString()} stores</span></div>
+   <div><small>NET IMPROVEMENT</small><b>+${(plan.finalCovered-plan.baselineCovered).toLocaleString()}</b><span>incrementally covered stores</span></div>
+  </div>
+
+  <div class="callout"><b>How ranking works:</b> Candidate #1 is evaluated against the current RTS network. After it is hypothetically added, Candidate #2 is recalculated against that expanded network, and so on. This prevents two nearby proposed positions from both receiving credit for covering the same gaps.</div>
+
+  <div class="v4-two">
+   <div class="v4-panel"><h3>Sequential placement plan</h3>
+    <div class="tablewrap"><table><thead><tr><th>#</th><th>Suggested Area</th><th>Position Value</th><th>Net-new</th><th>Backup</th><th>Remaining-gap share</th><th></th></tr></thead><tbody>${placementRows}</tbody></table></div>
+   </div>
+   <div class="v4-panel"><h3>Marginal coverage curve</h3>
+    <div class="tablewrap"><table><thead><tr><th>Total Positions</th><th>Covered Stores</th><th>Coverage</th><th>Incremental Gain</th></tr></thead><tbody>${curveRows}</tbody></table></div>
+    <div class="callout">${esc(stopReason)}</div>
+   </div>
+  </div>
+
+  <div class="actions">
+   <button class="btn primary" onclick="window.v710ExportSequentialPlan()">Export Position Plan</button>
+   ${plan.placements[0]?`<button class="btn" onclick="window.v710SimulatePortfolioPlacement(1)">Simulate Top Candidate</button>`:''}
+  </div>
+ `);
+}
 function rtmDashboard(){
  const rtms=uniq(activeRTS().map(r=>r.rtm||'Not listed'));
  const options=rtms.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
@@ -1108,6 +1337,20 @@ window.multiHirePlanner=multiHirePlanner;
 window.territoryHealthScores=territoryHealthScores;
 window.rtmDashboard=rtmDashboard;
 
+
+
+function v710PositionPlanningCard(){
+ const p=v710SequentialPlan();
+ return `<div class="v4-panel"><h3>Authorized Position Outlook</h3>
+   <div class="v4-grid">
+    <div class="metric"><small>Active RTS</small><b>${p.capacity.active}</b></div>
+    <div class="metric"><small>Open capacity</small><b>${p.capacity.remaining}</b></div>
+    <div class="metric"><small>Qualifying additions</small><b>${p.placements.length}</b></div>
+    <div class="metric"><small>Projected coverage</small><b>${p.finalCoverage.toFixed(1)}%</b></div>
+   </div>
+   <button class="btn primary" onclick="networkOptimizer()">Open Position Portfolio</button>
+  </div>`;
+}
 
 function executiveDashboard(){
  const scope=currentScope();
@@ -1869,18 +2112,60 @@ window.v791ShowManagerGapsToken=function(token){return window.v79ShowManagerGaps
 function v79ManagerScope(name){
  return stores.filter(s=>(v7OrgForStore(s).areaManager||s.manager||'Not listed')===name);
 }
+function v795PositionCapacity(){
+ const cap=100;
+ const active=(rts||[]).filter(r=>r.active!==false).length;
+ return {cap,active,remaining:Math.max(0,cap-active)};
+}
+function v795CandidateScore(x,scope){
+ const gain=Number(x.gain||0), total=scope.length||1;
+ const currentGaps=scope.filter(s=>!s.covered).length||1;
+ const pctGain=gain/total*100;
+ const gapCapture=gain/currentGaps*100;
+
+ // Score rewards meaningful incremental coverage and concentration.
+ // Existing RTS locations are fixed/protected and are never evaluated for relocation.
+ const netNewScore=Math.min(100,gain/40*100);
+ const footprintScore=Math.min(100,pctGain/30*100);
+ const gapScore=Math.min(100,gapCapture/40*100);
+ const score=Math.round(netNewScore*.50 + footprintScore*.25 + gapScore*.25);
+
+ return {gain,pctGain,gapCapture,score};
+}
+
+function v795CapacitySummaryHTML(){
+ const c=v795PositionCapacity();
+ return `<div class="v795-capacity">
+   <div><small>AUTHORIZED POSITIONS</small><b>${c.cap}</b></div>
+   <div><small>ACTIVE RTS</small><b>${c.active}</b></div>
+   <div><small>REMAINING CAPACITY</small><b>${c.remaining}</b></div>
+   <div><small>PLANNING RULE</small><b>Existing roster protected</b><span>New positions only</span></div>
+ </div>`;
+}
+window.v795CapacitySummaryHTML=v795CapacitySummaryHTML;
 function v79ManagerPlacementPlan(scope,limit=6){
- const base=v4Plan(scope,Math.max(limit*3,12));
- const total=scope.length||1;
+ const capacity=v795PositionCapacity();
+ if(capacity.remaining<=0)return [];
+
+ const base=v4Plan(scope,Math.max(limit*5,20));
  return base.map(x=>{
-   const gain=Number(x.gain||0);
-   const pctGain=gain/total*100;
-   let tier='No Recommendation', reason='The modeled placement does not create enough concentrated net-new coverage to justify surfacing it as a staffing opportunity.';
-   if(gain>=15 && pctGain>=8){tier='Strong';reason='Concentrated uncovered stores create a material coverage improvement in this manager footprint.'}
-   else if(gain>=8 && pctGain>=5){tier='Worth Evaluating';reason='The location produces a reasonable manager-level coverage gain and is worth validating in the simulator.'}
-   else if(gain>=5){tier='Limited Impact';reason='Some coverage improves, but the modeled return is modest for an additional RTS placement.'}
-   return {...x,gain,pctGain,tier,reason};
- }).filter(x=>x.tier==='Strong'||x.tier==='Worth Evaluating').slice(0,limit);
+   const q=v795CandidateScore(x,scope);
+   let tier='No Recommendation';
+   let reason='Positive coverage impact, but not enough value to justify using a limited future RTS position.';
+
+   // Hard gates prevent mathematically-positive but operationally weak recommendations.
+   if(q.gain>=35 && q.pctGain>=20 && q.gapCapture>=25 && q.score>=75){
+     tier='High Priority';
+     reason='Large, concentrated uncovered-store impact makes this a competitive use of remaining authorized RTS capacity.';
+   }else if(q.gain>=25 && q.pctGain>=15 && q.gapCapture>=20 && q.score>=60){
+     tier='Competitive';
+     reason='Meaningful concentrated coverage improvement. Validate against other open-position candidates before staffing.';
+   }else if(q.gain>=20 && q.score>=45){
+     tier='Monitor';
+     reason='Useful improvement, but not currently strong enough to recommend consuming an authorized position.';
+   }
+   return {...x,...q,tier,reason};
+ }).filter(x=>x.tier==='High Priority'||x.tier==='Competitive').sort((a,b)=>b.score-a.score||b.gain-a.gain).slice(0,Math.min(limit,capacity.remaining));
 }
 window.v79OpenManagerWorkspace=function(name){
  const scope=v79ManagerScope(name);
@@ -1894,7 +2179,7 @@ window.v79OpenManagerWorkspace=function(name){
    return {r,count:ds.length,unique:ds.filter(x=>scope.filter(t=>hav(t.lat,t.lng,x.s.lat,x.s.lng)<0.01).length).length};
  }).filter(x=>x.count).sort((a,b)=>b.count-a.count);
  const plan=v79ManagerPlacementPlan(scope,6);
- const placementHtml=plan.length?plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.tier)} · +${x.gain} net-new stores · +${x.pctGain.toFixed(1)} pts of manager footprint<br><small>${esc(x.reason)}</small></span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">Simulate</button></div>`).join(''):`<div class="callout"><b>No meaningful additional RTS placement identified.</b><br>The current gap pattern does not meet the manager-level impact threshold for a placement recommendation. Isolated or low-return gaps remain visible for operational review, but are not being presented as headcount opportunities.</div>`;
+ const placementHtml=plan.length?plan.map((x,i)=>`<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(x.city)}, ${esc(x.state||'')}</b><br>${esc(x.tier)} · Position Value ${x.score}/100 · +${x.gain} net-new stores · ${x.pctGain.toFixed(1)}% of manager footprint · ${x.gapCapture.toFixed(1)}% of current gaps addressed<br><small>${esc(x.reason)}</small></span><button class="btn" onclick="window.simulateAt(${x.lat},${x.lng});document.getElementById('modal').classList.remove('show')">Simulate</button></div>`).join(''):`<div class="callout"><b>No meaningful additional RTS placement identified.</b><br>The current gap pattern does not meet the manager-level impact threshold for a placement recommendation. Isolated or low-return gaps remain visible for operational review, but are not being presented as headcount opportunities.</div>`;
  openModal('Manager Coverage & Placement Intelligence',`
   <div class="v6-hero"><h2>${esc(name)}</h2><p>${ACTIVE_PROGRAM_ID==='premium-merchandising'?'District Manager':'Area Manager / RDM'} · Regional Manager: <button class="v79-inline-hierarchy-link" onclick="window.v7RegionalDashboard(decodeURIComponent('${encodeURIComponent(regional)}'))">${esc(regional)}</button> · ${states.join(', ')}</p></div>
   <div class="v6-kpi-grid">
@@ -1907,7 +2192,7 @@ window.v79OpenManagerWorkspace=function(name){
    <div class="v4-panel"><h3>RTS dependency</h3>${rtsStats.slice(0,10).map((x,i)=>`<div class="v78-drill-row v4-list-row" onclick="window.openTerritory('${esc(x.r.id)}');document.getElementById('modal').classList.remove('show')"><span class="v4-rank">${i+1}</span><span><b>${esc(x.r.name)}</b></span><span>${x.count} stores ↗</span></div>`).join('')||'<div class="callout">No active RTS currently reaches this manager footprint.</div>'}</div>
    <div class="v4-panel"><h3>Placement opportunities</h3>${placementHtml}</div>
   </div>
-  <div class="callout"><b>Placement rule:</b> recommendations are surfaced only when the modeled location produces a reasonable, concentrated manager-level impact. Low-value placements are intentionally suppressed. Use the simulator to validate any surfaced opportunity before treating it as a staffing decision.</div>
+  <div class="callout"><b>Position-capacity rule:</b> existing RTS positions are treated as fixed and protected — this model does <b>not</b> recommend relocations or replacement. New placements are surfaced only when they are competitive uses of remaining authorized capacity. Each program is capped at <b>100 RTS positions</b>. Candidates must pass minimum impact gates and earn a strong Position Value score before appearing here. Smaller positive improvements remain available in Gap and Simulation tools but are not staffing recommendations.</div>
   <div class="actions"><button class="btn primary" onclick="window.v791ApplyManagerToken('${v791ManagerToken(name)}')">View Manager on Map</button><button class="btn" onclick="window.v791ShowManagerGapsToken('${v791ManagerToken(name)}')">Show Manager Gaps</button></div>`);
 };
 window.v79ApplyManagerScope=function(name){

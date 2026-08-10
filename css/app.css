@@ -1348,3 +1348,19 @@ button:disabled{
 .v793-manager-row{display:grid;grid-template-columns:28px 1fr;gap:7px;align-items:start;padding:7px 0;border-bottom:1px solid #e2e8f0}
 .v793-text-link{appearance:none;border:0;background:transparent;text-align:left;padding:0;color:#0f172a;cursor:pointer;font:inherit}
 .v793-text-link:hover{color:#1d4ed8;text-decoration:underline}
+
+/* v7.9.5 authorized-position planning */
+.v795-capacity{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0}
+.v795-capacity>div{border:1px solid #dbe4ef;border-radius:12px;padding:10px 12px;background:#fff}
+.v795-capacity small{display:block;color:#64748b;font-weight:800;font-size:10px;letter-spacing:.06em}
+.v795-capacity b{display:block;font-size:20px;color:#0f172a;margin-top:2px}
+.v795-capacity span{display:block;color:#64748b;font-size:11px;margin-top:2px}
+@media(max-width:800px){.v795-capacity{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Version 7.10 sequential position portfolio */
+.v710-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.v710-summary>div{border:1px solid #dbe4ef;border-radius:12px;padding:10px 12px;background:#fff}
+.v710-summary small{display:block;color:#64748b;font-weight:800;font-size:10px;letter-spacing:.06em}
+.v710-summary b{display:block;font-size:23px;color:#0f172a;margin-top:2px}
+.v710-summary span{display:block;color:#64748b;font-size:11px;margin-top:2px}
+@media(max-width:800px){.v710-summary{grid-template-columns:1fr}}

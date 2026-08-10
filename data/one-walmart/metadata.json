@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.9.3 \u2014 Manager Hierarchy Browser",
+  "platformRelease": "Version 7.10 \u2014 Sequential Authorized Position Optimizer",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
@@ -60,5 +60,8 @@
   "organizationMatchedStoreCount": 4598,
   "organizationUnmatchedStoreCount": 0,
   "regionalManagerCount": 12,
-  "areaManagerCount": 104
+  "areaManagerCount": 104,
+  "authorizedRTSPositions": 100,
+  "existingRosterPolicy": "fixed-protected",
+  "positionOptimization": "sequential-incremental"
 }

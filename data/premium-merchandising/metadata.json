@@ -32,12 +32,15 @@
     "Hiring recommendations are gap-driven"
   ],
   "platformProgramId": "premium-merchandising",
-  "platformRelease": "Version 7.9.3 \u2014 Manager Hierarchy Browser",
+  "platformRelease": "Version 7.10 \u2014 Sequential Authorized Position Optimizer",
   "coverageTruth": "Every roster row counts; per-store program eligibility; selected radius",
   "regionalManagerCount": 18,
   "districtManagerCount": 133,
   "organizationMatchedDistrictStoreCount": 9048,
   "organizationMatchedRegionalDirectStoreCount": 351,
   "organizationUnmatchedStoreCount": 74,
-  "organizationSource": "data (42).xlsx"
+  "organizationSource": "data (42).xlsx",
+  "authorizedRTSPositions": 100,
+  "existingRosterPolicy": "fixed-protected",
+  "positionOptimization": "sequential-incremental"
 }
