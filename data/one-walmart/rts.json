@@ -235,6 +235,26 @@
     ]
   },
   {
+    "id": "349966",
+    "name": "Eisele, Sheen",
+    "email": "SheenEisele.349966@premiumretail.com",
+    "lat": 26.271533072058087,
+    "lng": -80.10496858853487,
+    "active": true,
+    "status": "Active",
+    "team": "One Walmart",
+    "legacyTeam": "Premium PSP",
+    "routingPool": "Legacy",
+    "sourceActiveForRouting": "True",
+    "rtm": "Jeff Parsons",
+    "remoteCapable": true,
+    "maxDistanceMiles": 75,
+    "program": "one-walmart",
+    "eligibility": [
+      "ONE_WALMART"
+    ]
+  },
+  {
     "id": "75036",
     "name": "Eslick, Angela",
     "email": "AngelaEslick.75036@premiumretail.com",
@@ -547,6 +567,26 @@
     ]
   },
   {
+    "id": "476033",
+    "name": "Kereszt, Amanda",
+    "email": "AKereszt@premiumretail.com",
+    "lat": 39.84433552115842,
+    "lng": -105.02445083057543,
+    "active": true,
+    "status": "Active",
+    "team": "One Walmart",
+    "legacyTeam": "Premium PSP",
+    "routingPool": "Legacy",
+    "sourceActiveForRouting": "True",
+    "rtm": "Jeff Parsons",
+    "remoteCapable": false,
+    "maxDistanceMiles": 75,
+    "program": "one-walmart",
+    "eligibility": [
+      "ONE_WALMART"
+    ]
+  },
+  {
     "id": "469093",
     "name": "Kuhls, Rachel",
     "email": "RKuhls@premiumretail.com",
@@ -590,6 +630,46 @@
       "PG_WALMART",
       "TYSON_WALMART",
       "UNILEVER_WALMART"
+    ]
+  },
+  {
+    "id": "475545",
+    "name": "Massey, Troy",
+    "email": "TMassey5@premiumretail.com",
+    "lat": 30.09241117907388,
+    "lng": -95.21500455962882,
+    "active": true,
+    "status": "Active",
+    "team": "One Walmart",
+    "legacyTeam": "Premium PSP",
+    "routingPool": "Legacy",
+    "sourceActiveForRouting": "True",
+    "rtm": "Jeff Parsons",
+    "remoteCapable": false,
+    "maxDistanceMiles": 75,
+    "program": "one-walmart",
+    "eligibility": [
+      "ONE_WALMART"
+    ]
+  },
+  {
+    "id": "73949",
+    "name": "Mock, Rebecca",
+    "email": "RMock@premiumretail.com",
+    "lat": 41.52033462947079,
+    "lng": -83.96928873053292,
+    "active": true,
+    "status": "Active",
+    "team": "One Walmart",
+    "legacyTeam": "Premium PSP",
+    "routingPool": "Legacy",
+    "sourceActiveForRouting": "True",
+    "rtm": "Jeff Parsons",
+    "remoteCapable": false,
+    "maxDistanceMiles": 75,
+    "program": "one-walmart",
+    "eligibility": [
+      "ONE_WALMART"
     ]
   },
   {
@@ -751,6 +831,26 @@
     "routingPool": "Legacy",
     "sourceActiveForRouting": "True",
     "rtm": "Jeff Parsons",
+    "remoteCapable": false,
+    "maxDistanceMiles": 75,
+    "program": "one-walmart",
+    "eligibility": [
+      "ONE_WALMART"
+    ]
+  },
+  {
+    "id": "444040",
+    "name": "Saxe, Melissa",
+    "email": "MSaxe@premiumretail.com",
+    "lat": 45.26214,
+    "lng": -93.58561,
+    "active": true,
+    "status": "Active",
+    "team": "One Walmart",
+    "legacyTeam": "Acosta PSP",
+    "routingPool": "Legacy",
+    "sourceActiveForRouting": "True",
+    "rtm": "Daphney Elvis",
     "remoteCapable": false,
     "maxDistanceMiles": 75,
     "program": "one-walmart",

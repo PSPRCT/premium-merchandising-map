@@ -37,7 +37,7 @@
   "addressUnmatchedCount": 16,
   "duplicateStoreNumbersResolved": 3,
   "addressMatchMethod": "Store number; duplicated store numbers resolved by coordinate proximity",
-  "platformRelease": "Version 7.14.6 \u2014 Regional Hierarchy Navigation Fix",
+  "platformRelease": "Version 7.14.7 \u2014 One Walmart RTS Roster Update",
   "featureSet": [
     "Executive Home",
     "Coverage Rings",
@@ -66,5 +66,6 @@
   "positionOptimization": "sequential-expanded-pipeline",
   "postingMarketStrategy": "nearest-major-metro-with-local-fallback",
   "planningCache": "shared-memoized",
-  "managerIdentityStrategy": "canonical-normalized-key"
+  "managerIdentityStrategy": "canonical-normalized-key",
+  "rosterUpdated": "2026-08-14"
 }
