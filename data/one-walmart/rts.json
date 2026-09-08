@@ -398,29 +398,6 @@
     ]
   },
   {
-    "id": "457426",
-    "name": "Harbin, Thomas",
-    "email": "THarbin@premiumretail.com",
-    "lat": 39.71709,
-    "lng": -84.14105,
-    "active": true,
-    "status": "Active",
-    "team": "One Walmart",
-    "legacyTeam": "Acosta PSP",
-    "routingPool": "Legacy",
-    "sourceActiveForRouting": "True",
-    "rtm": "Daphney Elvis",
-    "remoteCapable": true,
-    "maxDistanceMiles": 75,
-    "program": "one-walmart",
-    "eligibility": [
-      "ONE_WALMART",
-      "PG_WALMART",
-      "TYSON_WALMART",
-      "UNILEVER_WALMART"
-    ]
-  },
-  {
     "id": "505395",
     "name": "Holland, Jonathan",
     "email": "JHolland3@premiumretail.com",
