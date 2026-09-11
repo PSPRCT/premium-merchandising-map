@@ -438,29 +438,6 @@
     ]
   },
   {
-    "id": "418676",
-    "name": "Houston, Theresa",
-    "email": "THouston@premiumretail.com",
-    "lat": 34.59992,
-    "lng": -86.48756,
-    "active": true,
-    "status": "Active",
-    "team": "One Walmart",
-    "legacyTeam": "Acosta PSP",
-    "routingPool": "Legacy",
-    "sourceActiveForRouting": "True",
-    "rtm": "Daphney Elvis",
-    "remoteCapable": false,
-    "maxDistanceMiles": 75,
-    "program": "one-walmart",
-    "eligibility": [
-      "ONE_WALMART",
-      "PG_WALMART",
-      "TYSON_WALMART",
-      "UNILEVER_WALMART"
-    ]
-  },
-  {
     "id": "64137",
     "name": "Ibargo, Deborah",
     "email": "DIbargo@premiumretail.com",
@@ -609,29 +586,6 @@
       "UNILEVER_WALMART"
     ]
   },
-  {
-  "id": "549822",
-  "name": "Mcghee, Travis",
-  "email": "TMcghee@premiumretail.com",
-  "lat": 42.30776739385337,
-  "lng": -85.2008675863328,
-  "active": true,
-  "status": "Active",
-  "team": "One Walmart",
-  "legacyTeam": "Acosta PSP",
-  "routingPool": "Legacy",
-  "sourceActiveForRouting": "True",
-  "rtm": "Daphney Elvis",
-  "remoteCapable": false,
-  "maxDistanceMiles": 75,
-  "program": "one-walmart",
-  "eligibility": [
-    "ONE_WALMART",
-    "PG_WALMART",
-    "TYSON_WALMART",
-    "UNILEVER_WALMART"
-  ]
-},
   {
     "id": "475545",
     "name": "Massey, Troy",
