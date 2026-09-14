@@ -753,26 +753,6 @@
     ]
   },
   {
-    "id": "320501",
-    "name": "Rogers, Michelle",
-    "email": "MRogers4@premiumretail.com",
-    "lat": 37.03151,
-    "lng": -93.14508,
-    "active": true,
-    "status": "Active",
-    "team": "One Walmart",
-    "legacyTeam": "Premium PSP",
-    "routingPool": "Legacy",
-    "sourceActiveForRouting": "True",
-    "rtm": "Jeff Parsons",
-    "remoteCapable": false,
-    "maxDistanceMiles": 75,
-    "program": "one-walmart",
-    "eligibility": [
-      "ONE_WALMART"
-    ]
-  },
-  {
     "id": "381696",
     "name": "Salvato, Nicholas",
     "email": "NSalvato@premiumretail.com",
