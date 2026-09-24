@@ -358,26 +358,6 @@
     ]
   },
   {
-    "id": "67428",
-    "name": "Hall, Sabrina",
-    "email": "SabrinaHall.67428@premiumretail.com",
-    "lat": 30.1849,
-    "lng": -81.71847,
-    "active": true,
-    "status": "Active",
-    "team": "One Walmart",
-    "legacyTeam": "Premium PSP",
-    "routingPool": "Legacy",
-    "sourceActiveForRouting": "True",
-    "rtm": "Jeff Parsons",
-    "remoteCapable": false,
-    "maxDistanceMiles": 75,
-    "program": "one-walmart",
-    "eligibility": [
-      "ONE_WALMART"
-    ]
-  },
-  {
     "id": "395435",
     "name": "Hamrick, Sherry",
     "email": "SHamrick2@premiumretail.com",
