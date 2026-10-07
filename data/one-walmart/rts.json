@@ -106,29 +106,6 @@
     ]
   },
   {
-    "id": "519965",
-    "name": "Cherry, Holly",
-    "email": "HCherry@premiumretail.com",
-    "lat": 36.19309,
-    "lng": -115.18095,
-    "active": true,
-    "status": "Active",
-    "team": "One Walmart",
-    "legacyTeam": "Acosta PSP",
-    "routingPool": "Legacy",
-    "sourceActiveForRouting": "True",
-    "rtm": "Daphney Elvis",
-    "remoteCapable": false,
-    "maxDistanceMiles": 75,
-    "program": "one-walmart",
-    "eligibility": [
-      "ONE_WALMART",
-      "PG_WALMART",
-      "TYSON_WALMART",
-      "UNILEVER_WALMART"
-    ]
-  },
-  {
     "id": "42941",
     "name": "Cole, Calvin",
     "email": "CCole6@premiumretail.com",
