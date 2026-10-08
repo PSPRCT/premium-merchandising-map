@@ -235,7 +235,7 @@ function applyFilters(){
    (!c||(c==='covered'?s.covered:!s.covered))&&
    (!ret||s.retailer===ret)&&
    (!st||s.state===st)&&
-   (!regional||v7OrgForStore(s).regionalManager===regional)&&
+   (!regional||v7145ManagerKey(v7OrgForStore(s).regionalManager)===v7145ManagerKey(regional))&&
    (!mgr||v7OrgForStore(s).areaManager===mgr)&&
    (!rr||(s._eligibleDistances||[]).some(r=>r.name===rr&&r.distance<=rad))&&
    (!$('within').checked||(s._eligibleDistances||[]).some(r=>r.distance<=rad))
@@ -2338,7 +2338,7 @@ function v713OpportunityRows(scope,limit=6,kind='manager'){
  return rows.map((p,i)=>{const q=p.scopeImpact, mgr=q.managers.slice(0,3).map(([n,c])=>`${n} +${c}`).join(' · ');return `<div class="v4-list-row"><span class="v4-rank">${i+1}</span><span><b>${esc(p.postingMarket?.label||`${p.city}, ${p.state||''}`)}</b><br>${esc(p.tier)} · Portfolio #${p.rank} · +${p.netNew} network net-new · <b>+${q.gain} in this ${kind}</b> · ${q.beforePct.toFixed(1)}% → ${q.afterPct.toFixed(1)}% (+${q.pointGain.toFixed(1)} pts)<br><small>Modeled 75-mi center: ${esc(p.city||p.label)}, ${esc(p.state||'')}${mgr?` · Manager benefit: ${esc(mgr)}`:''}</small></span><button class="btn" onclick="window.v710SimulatePortfolioPlacement(${p.rank})">Simulate</button></div>`}).join('');
 }
 function v793OpenRegionalProfile(name){
- const scope=stores.filter(s=>v7OrgForStore(s).regionalManager===name);
+ const scope=stores.filter(s=>v7145ManagerKey(v7OrgForStore(s).regionalManager)===v7145ManagerKey(name));
  if(!scope.length){openModal('Regional Manager Intelligence',`<div class="callout">No stores were found for ${esc(name)}.</div>`);return}
  const model=v4Model(scope),covered=scope.length-model.gaps.length,pct=covered/scope.length*100;
  const mgrs=v793ManagerRows(scope);
@@ -2365,7 +2365,7 @@ function v793OpenRegionalProfile(name){
 window.v793OpenRegionalProfile=v793OpenRegionalProfile;
 window.v793ApplyRegionalScope=function(token){
  const name=decodeURIComponent(token),el=$('fRegional');
- if(el){el.value=name;refreshCascadingFilters({preserve:true});applyFilters();}
+ if(el){el.value=[...el.options].find(o=>v7145ManagerKey(o.value)===v7145ManagerKey(name))?.value||'';refreshCascadingFilters({preserve:true});applyFilters();}
  $('modal')?.classList.remove('show');fitResults();
 };
 
@@ -2858,7 +2858,7 @@ function v7OrgForStore(store){
  return {regionalManager:regional,areaManager:area};
 }
 function v7StoresForRegional(rm){
- return stores.filter(s=>v7OrgForStore(s).regionalManager===rm);
+ return stores.filter(s=>v7145ManagerKey(v7OrgForStore(s).regionalManager)===v7145ManagerKey(rm));
 }
 function v7StoresForArea(rdm){
  return stores.filter(s=>v7OrgForStore(s).areaManager===rdm);
@@ -3047,7 +3047,7 @@ function refreshCascadingFilters({preserve=true}={}){
  if(oldRegional&&regionalNames.includes(oldRegional))regionalEl.value=oldRegional;
 
  const selectedRegional=regionalEl.value||'';
- const districtScope=base.filter(s=>!selectedRegional||v7OrgForStore(s).regionalManager===selectedRegional);
+ const districtScope=base.filter(s=>!selectedRegional||v7145ManagerKey(v7OrgForStore(s).regionalManager)===v7145ManagerKey(selectedRegional));
  const managerNames=uniq(districtScope.map(s=>v7OrgForStore(s).areaManager).filter(Boolean));
  options('fManager',managerNames);
  if(oldManager&&managerNames.includes(oldManager))managerEl.value=oldManager;
