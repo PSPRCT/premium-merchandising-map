@@ -584,29 +584,6 @@
     ]
   },
   {
-    "id": "359880",
-    "name": "Nunez Almeida, Ricardo",
-    "email": "RNunezAlmeida@premiumretail.com",
-    "lat": 39.95697,
-    "lng": -86.12325,
-    "active": true,
-    "status": "Active",
-    "team": "One Walmart",
-    "legacyTeam": "Acosta PSP",
-    "routingPool": "Legacy",
-    "sourceActiveForRouting": "True",
-    "rtm": "Daphney Elvis",
-    "remoteCapable": false,
-    "maxDistanceMiles": 75,
-    "program": "one-walmart",
-    "eligibility": [
-      "ONE_WALMART",
-      "PG_WALMART",
-      "TYSON_WALMART",
-      "UNILEVER_WALMART"
-    ]
-  },
-  {
     "id": "370933",
     "name": "Orr, John",
     "email": "JOrr3@premiumretail.com",
